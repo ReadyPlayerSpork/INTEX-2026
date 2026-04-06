@@ -174,9 +174,44 @@ Gated behind the **SocialMedia** role.
 
 ## Phase 7: Admin Dashboard & System Management
 
-Gated behind the **Admin** role.
+Gated behind the **Admin** role. The admin dashboard is the executive command center — it should give leadership a complete picture of organizational health at a glance without needing to navigate to individual tools.
 
-1. **Admin Dashboard** (`/admin/dashboard`) — KPI summary: total residents, total active safehouses, total donations this month, recent activity feed (new residents, new donations, incidents). Quick links to all admin tools.
+1. **Admin Executive Dashboard** (`/admin/dashboard`) — A single-page overview with the following sections/cards:
+
+   ### Financial Health Overview
+   - **Total donations this month** vs last month (with % change arrow, green/red)
+   - **Donations over time** — Line chart showing monthly donation totals for the past 12 months (from `donations` table, grouped by month). Toggle between monetary only and all types.
+   - **Recurring vs one-time donation ratio** — Donut chart (from `donations.is_recurring`)
+   - **Top campaigns** — Ranked list of campaigns by total donation value this month (from `donations.campaign_name`)
+   - **Donation pipeline** — Breakdown by `donation_type` (Monetary, InKind, Time, Skills, SocialMedia) with totals
+   - **Donor health indicators** — Count of active donors (donated in last 6 months), lapsed donors (6-12 months since last donation), churned donors (12+ months). These numbers link to the Financial Insights page.
+
+   ### Resident & Case Management Overview
+   - **Total active residents** across all safehouses (from `residents` where `case_status = 'Active'`)
+   - **Residents by safehouse** — Bar chart showing active count vs capacity for each safehouse (from `residents` + `safehouses.capacity_girls`)
+   - **Risk level distribution** — Pie chart of `residents.current_risk_level` (Low/Medium/High/Critical). Critical count should be prominently displayed with a red badge.
+   - **Alerts: Residents who may be struggling** — Auto-generated alert cards for:
+     - Residents whose `current_risk_level` is higher than `initial_risk_level` (escalating risk)
+     - Residents with `concerns_flagged = true` on their most recent process recording
+     - Residents with a `HealthWellbeingRecord.general_health_score < 2.0` in the latest month
+     - Residents with an unresolved incident report (`resolved = false`) older than 7 days
+     - Residents with no process recording in the last 30 days (may indicate missed sessions)
+   - **Alerts: Former residents needing follow-up** — Residents where `case_status = 'Closed'` and `reintegration_status = 'In Progress'` with no `home_visitation` in the last 60 days. These are survivors we haven't heard from.
+   - **Recent activity feed** — Chronological list of the last 20 events: new admissions, discharges, incident reports, completed intervention plans
+
+   ### Social Media Overview
+   - **Engagement summary** — Total impressions, reach, and engagement rate this month vs last month (from `social_media_posts`)
+   - **Top performing post** this month — Show the post with highest `engagement_rate`, its platform, content topic, and a link
+   - **Recommended actions:**
+     - "Repost this campaign" — Identify the campaign with the highest `estimated_donation_value_php` per post and suggest rerunning it. Show the ROI (total donation referrals / boost budget if boosted).
+     - "Best time to post" — Show the `day_of_week` + `post_hour` combination with the highest average engagement rate
+     - "Content that drives donations" — Show the `content_topic` with the highest average `donation_referrals`
+   - **Active campaigns** — List posts from the last 30 days where `is_boosted = true`, with remaining budget context if available
+
+   ### Quick Stats Bar (top of page)
+   - Total active residents | Active safehouses | Donations this month (PHP) | Active donors | Unresolved incidents | Engagement rate this month
+   - Each stat is clickable and links to the relevant detail page
+
 2. **User Management** (`/admin/users`) — CRUD for user accounts. List all users, search/filter, view details, deactivate accounts. This is separate from role assignment (Phase 1, Step 3) but can link to it.
 3. **Database CRUD Pages** (`/admin/data/:table`) — Generic or per-table CRUD interface for all 17 domain tables. Admins can create, read, update, and delete any record. Include confirmation dialogs for all deletions.
 4. **Safehouse Management** (`/admin/safehouses`) — CRUD for safehouses with current occupancy tracking.
@@ -203,13 +238,352 @@ Complete these security requirements across the entire application:
 
 ## Phase 9: ML Pipeline Integration (IS 455 Requirements)
 
-Create Jupyter notebooks in a `ml-pipelines/` directory. Each pipeline follows the full lifecycle: problem framing, data prep, exploration, modeling, evaluation, feature selection, deployment. Integrate predictions into the web app via API endpoints.
+**Scoring:** 20 points total. Quality > quantity, but both matter. Each pipeline is graded on: Problem Framing, Data Prep & Exploration, Modeling & Feature Selection, Evaluation & Interpretation, Causal Analysis, and Deployment Integration. A poorly executed pipeline hurts more than it helps — do each one well before starting the next.
 
-1. **Donor Retention & Growth Pipeline** — Predict which donors are likely to churn or increase giving. Surface recommendations on the Financial dashboard and Donor Management page.
-2. **Volunteer Optimization Pipeline** — Predict volunteer hours and recommend who/how to maximize volunteer engagement. Surface on the Volunteer page or Admin dashboard.
-3. **Donor Outreach Prioritization Pipeline** — Prioritize which donors to reach out to, when, and how. Surface on the Financial Insights page.
-4. **Resident Outreach/Follow-up Pipeline** — Predict which former residents need follow-up. Surface on the Counselor dashboard.
-5. **Social Media Analytics Pipeline** — Analyze post performance and predict optimal posting strategies. Surface on the Social Media Analytics dashboard.
+**Directory structure:** Create `ml-pipelines/` at the project root. Each pipeline gets its own descriptively-named `.ipynb` file. Also create `ml-pipelines/requirements.txt` and `ml-pipelines/models/` (for saved model artifacts).
+
+**Environment setup:** `requirements.txt` should include:
+```
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.3
+matplotlib>=3.7
+seaborn>=0.12
+jupyter>=1.0
+joblib>=1.3
+flask>=3.0       # lightweight model serving if needed
+statsmodels>=0.14  # for explanatory models
+shap>=0.42        # for model interpretability
+imbalanced-learn>=0.11  # if class imbalance exists
+```
+
+**Critical rules for every notebook:**
+- Must be **fully executable top-to-bottom** by a TA (no broken cells, no missing data paths)
+- Data paths must be relative to the repo root (e.g., `../data/donations.csv`)
+- Every notebook must have **written markdown analysis between code cells** — not just code
+- Explicitly state whether the pipeline is **predictive or explanatory** and justify why
+- 60-80% of effort should be data preparation and exploration
+- Evaluate in **business terms** ("this means 12 donors are likely to stop giving next quarter") not just metrics ("accuracy is 0.87")
+
+---
+
+### Pipeline 1: Donor Churn Classifier
+**File:** `ml-pipelines/donor-churn-classifier.ipynb`
+**Goal:** PREDICTIVE — Identify supporters likely to stop donating in the next 6 months so the Financial team can intervene.
+**Surfaces on:** Financial Dashboard (donor health indicators), Donor Management page (risk badges per donor)
+
+**Section 1 — Problem Framing (markdown):**
+- Define churn: no donation in the next 6 months from a donor who has donated before
+- Who cares: Financial team, executive leadership. A retained donor is worth far more than acquiring a new one.
+- Why predictive: we need actionable scores per donor, not causal understanding of why people leave (that's Pipeline 3)
+
+**Section 2 — Data Acquisition & Preparation:**
+- Load `supporters.csv` and `donations.csv`. Join on `supporter_id`.
+- Engineer features per supporter:
+  - `total_donations` — count of all donations
+  - `total_monetary_value` — sum of `amount` where `donation_type = 'Monetary'`
+  - `avg_donation_amount` — mean monetary donation
+  - `donation_frequency_days` — mean days between consecutive donations
+  - `days_since_last_donation` — days from most recent `donation_date` to the dataset's max date
+  - `is_recurring_donor` — has at least one `is_recurring = true` donation
+  - `num_campaigns` — count of distinct `campaign_name` values
+  - `channel_diversity` — count of distinct `channel_source` values
+  - `supporter_type` — one-hot encode `supporter_type`
+  - `acquisition_channel` — one-hot encode
+  - `donor_tenure_days` — days from `first_donation_date` to dataset max date
+  - `relationship_type` — one-hot encode (Local, International, PartnerOrganization)
+- Create the **target variable**: label a donor as churned (1) if they have no donation in the last 6 months of the dataset. Use an earlier cutoff for training so you have ground truth.
+- Handle missing values: `amount` is null for non-monetary donations (fill with 0 or filter). `first_donation_date` nulls mean no donations yet (exclude).
+- Document class balance (likely imbalanced — more active than churned). Consider SMOTE or class weights.
+- Train/test split: 80/20 stratified on the target. Or use a **temporal split** — train on data before a cutoff date, test on data after.
+
+**Section 3 — Exploration (code + markdown):**
+- Distribution of `days_since_last_donation` — is there a natural breakpoint for churn?
+- Correlation heatmap of engineered features
+- Box plots: churned vs active donors by `total_donations`, `avg_donation_amount`, `donor_tenure_days`
+- Bar chart: churn rate by `acquisition_channel` and by `supporter_type`
+- Document 3-5 key findings that inform model choice
+
+**Section 4 — Modeling & Feature Selection:**
+- Start with **Logistic Regression** as a baseline (interpretable, good for comparison)
+- Then try **Random Forest** and **Gradient Boosting (XGBoost or sklearn GradientBoostingClassifier)**
+- For each model:
+  - Fit on training data
+  - Predict on test data
+  - Print classification report (precision, recall, F1, support)
+  - Print confusion matrix
+- Use **GridSearchCV or RandomizedSearchCV** for hyperparameter tuning on the best-performing model
+- Feature importance: use `model.feature_importances_` (tree models) or SHAP values
+- Feature selection: try removing low-importance features and re-evaluate. Document whether it helps.
+
+**Section 5 — Evaluation & Interpretation:**
+- Compare models on **recall for the churned class** (catching at-risk donors matters more than overall accuracy — a false negative means we miss a donor who's about to leave)
+- Report precision too — too many false positives waste outreach effort
+- ROC-AUC curve for the best model
+- **Business interpretation:** "The model identifies X% of donors who will churn. If the Financial team reaches out to the top 20 highest-risk donors, we estimate Y potential donations retained based on their historical average."
+- Discuss false positive/negative costs in context: false positive = wasted outreach email. False negative = lost donor relationship.
+
+**Section 6 — Causal & Relationship Analysis (markdown):**
+- Which features are most predictive of churn? Does this make theoretical sense?
+- Is `days_since_last_donation` just a tautology (it partially defines churn)? Discuss and consider excluding it.
+- Does `acquisition_channel` correlate with churn? If SocialMedia donors churn more, is that causal or because they're less engaged to begin with?
+- Be honest: this model predicts churn, it does NOT prove why donors leave.
+
+**Section 7 — Deployment:**
+- Save the trained model with `joblib.dump(model, 'models/donor_churn_model.joblib')`
+- Create a backend API endpoint: `GET /api/ml/donor-churn?supporter_id={id}` that loads the model, computes features for that donor from the database, and returns `{ churn_probability: 0.73, risk_level: "High" }`
+- Also create a batch endpoint: `GET /api/ml/donor-churn/batch` that scores all active donors and returns a sorted list
+- Frontend integration: on the Donor Management page, show a colored risk badge (green/yellow/red) next to each donor. On the Financial Dashboard, show the count of High/Medium/Low risk donors.
+
+---
+
+### Pipeline 2: Donor Outreach Prioritization
+**File:** `ml-pipelines/donor-outreach-prioritization.ipynb`
+**Goal:** EXPLANATORY — Understand what drives donation amount and frequency so the Financial team knows WHO to reach out to, WHEN, and HOW.
+**Surfaces on:** Financial Insights page (recommended actions per donor)
+
+**Section 1 — Problem Framing:**
+- This is explanatory, not predictive. We want to understand the relationships between donor characteristics and their giving behavior.
+- Who cares: Financial team doing outreach. They need to know which donors to prioritize and what channel/campaign to use.
+
+**Section 2 — Data Prep:**
+- Join `supporters`, `donations`, `donation_allocations`. Optionally join `social_media_posts` via `referral_post_id` to understand social media-driven donations.
+- Target variable: `total_lifetime_value` (sum of all monetary donations per supporter) OR `donation_frequency` (donations per year)
+- Features: `supporter_type`, `relationship_type`, `acquisition_channel`, `country`, `region`, number of campaigns participated in, whether they ever gave in-kind, whether any donation was social-media-referred, tenure, recency
+- Handle multicollinearity: check VIF scores before fitting linear models
+
+**Section 3 — Exploration:**
+- Scatter: tenure vs lifetime value (is there a loyalty curve?)
+- Bar: average donation by `acquisition_channel` — which channels bring high-value donors?
+- Heatmap: correlation between all numeric features
+- Time series: are there seasonal donation patterns? (group by month)
+
+**Section 4 — Modeling:**
+- **Multiple Linear Regression** — primary model for explanation (interpret coefficients)
+- Check assumptions: residual plots, Q-Q plot, multicollinearity (VIF)
+- **Decision Tree Regressor** — for comparison and to find non-linear splits
+- Use `statsmodels.OLS` for the linear model so you get p-values and confidence intervals
+- Feature selection: forward selection or backward elimination based on p-values
+
+**Section 5 — Evaluation:**
+- R², adjusted R², RMSE on test set
+- **Coefficient interpretation in business terms:** "Each additional campaign a donor participates in is associated with PHP X,XXX more in lifetime giving, holding other factors constant"
+- Residual analysis: are there donors the model consistently under/over-predicts?
+
+**Section 6 — Causal Analysis:**
+- Can we claim `acquisition_channel` causes higher donations? No — donors who come via events may be pre-disposed to give more. Discuss selection bias.
+- Can we claim recurring donors give more? Correlation yes, but the direction could be reversed (high-value donors are asked to set up recurring).
+- Identify 2-3 actionable insights the Financial team can use despite causal limitations
+
+**Section 7 — Deployment:**
+- Backend endpoint: `GET /api/ml/donor-priority` returns a ranked list of donors with a priority score and recommended action ("reach out via email", "invite to next campaign", "at risk of lapsing — personal call")
+- Frontend: on the Financial Insights page, show a prioritized outreach table with donor name, priority score, recommended action, and last donation date
+
+---
+
+### Pipeline 3: Resident Risk & Wellbeing Predictor
+**File:** `ml-pipelines/resident-risk-predictor.ipynb`
+**Goal:** PREDICTIVE — Flag residents whose risk level is likely to escalate so counselors can intervene early.
+**Surfaces on:** Counselor Dashboard (alerts), Admin Dashboard (resident alerts section)
+
+**Section 1 — Problem Framing:**
+- Predict whether a resident's `current_risk_level` will increase in the next assessment period
+- Who cares: Counselors, safehouse managers. Early intervention prevents crises.
+- This is predictive — we need individual risk scores, not just understanding of risk factors
+
+**Section 2 — Data Prep:**
+- Join `residents`, `process_recordings`, `health_wellbeing_records`, `education_records`, `incident_reports`, `intervention_plans`
+- Engineer features per resident:
+  - Latest `general_health_score`, `nutrition_score`, `sleep_quality_score`, `energy_level_score`
+  - Trend in health scores (improving/declining over last 3 months)
+  - Count of `concerns_flagged = true` in recent process recordings
+  - Count of unresolved incident reports
+  - Count of intervention plans with `status = 'Open'` or `'On Hold'`
+  - `emotional_state_observed` from most recent process recording (one-hot or ordinal)
+  - Whether emotional state improved or worsened during last session (`emotional_state_observed` vs `emotional_state_end`)
+  - Days since last process recording
+  - Days since last home visitation
+  - `attendance_rate` from latest education record
+  - `case_category` and sub-category booleans (abuse type indicators)
+  - `length_of_stay` (parse to numeric days)
+- Target: binary — did `current_risk_level` increase from one assessment to the next? Or multi-class: predict the risk level itself (Low/Medium/High/Critical as ordinal).
+- This dataset is likely small (fewer residents than donors). Use cross-validation heavily.
+
+**Section 3 — Exploration:**
+- Distribution of risk levels — is it imbalanced?
+- Which health/wellbeing scores correlate most with high risk?
+- Do residents with more incident reports have higher risk levels?
+- Does `emotional_state_observed` track with risk changes?
+- Small dataset means every observation matters — look for outliers carefully
+
+**Section 4 — Modeling:**
+- **Logistic Regression** (ordinal or binary) as baseline
+- **Random Forest** for non-linear relationships
+- **K-Nearest Neighbors** — may work well with small datasets
+- Use **stratified k-fold cross-validation** (k=5 or k=10) given small dataset size
+- Feature importance via SHAP for the best model
+
+**Section 5 — Evaluation:**
+- **Recall for high-risk class is paramount** — missing a resident at risk has severe real-world consequences
+- Confusion matrix: discuss what a false negative means (a struggling resident we failed to flag)
+- If dataset is too small for reliable predictions, be honest about it and discuss what additional data collection would help
+
+**Section 6 — Causal Analysis:**
+- Do declining health scores cause risk escalation, or does risk escalation cause health decline? Likely bidirectional.
+- Are abuse type categories predictive? Be very careful with interpretation — correlation with case outcomes does not mean one abuse type is "worse"
+- Discuss ethical considerations: this model flags vulnerable minors. False positives mean extra check-ins (low cost). False negatives mean missed crises (very high cost). Err on the side of over-flagging.
+
+**Section 7 — Deployment:**
+- Save model. Backend endpoint: `GET /api/ml/resident-risk?resident_id={id}` returns `{ escalation_probability: 0.65, risk_factors: ["declining health scores", "missed sessions"] }`
+- Batch endpoint: `GET /api/ml/resident-risk/alerts` returns all residents above a threshold
+- Frontend: alert cards on the Counselor Dashboard and Admin Dashboard. Show the resident name (internal code for privacy), current risk level, escalation probability, and top contributing factors.
+
+---
+
+### Pipeline 4: Social Media ROI & Posting Optimization
+**File:** `ml-pipelines/social-media-optimization.ipynb`
+**Goal:** PREDICTIVE + EXPLANATORY (hybrid) — Predict which posts will drive donations and explain what content/timing factors matter most.
+**Surfaces on:** Social Media Analytics Dashboard (recommendations), Admin Dashboard (social overview)
+
+**Section 1 — Problem Framing:**
+- Dual goal: (1) Predict `donation_referrals` or `estimated_donation_value_php` for a new post (predictive), (2) Understand what makes a post successful for future content strategy (explanatory)
+- Who cares: Social Media team for posting decisions, executives for ROI justification of social media spend
+
+**Section 2 — Data Prep:**
+- Load `social_media_posts.csv`. This is a single-table pipeline (no joins needed, but optionally join to `donations` via `referral_post_id` for validation).
+- Features:
+  - `platform` — one-hot encode
+  - `post_type` — one-hot encode (ImpactStory, Campaign, FundraisingAppeal, etc.)
+  - `media_type` — one-hot encode (Photo, Video, Carousel, Reel, Text)
+  - `content_topic` — one-hot encode
+  - `sentiment_tone` — one-hot encode
+  - `day_of_week` — one-hot or ordinal
+  - `post_hour` — numeric or binned (morning/afternoon/evening)
+  - `caption_length` — numeric
+  - `num_hashtags` — numeric
+  - `mentions_count` — numeric
+  - `has_call_to_action` — boolean
+  - `call_to_action_type` — one-hot (nullable — handle missing)
+  - `features_resident_story` — boolean
+  - `is_boosted` — boolean
+  - `boost_budget_php` — numeric (0 if not boosted)
+  - `follower_count_at_post` — numeric (controls for audience size growth over time)
+- Target variables (build separate models or a multi-output model):
+  - `engagement_rate` — for content quality prediction
+  - `donation_referrals` — for donation-driving prediction
+  - `estimated_donation_value_php` — for ROI prediction
+
+**Section 3 — Exploration:**
+- Average engagement rate by `platform`, `post_type`, `media_type`, `content_topic`
+- Heatmap: engagement rate by `day_of_week` × `post_hour` — find the optimal posting windows
+- Scatter: `boost_budget_php` vs `donation_referrals` — is paid promotion worth it?
+- Bar: `content_topic` ranked by average `estimated_donation_value_php` — what content drives money?
+- Does `features_resident_story` increase engagement? Compare distributions.
+- Does `has_call_to_action` increase `donation_referrals`? Which `call_to_action_type` works best?
+
+**Section 4 — Modeling:**
+- **For engagement prediction (predictive):** Random Forest Regressor, Gradient Boosting Regressor. Target: `engagement_rate`. Evaluate with RMSE, MAE, R².
+- **For donation prediction (predictive):** Same models. Target: `donation_referrals`. This may be a count — consider Poisson regression.
+- **For content understanding (explanatory):** Linear Regression with `statsmodels.OLS` on `engagement_rate`. Interpret coefficients: "Posts with FundraisingAppeal type have X% higher engagement than the baseline, controlling for other factors."
+- Feature importance comparison across models using SHAP
+
+**Section 5 — Evaluation:**
+- For the predictive models: RMSE, MAE, R² on test set. Business framing: "The model predicts donation referrals within ±X for 80% of posts"
+- For the explanatory model: coefficient significance, R², residual analysis
+- **Identify the top 5 actionable levers** the social media team can control (they can't control follower count, but they can control post timing, content type, CTA, and boosting)
+
+**Section 6 — Causal Analysis:**
+- Does boosting cause more donations, or do the SM team boost posts that are already performing well? Selection bias.
+- Does posting at optimal times cause better engagement, or do followers just happen to be online then? (Likely causal, but discuss)
+- `features_resident_story` correlation with engagement: is it the story or the emotional sentiment that drives engagement?
+
+**Section 7 — Deployment:**
+- Save models. Backend endpoints:
+  - `POST /api/ml/social-media/predict` — accepts post metadata (platform, type, time, etc.) and returns predicted engagement rate and donation referrals
+  - `GET /api/ml/social-media/recommendations` — returns best posting time, best content type, and whether to boost, based on model insights
+- Frontend: on the Social Media Analytics Dashboard, show a "Recommendations" card with the top 3 actions. On the Cross-Post Tool, show a "predicted engagement" estimate as the user fills out the form.
+
+---
+
+### Pipeline 5: Reintegration Readiness / Follow-up Priority
+**File:** `ml-pipelines/reintegration-readiness.ipynb`
+**Goal:** PREDICTIVE — Score residents on their readiness for reintegration and flag former residents who may need follow-up.
+**Surfaces on:** Counselor Dashboard (follow-up alerts), Caseload Inventory (readiness scores)
+
+**Section 1 — Problem Framing:**
+- Two sub-problems: (1) For active residents: predict readiness for reintegration. (2) For closed/transferred cases: predict likelihood of needing follow-up intervention.
+- Who cares: Counselors planning reintegration. Social workers doing post-placement monitoring.
+- Predictive — we need individual scores, not just understanding.
+
+**Section 2 — Data Prep:**
+- Join `residents`, `process_recordings`, `home_visitations`, `education_records`, `health_wellbeing_records`, `intervention_plans`, `incident_reports`
+- Features per resident:
+  - Latest health scores (all 4: nutrition, sleep, energy, general health)
+  - Health score trends (3-month moving average direction)
+  - Education `progress_percent` and `completion_status`
+  - `attendance_rate` trend
+  - Count of process recordings in last 90 days
+  - Ratio of sessions with `progress_noted = true`
+  - Count of sessions with `concerns_flagged = true`
+  - Most recent `emotional_state_end` (ordinal: Distressed=1 ... Happy=8)
+  - Intervention plan completion rate (`status = 'Achieved'` / total plans)
+  - Count of open intervention plans
+  - Days since last incident
+  - Total incident count and severity distribution
+  - Home visitation outcomes (count of Favorable vs Unfavorable)
+  - `family_cooperation_level` from most recent visitation (ordinal)
+  - `length_of_stay` in days
+  - `current_risk_level` (ordinal)
+- Target for sub-problem 1: `reintegration_status = 'Completed'` (binary: ready vs not ready). Use historical completed cases as positive examples.
+- Target for sub-problem 2: For closed cases, define "needed follow-up" as having a home visitation or incident report after `date_closed`. Binary classification.
+
+**Section 3 — Exploration:**
+- What distinguishes residents who successfully reintegrated from those still in progress?
+- Do health score trends correlate with reintegration timing?
+- Is family cooperation level from home visitations predictive?
+- How do intervention plan completion rates relate to outcomes?
+- Small dataset warning: same as Pipeline 3. Use cross-validation.
+
+**Section 4 — Modeling:**
+- Logistic Regression (baseline), Random Forest, Gradient Boosting
+- Stratified k-fold cross-validation
+- SHAP values for interpretability — counselors need to understand WHY a resident is flagged
+
+**Section 5 — Evaluation:**
+- For readiness: precision matters (don't prematurely recommend reintegration). A false positive means a girl is reintegrated before she's ready.
+- For follow-up: recall matters (don't miss someone who needs help). A false negative means a former resident struggles alone.
+- Frame results: "Of the 15 residents the model flagged for follow-up, 12 had documented needs within 90 days."
+
+**Section 6 — Causal Analysis:**
+- Does completing intervention plans cause better reintegration outcomes, or are residents who complete plans just generally doing better? Selection vs treatment effect.
+- Does family cooperation cause successful reintegration, or does a resident doing well cause the family to be more cooperative?
+- Ethical framing: these scores inform high-stakes decisions about vulnerable minors. Discuss guardrails (human always makes final decision, model is advisory only).
+
+**Section 7 — Deployment:**
+- Save model. Backend: `GET /api/ml/reintegration-readiness?resident_id={id}` returns `{ readiness_score: 0.78, top_factors: ["high health scores", "3 completed intervention plans", "favorable home visits"] }`
+- Batch: `GET /api/ml/follow-up-needed` returns closed-case residents ranked by follow-up urgency
+- Frontend: on Caseload Inventory, show readiness score bar next to active residents. On Counselor Dashboard, show follow-up alerts for closed cases.
+
+---
+
+### General ML Deployment Architecture
+
+All ML models are served from the ASP.NET backend. The pattern for each:
+
+1. **Train in notebook** → save model artifact with `joblib.dump()` to `ml-pipelines/models/`
+2. **Backend loads model on startup** using a Python interop approach. Options:
+   - **Option A (recommended for this project):** Run a small Flask/FastAPI microservice (`ml-pipelines/serve.py`) that loads all models and exposes prediction endpoints. The ASP.NET backend proxies ML requests to this service. Run both services in production.
+   - **Option B:** Use `ML.NET` to retrain equivalent models in C# (more work but single-process deployment)
+   - **Option C:** Pre-compute predictions nightly via a Python script and store results in the database. Backend just reads from DB. Simplest but predictions go stale.
+3. **Frontend calls the ASP.NET API** which routes to the ML service. The frontend never calls the ML service directly.
+
+For the Flask microservice approach, create `ml-pipelines/serve.py`:
+- Load all `.joblib` models on startup
+- Expose endpoints matching the ones defined in each pipeline above
+- Connect to the same SQLite/PostgreSQL database to compute features on-the-fly
+- Return JSON responses
+
+Add `ml-pipelines/serve.py` startup instructions to the project README.
 
 ---
 
