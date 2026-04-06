@@ -106,6 +106,15 @@ Gated behind the **Survivor** role.
 Gated behind the **SocialMedia** role.
 
 1. **Social Media Analytics Dashboard** (`/social/dashboard`) — Aggregate engagement metrics from `social_media_posts`. Charts: engagement rate over time, top-performing content topics, platform comparison, best posting times, posts that drove donations. Filter by platform, date range, campaign.
+   - Add an **Ad ROI panel** for Meta campaigns that pulls live ad performance from the Meta Ads API and stores normalized snapshots in the app database.
+   - The ROI panel must segment performance by the three strategic audiences: **Donors**, **Survivors**, and **Volunteers/Employees**.
+   - For each audience segment, show: impressions, reach, spend, link clicks, CTR, CPC, **cost per link click**, conversions/donation referrals when available, and estimated downstream value.
+   - The primary optimization target for paid Meta campaigns is **lowest cost per link click**, because the immediate business goal is to bring the most qualified people to the website.
+   - Recommendations must be audience-aware:
+     - **Donors** — optimize for traffic quality and downstream donation value
+     - **Survivors** — optimize for safe reach and low-friction crisis-resource visits
+     - **Volunteers/Employees** — optimize for qualified traffic to volunteer/program pages
+   - Include a comparison view that answers: "For this budget, which audience and creative combination is driving the cheapest qualified website traffic?"
 
 2. **Cross-Post Tool** (`/social/post`) — Simplified posting interface that publishes content to Facebook, Instagram, and TikTok from a single form. The backend handles all platform API calls. The form has two modes:
 
@@ -169,6 +178,9 @@ Gated behind the **SocialMedia** role.
    - Meta budget is in **cents** (so PHP 500 = `50000`). TikTok budget is in **dollars** (USD equivalent).
 
 3. **Post Performance Tracker** (`/social/posts`) — Table of all social media posts with engagement metrics. Link to the original post. Sort/filter by platform, engagement rate, donation referrals. For posts created through the Cross-Post Tool, show the platform-returned post IDs and approval status.
+   - Add a paid-media mode that lists Meta ads/campaigns/ad sets alongside organic posts.
+   - For Meta ads, display campaign objective, audience segment (Donor/Survivor/Volunteer), spend, link clicks, CTR, CPC, cost per link click, landing page URL, and current delivery status.
+   - Show a recommendation badge when the system thinks an ad should be scaled, paused, duplicated, or rewritten.
 
 ---
 
@@ -203,7 +215,9 @@ Gated behind the **Admin** role. The admin dashboard is the executive command ce
    - **Engagement summary** — Total impressions, reach, and engagement rate this month vs last month (from `social_media_posts`)
    - **Top performing post** this month — Show the post with highest `engagement_rate`, its platform, content topic, and a link
    - **Recommended actions:**
-     - "Repost this campaign" — Identify the campaign with the highest `estimated_donation_value_php` per post and suggest rerunning it. Show the ROI (total donation referrals / boost budget if boosted).
+    - "Repost this campaign" — Identify the campaign with the highest `estimated_donation_value_php` per post and suggest rerunning it. Show the ROI (total donation referrals / boost budget if boosted).
+    - "Scale this audience" — Identify which of Donors, Survivors, or Volunteers currently has the **lowest cost per link click** on Meta and recommend whether to increase budget, duplicate the ad set, or keep budget flat.
+    - "Pause or revise this ad" — Flag active Meta campaigns with rising cost per link click, weak CTR, or model-predicted underperformance.
      - "Best time to post" — Show the `day_of_week` + `post_hour` combination with the highest average engagement rate
      - "Content that drives donations" — Show the `content_topic` with the highest average `donation_referrals`
    - **Active campaigns** — List posts from the last 30 days where `is_boosted = true`, with remaining budget context if available
@@ -230,7 +244,7 @@ Complete these security requirements across the entire application:
 5. **Privacy Policy** — Built in Phase 2. Review for completeness.
 6. **Input Validation & Sanitization** — Add server-side validation on all API endpoints using Data Annotations and FluentValidation. Sanitize all user inputs to prevent XSS and SQL injection.
 7. **Deletion Confirmations** — Every delete action in the UI must show a confirmation dialog before executing.
-8. **Credential Security** — Move all secrets (Google OAuth keys, connection strings, API keys) to environment variables or a secrets manager. Never commit secrets to the repo. Create an `.env.example` file documenting required variables.
+8. **Credential Security** — Move all secrets (Google OAuth keys, connection strings, API keys) to environment variables or a secrets manager. Never commit secrets to the repo. Create an `.env.example` file documenting required variables. Production secrets must be injected through **Dokploy environment variables/secrets**, not hardcoded in compose files or committed manifests.
 9. **Optional: 2FA/MFA** — Add optional TOTP-based two-factor authentication via ASP.NET Identity.
 10. **Accessibility** — Target Lighthouse accessibility score of 90+. Use semantic HTML, ARIA labels, keyboard navigation, sufficient color contrast.
 
@@ -442,15 +456,25 @@ imbalanced-learn>=0.11  # if class imbalance exists
 
 ### Pipeline 4: Social Media ROI & Posting Optimization
 **File:** `ml-pipelines/social-media-optimization.ipynb`
-**Goal:** PREDICTIVE + EXPLANATORY (hybrid) — Predict which posts will drive donations and explain what content/timing factors matter most.
-**Surfaces on:** Social Media Analytics Dashboard (recommendations), Admin Dashboard (social overview)
+**Goal:** PREDICTIVE + EXPLANATORY (hybrid) — Predict whether currently running and newly proposed ads/posts will perform well, optimize Meta campaigns for **cost per link click**, and explain what audience/creative/timing factors matter most.
+**Surfaces on:** Social Media Analytics Dashboard (recommendations), Admin Dashboard (social overview), Cross-Post Tool / ad creation form
 
 **Section 1 — Problem Framing:**
-- Dual goal: (1) Predict `donation_referrals` or `estimated_donation_value_php` for a new post (predictive), (2) Understand what makes a post successful for future content strategy (explanatory)
-- Who cares: Social Media team for posting decisions, executives for ROI justification of social media spend
+- Dual goal:
+  - (1) Predict whether an ad or post is likely to perform well before and during its run (predictive)
+  - (2) Understand what makes content successful for future creative strategy (explanatory)
+- The most important paid-media KPI for Meta is **cost per link click**. The system should help the team buy the most website traffic for the lowest efficient cost.
+- All paid-media analysis must be segmented by target audience intent:
+  - **Donors** — traffic likely to donate
+  - **Survivors** — traffic likely to seek resources/help
+  - **Volunteers/Employees** — traffic likely to engage with volunteer opportunities
+- Who cares: Social Media team for day-to-day ad decisions, executives for ROI justification of social media spend
 
 **Section 2 — Data Prep:**
-- Load `social_media_posts.csv`. This is a single-table pipeline (no joins needed, but optionally join to `donations` via `referral_post_id` for validation).
+- Load `social_media_posts.csv` and create a companion Meta ads export or ingestion table from the Meta Ads API. Join live or snapshot ad metrics into the modeling dataset.
+- Pull and store Meta Ads metrics for active campaigns on a schedule. At minimum ingest: campaign/ad set/ad IDs, objective, spend, impressions, reach, frequency, CPM, link clicks, CTR, CPC, cost per landing page view if available, conversions, and audience labels.
+- Add an explicit `audience_segment` feature with allowed values `Donor`, `Survivor`, `Volunteer`.
+- Join to `donations` via `referral_post_id` or campaign tracking fields where possible so donor-facing ads can be evaluated on both traffic and downstream value.
 - Features:
   - `platform` — one-hot encode
   - `post_type` — one-hot encode (ImpactStory, Campaign, FundraisingAppeal, etc.)
@@ -468,10 +492,23 @@ imbalanced-learn>=0.11  # if class imbalance exists
   - `is_boosted` — boolean
   - `boost_budget_php` — numeric (0 if not boosted)
   - `follower_count_at_post` — numeric (controls for audience size growth over time)
+  - `audience_segment` — one-hot encode (`Donor`, `Survivor`, `Volunteer`)
+  - `campaign_objective` — one-hot encode
+  - `ad_creative_format` — image/video/carousel/etc.
+  - `headline` or CTA copy family — encoded if available
+  - `landing_page_url` or landing page type — donate/resources/volunteer/etc.
+  - `spend` — numeric
+  - `link_clicks` — numeric
+  - `ctr` — numeric
+  - `cpc` — numeric
+  - `cost_per_link_click` — numeric
+  - `frequency` — numeric
 - Target variables (build separate models or a multi-output model):
   - `engagement_rate` — for content quality prediction
   - `donation_referrals` — for donation-driving prediction
   - `estimated_donation_value_php` — for ROI prediction
+  - `cost_per_link_click` — for Meta traffic-efficiency prediction
+  - Optional binary target: `will_perform_well` where "well" is defined per audience segment using thresholds on CTR, cost per link click, and downstream conversions/value
 
 **Section 3 — Exploration:**
 - Average engagement rate by `platform`, `post_type`, `media_type`, `content_topic`
@@ -480,10 +517,18 @@ imbalanced-learn>=0.11  # if class imbalance exists
 - Bar: `content_topic` ranked by average `estimated_donation_value_php` — what content drives money?
 - Does `features_resident_story` increase engagement? Compare distributions.
 - Does `has_call_to_action` increase `donation_referrals`? Which `call_to_action_type` works best?
+- Compare **cost per link click** by `audience_segment`, creative format, and CTA type
+- Plot Meta performance by audience segment:
+  - Donor ads — cost per link click vs donation referrals
+  - Survivor ads — cost per link click vs resource page engagement
+  - Volunteer ads — cost per link click vs volunteer-form starts/submissions
+- Examine whether certain landing pages systematically lower or raise cost per link click
 
 **Section 4 — Modeling:**
 - **For engagement prediction (predictive):** Random Forest Regressor, Gradient Boosting Regressor. Target: `engagement_rate`. Evaluate with RMSE, MAE, R².
 - **For donation prediction (predictive):** Same models. Target: `donation_referrals`. This may be a count — consider Poisson regression.
+- **For Meta traffic-efficiency prediction (predictive):** Predict `cost_per_link_click` using Gradient Boosting, XGBoost/LightGBM if allowed, Random Forest, or regularized linear models.
+- **For "will this ad do well?" classification:** Train a classifier that labels ads as Likely Strong / Mixed / Likely Weak based on audience-specific thresholds. This is the model used before launch and while campaigns are running.
 - **For content understanding (explanatory):** Linear Regression with `statsmodels.OLS` on `engagement_rate`. Interpret coefficients: "Posts with FundraisingAppeal type have X% higher engagement than the baseline, controlling for other factors."
 - Feature importance comparison across models using SHAP
 
@@ -491,17 +536,26 @@ imbalanced-learn>=0.11  # if class imbalance exists
 - For the predictive models: RMSE, MAE, R² on test set. Business framing: "The model predicts donation referrals within ±X for 80% of posts"
 - For the explanatory model: coefficient significance, R², residual analysis
 - **Identify the top 5 actionable levers** the social media team can control (they can't control follower count, but they can control post timing, content type, CTA, and boosting)
+- Evaluate separately by `audience_segment`; a model that works for donor ads but fails for survivor outreach is not acceptable
+- For the classification model, report precision/recall for "Likely Weak" so the Social Media team can trust warnings before spending budget
 
 **Section 6 — Causal Analysis:**
 - Does boosting cause more donations, or do the SM team boost posts that are already performing well? Selection bias.
 - Does posting at optimal times cause better engagement, or do followers just happen to be online then? (Likely causal, but discuss)
 - `features_resident_story` correlation with engagement: is it the story or the emotional sentiment that drives engagement?
+- Does a low cost per link click actually reflect better audience-targeting, or just broader/cheaper clicks with lower intent? Discuss quality vs quantity tradeoffs by audience.
+- Are donor, survivor, and volunteer outcomes meaningfully different because of the audience itself, or because the creative and landing pages differ?
 
 **Section 7 — Deployment:**
 - Save models. Backend endpoints:
-  - `POST /api/ml/social-media/predict` — accepts post metadata (platform, type, time, etc.) and returns predicted engagement rate and donation referrals
-  - `GET /api/ml/social-media/recommendations` — returns best posting time, best content type, and whether to boost, based on model insights
-- Frontend: on the Social Media Analytics Dashboard, show a "Recommendations" card with the top 3 actions. On the Cross-Post Tool, show a "predicted engagement" estimate as the user fills out the form.
+  - `POST /api/ml/social-media/predict` — accepts post/ad metadata (platform, audience segment, creative type, CTA, timing, landing page, budget, etc.) and returns predicted engagement rate, predicted donation referrals, predicted cost per link click, and a `likely_performance` label
+  - `GET /api/ml/social-media/recommendations` — returns best posting time, best content type, best audience/creative pairing, whether to boost, and whether to scale/pause/rewrite currently running ads
+  - `GET /api/ml/social-media/live-ad-audit` — scores all currently running Meta ads and returns warnings/recommendations for the Social Media role group
+  - `POST /api/social/meta/sync` — pulls current Meta ad performance into the database for dashboards and model features
+- Frontend:
+  - On the Social Media Analytics Dashboard, show a "Recommendations" card with the top 3 actions plus a live "Active Ad Health" table for current campaigns
+  - On the Cross-Post Tool / ad builder, show predicted performance as the user fills out the form before launch
+  - Any user in the **SocialMedia** role should see model suggestions, warnings, and audience-specific recommendations so they can make better ad decisions before and during a campaign
 
 ---
 
@@ -577,25 +631,37 @@ All ML models are served from the ASP.NET backend. The pattern for each:
    - **Option C:** Pre-compute predictions nightly via a Python script and store results in the database. Backend just reads from DB. Simplest but predictions go stale.
 3. **Frontend calls the ASP.NET API** which routes to the ML service. The frontend never calls the ML service directly.
 
+For deployment, assume **Dokploy** as the production orchestrator:
+- Run the app as separate Dokploy services/containers:
+  - `frontend` — React/Vite static app or Node-served build
+  - `backend` — ASP.NET Core API
+  - `ml-service` — Flask/FastAPI service serving `.joblib` models
+  - `db` — PostgreSQL for production
+- Configure service-to-service networking inside Dokploy so the backend can call the ML service privately.
+- Store all production secrets in Dokploy environment variables/secrets.
+- Use Dokploy-managed domains/TLS and reverse proxy routing so frontend and backend are reachable under the intended production URLs.
+
 For the Flask microservice approach, create `ml-pipelines/serve.py`:
 - Load all `.joblib` models on startup
 - Expose endpoints matching the ones defined in each pipeline above
 - Connect to the same SQLite/PostgreSQL database to compute features on-the-fly
 - Return JSON responses
 
-Add `ml-pipelines/serve.py` startup instructions to the project README.
+Add `ml-pipelines/serve.py` startup instructions to the project README and document the Dokploy deployment topology.
 
 ---
 
 ## Phase 10: Deployment & Final Polish
 
-1. **Deploy to a public cloud** (Azure, AWS, or similar). Set up the database (Azure SQL, PostgreSQL, or MySQL for production). Configure environment variables for all secrets.
-2. **Connect frontend and backend** under a single domain or configure proper CORS for the production URLs.
-3. **Mobile responsiveness** — Verify all pages work on mobile viewports. Use responsive design patterns throughout.
-4. **Data seeding** — Import the 17 CSV files into the production database. Create a seed script or migration that loads the initial dataset.
-5. **Export functionality** — Verify PDF and CSV export works on Financial reports, tax documents, and any data table.
-6. **Lighthouse audit** — Run Lighthouse on all pages. Fix any accessibility, performance, or SEO issues until scores are 90+.
-7. **Video walkthroughs** — Record demo videos for IS 413 (app features), IS 414 (security), and IS 455 (ML pipelines).
+1. **Deploy with Dokploy** as the production platform. Create Dokploy services for the frontend, ASP.NET backend, ML service, and production database. Use PostgreSQL for production unless there is a strong reason otherwise. Configure environment variables and secrets through Dokploy.
+2. **Define Dokploy routing/domain setup** so the frontend and backend are served under the production domain with proper HTTPS/TLS termination. Configure CORS for the real Dokploy production URLs only.
+3. **Containerization** — Add production-ready Dockerfiles for frontend, backend, and ML service plus any Dokploy/docker-compose manifests needed for deployment.
+4. **Operational jobs** — Add scheduled jobs or background tasks for Meta ad sync, ML refresh/batch scoring, and any nightly prediction snapshots that should run in production under Dokploy.
+5. **Mobile responsiveness** — Verify all pages work on mobile viewports. Use responsive design patterns throughout.
+6. **Data seeding** — Import the 17 CSV files into the production database. Create a seed script or migration that loads the initial dataset.
+7. **Export functionality** — Verify PDF and CSV export works on Financial reports, tax documents, and any data table.
+8. **Lighthouse audit** — Run Lighthouse on all pages. Fix any accessibility, performance, or SEO issues until scores are 90+.
+9. **Video walkthroughs** — Record demo videos for IS 413 (app features), IS 414 (security), and IS 455 (ML pipelines).
 
 ---
 
