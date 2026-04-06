@@ -106,15 +106,55 @@ Gated behind the **Survivor** role.
 Gated behind the **SocialMedia** role.
 
 1. **Social Media Analytics Dashboard** (`/social/dashboard`) — Aggregate engagement metrics from `social_media_posts`. Charts: engagement rate over time, top-performing content topics, platform comparison, best posting times, posts that drove donations. Filter by platform, date range, campaign.
-2. **Cross-Post Tool** (`/social/post`) — Simplified posting interface that uses Meta (Facebook/Instagram) and TikTok APIs to publish content. The form has:
-   - **Post type toggle:** Post or Ad
-   - **Media upload:** Image or video
-   - **Primary text:** Caption/copy
+
+2. **Cross-Post Tool** (`/social/post`) — Simplified posting interface that publishes content to Facebook, Instagram, and TikTok from a single form. The backend handles all platform API calls. The form has two modes:
+
+   ### Organic Post Mode
+   - **Media upload:** Single image (JPEG) or video (MP4 H.264)
+   - **Primary text:** Caption/copy (max 2200 chars for TikTok, 63206 for Facebook)
    - **Platform selector:** Checkboxes for Facebook, Instagram, TikTok
-   - **If Ad:** Lifetime budget input (PHP), campaign duration (start/end dates), simplified audience picker with two presets: "Survivors" (crisis/support targeting), "Donors" (philanthropy/giving targeting), "Locations" (geographic targeting by region)
-   - Advanced settings drop down for people already familiar with advertising which allows a 
-   - On submit, call the respective platform APIs and store the post record in `social_media_posts`.
-3. **Post Performance Tracker** (`/social/posts`) — Table of all social media posts with engagement metrics. Link to the original post. Sort/filter by platform, engagement rate, donation referrals.
+   - On submit, the backend makes separate API calls per platform:
+     - **Facebook:** `POST /{page_id}/feed` (text/link) or `POST /{page_id}/photos` (image) or `POST /{page_id}/videos` (video). Requires a Page Access Token with `pages_manage_posts` permission.
+     - **Instagram:** Two-step process — `POST /{ig_user_id}/media` to create a container (pass `image_url` or `video_url` + `caption`), then `POST /{ig_user_id}/media_publish` with the `creation_id`. Requires `instagram_basic` + `instagram_content_publish` permissions. Images must be hosted on a publicly accessible URL (upload to blob storage first). Rate limit: 100 posts/day per account.
+     - **TikTok:** `POST /v2/post/publish/video/init/` with `post_info.title` (caption), `post_info.privacy_level` (`PUBLIC_TO_EVERYONE`), and `source_info` (either `FILE_UPLOAD` with chunked upload or `PULL_FROM_URL`). Requires OAuth token with `video.publish` scope. Rate limit: 6 requests/min, ~15 posts/day per account. Note: the app must pass TikTok's compliance audit or posts will be private-only.
+   - After posting, store the record in `social_media_posts` with the returned platform post ID and URL.
+
+   ### Ad Campaign Mode
+   When the user toggles to "Ad" mode, show additional fields:
+   - **Lifetime budget:** Input in PHP (Philippine pesos). Meta API accepts budget in cents, so multiply by 100 before sending. Minimums: Meta $1/day for awareness, $5/day for traffic. TikTok: $50/campaign, $20/day per ad group.
+   - **Campaign duration:** Start date (default: now) and end date. Meta requires `end_time` when using `lifetime_budget`. TikTok uses `schedule_start_time` + `schedule_end_time`.
+   - **Simplified audience picker** with three presets (maps to actual targeting params):
+     - **"Survivors"** — Interest targeting: crisis support, social services, women's shelters. Age: 18-45. Location: Philippines.
+     - **"Donors"** — Interest targeting: philanthropy, charitable giving, volunteering, nonprofit. Age: 25-65. Location: Philippines + International.
+     - **"By Region"** — Geographic targeting: dropdown to select Philippine regions (Luzon, Visayas, Mindanao) or specific cities. Maps to `geo_locations.regions` (Meta) or `location` IDs (TikTok).
+   - **Advanced settings dropdown** (collapsed by default, for users familiar with advertising): allows manual override of objective, optimization goal, age range, gender, and interest keywords instead of using the presets above.
+
+   **Meta Ad creation flow (backend, 5 API calls):**
+   1. Upload image: `POST /act_{ad_account_id}/adimages` → get `image_hash`. Or upload video: `POST /act_{ad_account_id}/advideos` → get `video_id`.
+   2. Create campaign: `POST /act_{ad_account_id}/campaigns` with `name`, `objective: "OUTCOME_AWARENESS"` (default), `status: "PAUSED"`, `special_ad_categories: []` (or `["HOUSING"]` if ad content relates to shelter services — this restricts targeting by age/gender/zip).
+   3. Create ad set: `POST /act_{ad_account_id}/adsets` with `campaign_id`, `lifetime_budget` (in cents), `start_time` (ISO 8601, default now), `end_time`, `optimization_goal: "IMPRESSIONS"`, `billing_event: "IMPRESSIONS"`, `targeting` (JSON with `geo_locations`, `age_min/max`, `interests`, `publisher_platforms: ["facebook", "instagram"]`).
+   4. Create ad creative: `POST /act_{ad_account_id}/adcreatives` with `object_story_spec: { page_id, instagram_actor_id, link_data: { image_hash, message, link } }`.
+   5. Create ad: `POST /act_{ad_account_id}/ads` with `adset_id`, `creative: { creative_id }`, `status: "ACTIVE"`.
+
+   **TikTok Ad creation flow (backend, 4 API calls):**
+   1. Upload creative: `POST /open_api/v1.3/file/video/ad/upload/` (video) or `POST /open_api/v1.3/file/image/ad/upload/` (image) → get `video_id` or `image_id`.
+   2. Create campaign: `POST /open_api/v1.3/campaign/create/` with `advertiser_id`, `campaign_name`, `objective_type: "REACH"` (default), `budget_mode: "BUDGET_MODE_TOTAL"`, `budget`.
+   3. Create ad group: `POST /open_api/v1.3/adgroup/create/` with `campaign_id`, `placement_type: "PLACEMENT_TYPE_NORMAL"`, `placement: ["PLACEMENT_TIKTOK"]`, `location` (region IDs), `budget_mode`, `budget`, `schedule_type: "SCHEDULE_START_END"`, `schedule_start_time`, `schedule_end_time`, `optimize_goal: "REACH"`, `billing_event: "CPM"`, `bid_type: "BID_TYPE_NO_BID"`, `pacing: "PACING_MODE_SMOOTH"`, plus optional `age`, `gender`, `interest_keywords`.
+   4. Create ad: `POST /open_api/v1.3/ad/create/` with `adgroup_id`, `creatives: [{ ad_name, ad_format: "SINGLE_VIDEO" or "SINGLE_IMAGE", ad_text, video_id or image_ids, call_to_action, landing_page_url }]`.
+
+   ### Prerequisites (one-time setup by the nonprofit)
+   - **Meta:** Meta Business Manager account → Facebook Page → Instagram Business account linked to Page → Ad Account (has `act_` ID) → Developer App at developers.facebook.com (type: Business) → App Review for `ads_management`, `ads_read`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish` → System User Access Token (non-expiring, for server-to-server use).
+   - **TikTok Ads:** TikTok for Business account at business-api.tiktok.com → Developer App → App Review (1-2 weeks) → OAuth 2.0 flow to get `access_token` (expires 24h, use refresh token) + `advertiser_id`. Sandbox available at sandbox-ads.tiktok.com for testing.
+   - **TikTok Organic:** Separate developer app at developers.tiktok.com → Request `video.publish` scope → App Review → Must pass compliance audit for public posting.
+   - **Store all tokens/secrets in environment variables, never in code.** Add to `.env.example`: `META_SYSTEM_USER_TOKEN`, `META_AD_ACCOUNT_ID`, `META_PAGE_ID`, `META_IG_USER_ID`, `TIKTOK_APP_ID`, `TIKTOK_APP_SECRET`, `TIKTOK_ACCESS_TOKEN`, `TIKTOK_ADVERTISER_ID`.
+
+   ### Important constraints
+   - All ads go through platform review before serving (Meta: typically <24h, TikTok: similar). Ads can be rejected for policy violations.
+   - Meta `special_ad_categories: ["HOUSING"]` is required if ad content references shelter/housing services — this disables age, gender, and zip-code targeting.
+   - Meta rate limit: 100 requests/sec per app+ad account. TikTok: 600 requests/min.
+   - Meta budget is in **cents** (so PHP 500 = `50000`). TikTok budget is in **dollars** (USD equivalent).
+
+3. **Post Performance Tracker** (`/social/posts`) — Table of all social media posts with engagement metrics. Link to the original post. Sort/filter by platform, engagement rate, donation referrals. For posts created through the Cross-Post Tool, show the platform-returned post IDs and approval status.
 
 ---
 
