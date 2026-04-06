@@ -28,11 +28,11 @@ public class HealthWellbeingRecord
     [Column("nutrition_score")]
     public decimal NutritionScore { get; set; }
 
-    [Column("sleep_score")]
-    public decimal SleepScore { get; set; }
+    [Column("sleep_quality_score")]
+    public decimal SleepQualityScore { get; set; }
 
-    [Column("energy_score")]
-    public decimal EnergyScore { get; set; }
+    [Column("energy_level_score")]
+    public decimal EnergyLevelScore { get; set; }
 
     [Column("general_health_score")]
     public decimal GeneralHealthScore { get; set; }
@@ -46,8 +46,8 @@ public class HealthWellbeingRecord
     [Column("psychological_checkup_done")]
     public bool PsychologicalCheckupDone { get; set; }
 
-    [Column("medical_notes_restricted")]
-    public string? MedicalNotesRestricted { get; set; }
+    [Column("notes")]
+    public string? Notes { get; set; }
 
     // Navigation properties
     [ForeignKey(nameof(ResidentId))]

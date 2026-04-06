@@ -16,17 +16,14 @@ public class EducationRecord
     [Column("record_date")]
     public DateOnly RecordDate { get; set; }
 
-    [Column("program_name")]
-    public string ProgramName { get; set; } = null!;
-
-    [Column("course_name")]
-    public string CourseName { get; set; } = null!;
+    [Column("school_name")]
+    public string SchoolName { get; set; } = null!;
 
     [Column("education_level")]
     public string EducationLevel { get; set; } = null!;
 
-    [Column("attendance_status")]
-    public string AttendanceStatus { get; set; } = null!;
+    [Column("enrollment_status")]
+    public string EnrollmentStatus { get; set; } = null!;
 
     [Column("attendance_rate")]
     public decimal AttendanceRate { get; set; }
@@ -36,9 +33,6 @@ public class EducationRecord
 
     [Column("completion_status")]
     public string CompletionStatus { get; set; } = null!;
-
-    [Column("gpa_like_score")]
-    public decimal GpaLikeScore { get; set; }
 
     [Column("notes")]
     public string? Notes { get; set; }
