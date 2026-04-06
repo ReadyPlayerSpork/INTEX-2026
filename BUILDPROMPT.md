@@ -6,12 +6,90 @@ Follow this process **in order**. Complete each phase before moving to the next.
 
 ---
 
+## Non-Negotiable Architecture Guardrails
+
+These rules exist to prevent technical debt. Follow them across every phase.
+
+1. **Do not expose EF Core entities directly to the frontend.**
+   - Create explicit request/response DTOs for all API endpoints.
+   - Controllers should return DTOs or problem details, never tracked entities.
+   - Keep controllers thin and move business logic into services.
+2. **Keep backend layers explicit.**
+   - Use clear folders such as `Controllers/`, `Services/`, `Dtos/`, `Validators/`, and `Data/`.
+   - Do not let `Program.cs` or controllers become the place where business logic accumulates.
+3. **Design for SQLite in dev and PostgreSQL in production.**
+   - All schema changes must go through EF Core migrations.
+   - Seed scripts must be idempotent.
+   - Avoid provider-specific SQL unless it is isolated and documented.
+4. **All list endpoints must support server-side pagination, filtering, and sorting.**
+   - Do not fetch full tables into the browser and paginate client-side.
+   - Standardize query params where possible: `page`, `pageSize`, `sort`, `direction`, `search`.
+5. **The frontend must be strongly typed and API-driven.**
+   - Use TypeScript throughout.
+   - Centralize API access in a typed client layer instead of scattered ad hoc calls.
+   - Prefer React Router, TanStack Query, and React Hook Form + Zod unless there is a compelling reason not to.
+   - Generate or maintain frontend API contracts from backend OpenAPI so DTO drift does not accumulate over time.
+6. **All forms need shared validation rules on both client and server.**
+   - Client-side validation is for UX.
+   - Server-side validation is the source of truth.
+7. **Every external integration must be resilient and idempotent.**
+   - Meta, TikTok, OAuth, exports, and ML-service calls must use timeouts, retries where appropriate, and structured error handling.
+   - Store external IDs explicitly and make sync/import code safe to rerun.
+8. **Background work must be designed intentionally.**
+   - Meta sync, ML batch scoring, report generation, and imports must be explicit application services that can be triggered manually and scheduled in production.
+   - Under Dokploy, scheduled jobs should call deterministic commands or internal endpoints instead of relying only on in-memory timers.
+9. **Observability is required.**
+   - Add structured logging, request correlation, and health/readiness endpoints for the backend and ML service.
+   - Log enough to debug failures without leaking sensitive survivor information.
+10. **Testing is part of the deliverable for every phase.**
+   - Backend: unit tests for core services and integration tests for important endpoints.
+   - Frontend: component tests for shared infrastructure and end-to-end smoke tests for critical flows.
+   - Preferred stack:
+     - Backend: xUnit + FluentAssertions + `WebApplicationFactory`
+     - Frontend: Vitest + React Testing Library
+     - End-to-end: Playwright
+11. **High-risk data must be treated differently.**
+   - Add audit logging for role changes, admin actions, survivor record access, exports, and destructive operations.
+   - Prefer deactivation or soft delete where appropriate over hard delete.
+12. **Document decisions that create coupling.**
+   - If a new table, background job, integration contract, or deployment assumption is introduced, update the README or a short architecture note.
+
+## Definition of Done For Every Phase
+
+A phase is not complete until all of the following are true:
+
+1. The app builds successfully and the changed flows run locally.
+2. New backend endpoints are implemented with DTOs, validation, authorization, and error handling.
+3. New database requirements are captured in EF Core migrations and any seed/import logic is idempotent.
+4. Tests for the most important happy path, failure path, and authorization path are added or updated.
+5. Shared UI patterns are reused where possible instead of copying page-specific implementations.
+6. New environment variables, jobs, routes, and setup steps are documented.
+7. No placeholder TODO logic, fake success responses, or hardcoded secrets remain unless the phase explicitly calls for a temporary placeholder.
+8. OpenAPI stays in sync with implemented endpoints and the frontend contract layer is updated accordingly.
+
+---
+
 ## Phase 0: Foundation & Project Scaffolding
 
 1. **Scaffold the React + Vite + TypeScript frontend** in a `frontend/` directory at the project root. Install React Router, Axios (or fetch wrapper), and a component library if desired. Configure Vite to proxy API requests to `https://localhost:7229` during development.
 2. **Set up a shared layout** with a persistent navbar/sidebar and a main content area. The navbar should be role-aware — it only shows links the current user is authorized to see. Include a footer with the organization name and a link to the privacy policy.
 3. **Create an auth context/provider** on the frontend that calls `GET /api/auth/me` on app load to hydrate the current user session (isAuthenticated, email, roles). Expose login, logout, and register functions. Persist auth state across page refreshes via the existing cookie-based session.
 4. **Create a `<ProtectedRoute>` component** that accepts a list of allowed roles. If the user is not authenticated, redirect to login. If authenticated but missing the required role, show a 403 Forbidden page.
+5. **Create a typed API foundation.**
+   - Define shared DTOs/contracts or generate frontend types from OpenAPI.
+   - Create a centralized API client with auth-aware error handling.
+   - Standardize response shapes for paginated lists, validation errors, and success payloads.
+6. **Create a project-wide environment/config strategy.**
+   - Add `.env.example` files for frontend, backend, and ML service.
+   - Separate dev vs production configuration clearly.
+   - Do not hardcode frontend URLs, callback URLs, or third-party tokens.
+7. **Add baseline quality tooling before feature work expands.**
+   - Frontend: ESLint, Prettier, and TypeScript strict mode.
+   - Backend: analyzers, nullable reference types, and a test project scaffold.
+   - Add a root README section explaining how to run frontend, backend, and ML service locally.
+8. **Publish API contracts early.**
+   - Enable and maintain OpenAPI for the backend in development.
+   - Use it to keep frontend contracts, request/response shapes, and error handling aligned as the app grows.
 
 ---
 
@@ -38,6 +116,15 @@ The application has **six custom roles** beyond the existing Admin and Customer 
 3. **Build the Admin role assignment page** (`/admin/roles`). This page lists all users with their current roles. Admins can add or remove any role from any user. Enforce: users cannot edit their own roles unless they are Admin. Admins cannot remove Admin from themselves.
 4. **Create backend authorization policies** for each role. Apply `[Authorize(Roles = "...")]` to every controller that is role-gated. Create API endpoints for role management (list users, assign role, revoke role) gated behind Admin.
 5. **Wire up the frontend role-aware routing.** Every page below is wrapped in `<ProtectedRoute allowedRoles={[...]}>`. The navbar dynamically shows only the links the user's roles grant access to.
+6. **Define role precedence explicitly** for users who have multiple roles so redirects are deterministic.
+   - Use this default landing precedence unless a future user preference system overrides it:
+     - `Admin`
+     - `Financial`
+     - `Counselor`
+     - `SocialMedia`
+     - `Donor`
+     - `Survivor`
+     - `Employee`
 
 ---
 
@@ -115,6 +202,16 @@ Gated behind the **SocialMedia** role.
      - **Survivors** — optimize for safe reach and low-friction crisis-resource visits
      - **Volunteers/Employees** — optimize for qualified traffic to volunteer/program pages
    - Include a comparison view that answers: "For this budget, which audience and creative combination is driving the cheapest qualified website traffic?"
+   - Use first-party tracking and campaign attribution, not just platform-reported metrics. Every ad/campaign landing URL should include UTM parameters and internal campaign identifiers so downstream website behavior can be tied back to audience, campaign, and creative.
+   - If the current schema does not fully support paid-media snapshots and attribution, add new tables and migrations rather than overloading unrelated tables.
+   - Recommended schema additions if needed:
+     - `paid_media_campaigns`
+     - `paid_media_ad_sets`
+     - `paid_media_ads`
+     - `paid_media_metric_snapshots`
+     - `campaign_attribution_events`
+     - `audit_logs`
+   - Keep platform IDs, business audience intent, landing page, spend snapshots, and attribution events in dedicated structures so reporting and ML features do not depend on overloaded post tables.
 
 2. **Cross-Post Tool** (`/social/post`) — Simplified posting interface that publishes content to Facebook, Instagram, and TikTok from a single form. The backend handles all platform API calls. The form has two modes:
 
@@ -147,6 +244,7 @@ Gated behind the **SocialMedia** role.
      - **Placements:** Checkboxes — Facebook Feed, Instagram Feed, Instagram Stories, Instagram Reels, TikTok. Default: all selected platforms. Maps to Meta `publisher_platforms` + `facebook_positions`/`instagram_positions` and TikTok `placement`.
      - **Call to action:** Dropdown — Learn More (default), Donate Now, Sign Up, Share Story. Maps to Meta `call_to_action_type` on the creative and TikTok `call_to_action` on the ad.
      - **Landing page URL:** Text input. Required for Traffic/Conversion objectives. Used in Meta `link_data.link` and TikTok `landing_page_url`.
+     - **Audience intent:** Required selector with `Donor`, `Survivor`, or `Volunteer`. This is first-party business metadata used for ROI analysis and ML features, separate from platform targeting mechanics.
      - **Special ad category:** Checkbox — "This ad relates to housing/shelter services." If checked, sends Meta `special_ad_categories: ["HOUSING"]` (disables age/gender/zip targeting). Show a warning explaining the targeting restrictions.
      - **Start immediately vs schedule:** Toggle. Default: start immediately. If scheduled, show a date/time picker for start. Maps to Meta `start_time` and TikTok `schedule_start_time`.
      - **Bid strategy:** Dropdown — Lowest Cost (default), Cost Cap. Maps to Meta `bid_strategy` and TikTok `bid_type`. Only relevant for advanced users optimizing cost.
@@ -176,6 +274,8 @@ Gated behind the **SocialMedia** role.
    - Meta `special_ad_categories: ["HOUSING"]` is required if ad content references shelter/housing services — this disables age, gender, and zip-code targeting.
    - Meta rate limit: 100 requests/sec per app+ad account. TikTok: 600 requests/min.
    - Meta budget is in **cents** (so PHP 500 = `50000`). TikTok budget is in **dollars** (USD equivalent).
+   - Ad/media asset storage must be production-safe. Do not depend on local disk for files that must be accessible by Meta/Instagram/TikTok. Use durable object storage or another storage service with public or signed URLs where required.
+   - All sync/import jobs for ad metrics must be idempotent and keyed by platform IDs plus snapshot timestamp.
 
 3. **Post Performance Tracker** (`/social/posts`) — Table of all social media posts with engagement metrics. Link to the original post. Sort/filter by platform, engagement rate, donation referrals. For posts created through the Cross-Post Tool, show the platform-returned post IDs and approval status.
    - Add a paid-media mode that lists Meta ads/campaigns/ad sets alongside organic posts.
@@ -247,6 +347,8 @@ Complete these security requirements across the entire application:
 8. **Credential Security** — Move all secrets (Google OAuth keys, connection strings, API keys) to environment variables or a secrets manager. Never commit secrets to the repo. Create an `.env.example` file documenting required variables. Production secrets must be injected through **Dokploy environment variables/secrets**, not hardcoded in compose files or committed manifests.
 9. **Optional: 2FA/MFA** — Add optional TOTP-based two-factor authentication via ASP.NET Identity.
 10. **Accessibility** — Target Lighthouse accessibility score of 90+. Use semantic HTML, ARIA labels, keyboard navigation, sufficient color contrast.
+11. **Audit Logging** — Log admin actions, role changes, survivor-record access, exports, and delete/deactivate actions with timestamp, actor, target entity, and action type.
+12. **Backups & Recovery** — Define a production backup strategy for PostgreSQL and document restore steps before launch.
 
 ---
 
@@ -640,6 +742,12 @@ For deployment, assume **Dokploy** as the production orchestrator:
 - Configure service-to-service networking inside Dokploy so the backend can call the ML service privately.
 - Store all production secrets in Dokploy environment variables/secrets.
 - Use Dokploy-managed domains/TLS and reverse proxy routing so frontend and backend are reachable under the intended production URLs.
+- Expose health endpoints for each service and configure Dokploy health checks and restart policies.
+- Keep scheduled work explicit:
+  - Meta sync
+  - ML batch scoring / refresh
+  - optional nightly reporting/export jobs
+  These should be triggerable in a deterministic way so Dokploy scheduled jobs can run them safely.
 
 For the Flask microservice approach, create `ml-pipelines/serve.py`:
 - Load all `.joblib` models on startup
@@ -657,6 +765,7 @@ Add `ml-pipelines/serve.py` startup instructions to the project README and docum
 2. **Define Dokploy routing/domain setup** so the frontend and backend are served under the production domain with proper HTTPS/TLS termination. Configure CORS for the real Dokploy production URLs only.
 3. **Containerization** — Add production-ready Dockerfiles for frontend, backend, and ML service plus any Dokploy/docker-compose manifests needed for deployment.
 4. **Operational jobs** — Add scheduled jobs or background tasks for Meta ad sync, ML refresh/batch scoring, and any nightly prediction snapshots that should run in production under Dokploy.
+   - Document the exact trigger mechanism for each job and make sure each job is safe to rerun.
 5. **Mobile responsiveness** — Verify all pages work on mobile viewports. Use responsive design patterns throughout.
 6. **Data seeding** — Import the 17 CSV files into the production database. Create a seed script or migration that loads the initial dataset.
 7. **Export functionality** — Verify PDF and CSV export works on Financial reports, tax documents, and any data table.
@@ -676,3 +785,9 @@ Add `ml-pipelines/serve.py` startup instructions to the project README and docum
 - **Responsive Design:** All pages must work on desktop (1920px), tablet (768px), and mobile (375px).
 - **No secrets in code:** All API keys, connection strings, and credentials go in environment variables.
 - **Role-aware everything:** Every page, every API endpoint, every navbar link must respect the role system. If a user somehow navigates to a URL they don't have access to, they see a 403 page, not the content.
+- **Consistent API design:** Use RESTful naming, DTOs, standardized error responses, and `ProblemDetails` for failures where appropriate.
+- **No hidden schema drift:** If a feature requires new tables/columns for ads, tracking, audit logs, or ML predictions, add migrations and document why they exist.
+- **No duplicate business rules:** Redirect logic, role precedence, validation rules, and permission checks should live in shared abstractions, not be reimplemented per page/controller.
+- **Prefer additive evolution over rewrites:** Build reusable tables, filters, charts, forms, and dialog patterns early so later phases compose from them instead of duplicating UI.
+- **Track attribution intentionally:** Donation, volunteer, and survivor-resource flows should preserve campaign attribution wherever ethically and legally appropriate.
+- **Document what was completed at the end of each phase:** Update the README or a progress note with routes added, endpoints added, migrations created, env vars added, and tests written.
