@@ -2,7 +2,7 @@
 
 You are building a full-stack web application for a nonprofit that operates safe homes for girls who are survivors of sexual abuse and trafficking in the Philippines. The tech stack is **React + TypeScript (Vite)** on the frontend and **ASP.NET Core (.NET 10)** on the backend, with Entity Framework Core and SQLite for development. The backend authentication skeleton already exists (ASP.NET Identity + Google OAuth, CORS, CSP headers, secure cookies). All 17 EF Core domain models are already built and registered in `IntexPlaceholderDbContext`. The frontend has not been started.
 
-Follow this process **in order**. Complete each phase before moving to the next. Within each phase, build the pieces in the numbered order listed. Always verify the build compiles and the app runs before moving on.
+Follow this process **in order**. Complete each phase before moving to the next. Within each phase, build the pieces in the numbered order listed. Always verify the build compiles and the app runs before moving on. Complete only one phase at a time, then ask if we're ready to implement the next phase. 
 
 ---
 
@@ -111,7 +111,8 @@ Gated behind the **SocialMedia** role.
    - **Media upload:** Image or video
    - **Primary text:** Caption/copy
    - **Platform selector:** Checkboxes for Facebook, Instagram, TikTok
-   - **If Ad:** Lifetime budget input (PHP), campaign duration (start/end dates), simplified audience picker with three presets: "Survivors" (crisis/support targeting), "Donors" (philanthropy/giving targeting), "Locations" (geographic targeting by region)
+   - **If Ad:** Lifetime budget input (PHP), campaign duration (start/end dates), simplified audience picker with two presets: "Survivors" (crisis/support targeting), "Donors" (philanthropy/giving targeting), "Locations" (geographic targeting by region)
+   - Advanced settings drop down for people already familiar with advertising which allows a 
    - On submit, call the respective platform APIs and store the post record in `social_media_posts`.
 3. **Post Performance Tracker** (`/social/posts`) — Table of all social media posts with engagement metrics. Link to the original post. Sort/filter by platform, engagement rate, donation referrals.
 
