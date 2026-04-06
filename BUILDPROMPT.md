@@ -127,7 +127,21 @@ Gated behind the **SocialMedia** role.
      - **"Survivors"** — Interest targeting: crisis support, social services, women's shelters. Age: 18-45. Location: Philippines.
      - **"Donors"** — Interest targeting: philanthropy, charitable giving, volunteering, nonprofit. Age: 25-65. Location: Philippines + International.
      - **"By Region"** — Geographic targeting: dropdown to select Philippine regions (Luzon, Visayas, Mindanao) or specific cities. Maps to `geo_locations.regions` (Meta) or `location` IDs (TikTok).
-   - **Advanced settings dropdown** (collapsed by default, for users familiar with advertising): allows manual override of objective, optimization goal, age range, gender, and interest keywords instead of using the presets above.
+   - **Advanced settings dropdown** (collapsed by default, for users familiar with advertising). When expanded, shows:
+     - **Campaign objective:** Dropdown — Awareness (default), Traffic, Engagement, Leads. Maps to Meta `OUTCOME_AWARENESS` / `OUTCOME_TRAFFIC` / `OUTCOME_ENGAGEMENT` / `OUTCOME_LEADS` and TikTok `REACH` / `TRAFFIC` / `CONVERSIONS`.
+     - **Optimization goal:** Dropdown — Impressions (default), Link Clicks, Reach, Conversions. Must align with the selected objective. Maps to Meta `optimization_goal` and TikTok `optimize_goal`.
+     - **Daily vs Lifetime budget:** Toggle. Default is Lifetime. If Daily, show daily budget input instead. Maps to Meta `daily_budget` vs `lifetime_budget` and TikTok `BUDGET_MODE_DAY` vs `BUDGET_MODE_TOTAL`.
+     - **Age range:** Two sliders or inputs for min (13-65) and max (13-65). Defaults come from the selected audience preset. Maps to Meta `age_min`/`age_max` and TikTok `age` brackets (`AGE_18_24`, `AGE_25_34`, etc.).
+     - **Gender:** Dropdown — All (default), Male, Female. Maps to Meta `genders: [1]`/`[2]` and TikTok `GENDER_MALE`/`GENDER_FEMALE`/`GENDER_UNLIMITED`.
+     - **Interest keywords:** Free-text tag input where the user can type interests and press Enter to add them. Maps to Meta `interests` (matched to Interest Targeting Search API) and TikTok `interest_keywords`.
+     - **Locations:** Multi-select for countries, regions, or cities. Default comes from the audience preset. Maps to Meta `geo_locations` and TikTok `location` IDs.
+     - **Placements:** Checkboxes — Facebook Feed, Instagram Feed, Instagram Stories, Instagram Reels, TikTok. Default: all selected platforms. Maps to Meta `publisher_platforms` + `facebook_positions`/`instagram_positions` and TikTok `placement`.
+     - **Call to action:** Dropdown — Learn More (default), Donate Now, Sign Up, Share Story. Maps to Meta `call_to_action_type` on the creative and TikTok `call_to_action` on the ad.
+     - **Landing page URL:** Text input. Required for Traffic/Conversion objectives. Used in Meta `link_data.link` and TikTok `landing_page_url`.
+     - **Special ad category:** Checkbox — "This ad relates to housing/shelter services." If checked, sends Meta `special_ad_categories: ["HOUSING"]` (disables age/gender/zip targeting). Show a warning explaining the targeting restrictions.
+     - **Start immediately vs schedule:** Toggle. Default: start immediately. If scheduled, show a date/time picker for start. Maps to Meta `start_time` and TikTok `schedule_start_time`.
+     - **Bid strategy:** Dropdown — Lowest Cost (default), Cost Cap. Maps to Meta `bid_strategy` and TikTok `bid_type`. Only relevant for advanced users optimizing cost.
+     - Any field left at its default value uses the same value the simplified mode would have sent — the advanced dropdown only overrides, never removes.
 
    **Meta Ad creation flow (backend, 5 API calls):**
    1. Upload image: `POST /act_{ad_account_id}/adimages` → get `image_hash`. Or upload video: `POST /act_{ad_account_id}/advideos` → get `video_id`.
