@@ -7,7 +7,7 @@ description: Implements layouts and styling with Bootstrap 5.3 using official do
 
 ## Authority and version
 
-Treat **[Bootstrap 5.3 docs](https://getbootstrap.com/docs/5.3/getting-started/introduction/)** as the source of truth for class names, behavior, and examples. Prefer **5.3** APIs; do not reuse Bootstrap 4 patterns. For this repo, **`bootstrap` is pinned to 5.3.x** in `frontend/Haven for Her/package.json`—keep examples and MDX paths aligned with that release (e.g. tag **v5.3.8** on GitHub).
+Treat **[Bootstrap 5.3 docs](https://getbootstrap.com/docs/5.3/getting-started/introduction/)** as the source of truth for class names, behavior, and examples. Prefer **5.3** APIs; do not reuse Bootstrap 4 patterns. For this repo, **`bootstrap` is pinned to 5.3.x** in `frontend/haven-for-her/package.json`—keep examples and MDX paths aligned with that release (e.g. tag **v5.3.8** on GitHub).
 
 ## Documentation sources (site vs GitHub MDX)
 

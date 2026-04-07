@@ -29,12 +29,13 @@ Built by **BYU INTEX Section 2, Group 15**.
 ### Frontend
 
 ```bash
-cd "frontend/Haven for Her"
+cd frontend/haven-for-her
 npm install
 npm run dev        # Vite dev server on http://localhost:5173
 ```
 
 Other frontend commands:
+
 ```bash
 npm run build      # Production build (tsc + vite)
 npm run lint       # ESLint
@@ -49,6 +50,7 @@ dotnet run         # Runs on http://localhost:5064 / https://localhost:7229
 ```
 
 Other backend commands:
+
 ```bash
 dotnet build       # Build only
 dotnet watch       # Hot-reload dev server
@@ -60,19 +62,19 @@ Swagger UI is available in development at `/swagger`.
 
 ## Project Structure
 
-```
+```text
 INTEX-2026/
-├── frontend/
-│   └── Haven for Her/     # React + Vite app
-└── backend/
-    └── Haven-for-Her-Backend/   # ASP.NET Core API
+|-- frontend/
+|   `-- haven-for-her/           # React + Vite app
+`-- backend/
+    `-- Haven-for-Her-Backend/   # ASP.NET Core API
 ```
 
 ### Backend
 
 Two separate EF Core DB contexts:
-- `HavenForHerBackendDbContext` — 17 domain models (Resident, Donation, Safehouse, etc.)
-- `AuthIdentityDbContext` — ASP.NET Identity (users, roles)
+- `HavenForHerBackendDbContext` - 17 domain models (Resident, Donation, Safehouse, etc.)
+- `AuthIdentityDbContext` - ASP.NET Identity (users, roles)
 
 Auth is cookie-based: HttpOnly, SameSite=Lax, Secure, 7-day sliding expiration.
 
@@ -86,5 +88,5 @@ Roles: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Employee`, `Donor`, `S
 
 ## Development Notes
 
-- The backend CORS policy allows credentials from `FrontendUrl` (defaults to `http://localhost:3000`). Keep in sync with your Vite port via environment config or the Vite proxy setting.
-- See `BUILDPROMPT.md` for the full 7-phase feature roadmap.
+- The backend CORS policy allows credentials from `FrontendUrl` (defaults to `http://localhost:5173`). Keep it in sync with your Vite dev server or the configured proxy.
+- See `BUILDPROMPT.md` for the full feature roadmap.
