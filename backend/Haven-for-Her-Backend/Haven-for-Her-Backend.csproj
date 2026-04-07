@@ -5,6 +5,9 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>Haven_for_Her_Backend</RootNamespace>
+        <AssemblyTitle>Haven for Her API</AssemblyTitle>
+        <Product>Haven for Her</Product>
+        <Description>Backend API for the Haven for Her nonprofit platform.</Description>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,7 +24,6 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
     </ItemGroup>
 
 </Project>

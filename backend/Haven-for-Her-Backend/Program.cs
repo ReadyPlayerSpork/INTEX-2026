@@ -1,8 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using Haven_for_Her_Backend.Data;
+using Microsoft.AspNetCore.Identity;
 using Haven_for_Her_Backend.Infrastructure;
 using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 const string FrontendCorsPolicy = "FrontendClient";

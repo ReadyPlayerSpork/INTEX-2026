@@ -23,7 +23,7 @@ dotnet build       # Build only
 dotnet watch       # Hot-reload dev server
 ```
 
-Swagger UI is available in development at `/swagger`.
+In development, the backend exposes an OpenAPI document via `Microsoft.AspNetCore.OpenApi` at `/openapi/v1.json` (not Swagger UI). See [OpenAPI support in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/aspnetcore-openapi).
 
 ## Architecture
 

@@ -56,7 +56,7 @@ dotnet build       # Build only
 dotnet watch       # Hot-reload dev server
 ```
 
-Swagger UI is available in development at `/swagger`.
+In development, the OpenAPI JSON document is served at `/openapi/v1.json` (`Microsoft.AspNetCore.OpenApi`). There is no bundled Swagger UI; use that URL with an OpenAPI client or external UI if needed.
 
 ---
 
