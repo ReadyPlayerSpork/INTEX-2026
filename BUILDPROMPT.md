@@ -1,6 +1,6 @@
 # INTEX-2026 Build Prompt
 
-You are building a full-stack web application for a nonprofit that operates safe homes for girls who are survivors of sexual abuse and trafficking in the Philippines. The tech stack is **React + TypeScript (Vite)** on the frontend and **ASP.NET Core (.NET 10)** on the backend, with Entity Framework Core and SQLite for development. The backend authentication skeleton already exists (ASP.NET Identity + Google OAuth, CORS, CSP headers, secure cookies). All 17 EF Core domain models are already built and registered in `IntexPlaceholderDbContext`. The frontend has not been started.
+You are building a full-stack web application for a nonprofit that operates safe homes for girls who are survivors of sexual abuse and trafficking in the Philippines. The tech stack is **React + TypeScript + Vite** on the frontend, **Bootstrap** for styling, **ASP.NET Core (.NET 10)** on the backend, and Entity Framework Core with **SQLite for development** and **PostgreSQL for production**. The backend authentication skeleton already exists (ASP.NET Identity + Google OAuth, CORS, CSP headers, secure cookies). All 17 EF Core domain models are already built and registered in `IntexPlaceholderDbContext`. The frontend has not been started.
 
 Follow this process **in order**. Complete each phase before moving to the next. Within each phase, build the pieces in the numbered order listed. Always verify the build compiles and the app runs before moving on. Complete only one phase at a time, then ask if we're ready to implement the next phase. 
 
@@ -27,7 +27,8 @@ These rules exist to prevent technical debt. Follow them across every phase.
 5. **The frontend must be strongly typed and API-driven.**
    - Use TypeScript throughout.
    - Centralize API access in a typed client layer instead of scattered ad hoc calls.
-   - Prefer React Router, TanStack Query, and React Hook Form + Zod unless there is a compelling reason not to.
+   - Prefer plain React patterns the team already knows: React Router, `fetch()` or `axios`, `useEffect`, and `useState`.
+   - Do not assume TanStack Query, React Hook Form, or Zod are available or required.
    - Generate or maintain frontend API contracts from backend OpenAPI so DTO drift does not accumulate over time.
 6. **All forms need shared validation rules on both client and server.**
    - Client-side validation is for UX.
@@ -44,10 +45,6 @@ These rules exist to prevent technical debt. Follow them across every phase.
 10. **Testing is part of the deliverable for every phase.**
    - Backend: unit tests for core services and integration tests for important endpoints.
    - Frontend: component tests for shared infrastructure and end-to-end smoke tests for critical flows.
-   - Preferred stack:
-     - Backend: xUnit + FluentAssertions + `WebApplicationFactory`
-     - Frontend: Vitest + React Testing Library
-     - End-to-end: Playwright
 11. **High-risk data must be treated differently.**
    - Add audit logging for role changes, admin actions, survivor record access, exports, and destructive operations.
    - Prefer deactivation or soft delete where appropriate over hard delete.
