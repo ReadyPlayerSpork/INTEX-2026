@@ -1,6 +1,6 @@
 # INTEX-2026 Build Prompt
 
-You are building a full-stack web application for a nonprofit that operates safe homes for girls who are survivors of sexual abuse and trafficking in the Philippines. The tech stack is **React + TypeScript + Vite** on the frontend, **Bootstrap** for styling, **ASP.NET Core (.NET 10)** on the backend, and Entity Framework Core with **SQLite for development** and **PostgreSQL for production**. The backend authentication skeleton already exists (ASP.NET Identity + Google OAuth, CORS, CSP headers, secure cookies). All 17 EF Core domain models are already built and registered in `IntexPlaceholderDbContext`. The frontend has not been started.
+You are building a full-stack web application for a nonprofit that operates safe homes for girls who are survivors of sexual abuse and trafficking in the Philippines. The tech stack is **React + TypeScript + Vite** on the frontend, **ASP.NET Core (.NET 10)** on the backend, and Entity Framework Core with **SQLite for development** and **PostgreSQL for production**. The backend authentication skeleton already exists (ASP.NET Identity + Google OAuth, CORS, CSP headers, secure cookies). All 17 EF Core domain models are already built and registered in `IntexPlaceholderDbContext`. The frontend has not been started.
 
 Follow this process **in order**. Complete each phase before moving to the next. Within each phase, build the pieces in the numbered order listed. Always verify the build compiles and the app runs before moving on. Complete only one phase at a time, then ask if we're ready to implement the next phase. 
 
@@ -69,9 +69,9 @@ A phase is not complete until all of the following are true:
 
 ## Phase 0: Foundation & Project Scaffolding
 
-1. **Scaffold the React + Vite + TypeScript frontend** in a `frontend/` directory at the project root. Install React Router, Axios (or fetch wrapper), and **Bootstrap CSS** as the baseline frontend styling framework. Configure Vite to proxy API requests to `https://localhost:7229` during development.
-   - Use Bootstrap intentionally for layout, spacing, forms, tables, navigation, modals, alerts, and responsive behavior rather than mixing multiple competing UI systems.
-   - Custom styles are allowed, but Bootstrap should be the primary shared design foundation so the UI stays consistent and maintainable.
+1. **Scaffold the React + Vite + TypeScript frontend** in a `frontend/` directory at the project root. Install React Router and an HTTP client (Axios or a typed `fetch()` wrapper). Configure Vite to proxy API requests to `https://localhost:7229` during development.
+   - Do **not** install or use Bootstrap (the project is switching CSS/UI libraries).
+   - Keep styling decisions isolated so the team can swap the chosen UI system cleanly (avoid global assumptions in layout/components).
 2. **Set up a shared layout** with a persistent navbar/sidebar and a main content area. The navbar should be role-aware — it only shows links the current user is authorized to see. Include a footer with the organization name and a link to the privacy policy.
 3. **Create an auth context/provider** on the frontend that calls `GET /api/auth/me` on app load to hydrate the current user session (isAuthenticated, email, roles). Expose login, logout, and register functions. Persist auth state across page refreshes via the existing cookie-based session.
 4. **Create a `<ProtectedRoute>` component** that accepts a list of allowed roles. If the user is not authenticated, redirect to login. If authenticated but missing the required role, show a 403 Forbidden page.
