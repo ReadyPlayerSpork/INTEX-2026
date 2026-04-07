@@ -14,6 +14,9 @@ import { VolunteerPage } from '@/pages/VolunteerPage'
 import { ResourcesPage } from '@/pages/ResourcesPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { RolesPage } from '@/pages/admin/RolesPage'
+import { CounselingPage } from '@/pages/survivor/CounselingPage'
+import { FindHomePage } from '@/pages/survivor/FindHomePage'
+import { MyResourcesPage } from '@/pages/survivor/MyResourcesPage'
 
 function App() {
   return (
@@ -58,7 +61,9 @@ function App() {
 
           {/* Protected: Survivor */}
           <Route element={<ProtectedRoute allowedRoles={['Survivor']} />}>
-            {/* Survivor pages added in Phase 3 */}
+            <Route path="/survivor/counseling" element={<CounselingPage />} />
+            <Route path="/survivor/find-home" element={<FindHomePage />} />
+            <Route path="/survivor/resources" element={<MyResourcesPage />} />
           </Route>
 
           {/* Catch-all */}
