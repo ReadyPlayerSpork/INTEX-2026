@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface FinancialDashboard {
   totalMonetaryPhp: number
@@ -41,11 +42,18 @@ export function FinancialDashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
-      <h1 className="mb-8 text-2xl font-bold">Financial Dashboard</h1>
+    <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
+      <div className="mb-8">
+        <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+          Financial dashboard
+        </p>
+        <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
+          Financial Dashboard
+        </h1>
+      </div>
 
       {/* Quick nav */}
-      <div className="text-muted-foreground mb-6 flex gap-4 text-sm">
+      <div className="text-muted-foreground mb-6 flex flex-wrap gap-4 text-sm">
         <Link to="/financial/donors" className="hover:text-foreground underline">
           Donor Management
         </Link>
@@ -77,7 +85,7 @@ export function FinancialDashboardPage() {
             {data.donationsByType.map((t) => (
               <div
                 key={t.type}
-                className="bg-card border-border flex items-center justify-between rounded border p-3"
+                className="bg-card border-border/70 flex items-center justify-between rounded-2xl border p-4"
               >
                 <span className="text-sm font-medium">{t.type}</span>
                 <span className="text-muted-foreground text-sm">
@@ -98,7 +106,7 @@ export function FinancialDashboardPage() {
               {data.topCampaigns.map((c) => (
                 <div
                   key={c.campaign}
-                  className="bg-card border-border flex items-center justify-between rounded border p-3"
+                className="bg-card border-border/70 flex items-center justify-between rounded-2xl border p-4"
                 >
                   <span className="text-sm font-medium">{c.campaign}</span>
                   <span className="text-muted-foreground text-sm">
@@ -116,9 +124,11 @@ export function FinancialDashboardPage() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-card border-border rounded-lg border p-4 text-center">
-      <p className="text-primary text-2xl font-bold">{value}</p>
-      <p className="text-muted-foreground mt-1 text-xs">{label}</p>
-    </div>
+    <Card className="border-border/70 bg-card/95">
+      <CardContent className="p-5 text-center">
+        <p className="text-primary text-2xl font-extrabold">{value}</p>
+        <p className="text-muted-foreground mt-2 text-xs">{label}</p>
+      </CardContent>
+    </Card>
   )
 }

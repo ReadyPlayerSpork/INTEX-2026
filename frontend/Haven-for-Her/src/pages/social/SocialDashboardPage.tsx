@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface TopicEngagement {
   topic: string
@@ -68,11 +69,18 @@ export function SocialDashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
-      <h1 className="mb-8 text-2xl font-bold">Social Media Dashboard</h1>
+    <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
+      <div className="mb-8">
+        <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+          Social media dashboard
+        </p>
+        <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
+          Social Media Dashboard
+        </h1>
+      </div>
 
       {/* Quick nav */}
-      <div className="text-muted-foreground mb-6 flex gap-4 text-sm">
+      <div className="text-muted-foreground mb-6 flex flex-wrap gap-4 text-sm">
         <Link to="/social/posts" className="hover:text-foreground underline">
           All Posts
         </Link>
@@ -112,7 +120,7 @@ export function SocialDashboardPage() {
               {data.topContentTopics.map((t) => (
                 <div
                   key={t.topic}
-                  className="bg-card border-border flex items-center justify-between rounded border p-3"
+                  className="bg-card border-border/70 flex items-center justify-between rounded-2xl border p-4"
                 >
                   <span className="text-sm font-medium">{t.topic}</span>
                   <span className="text-muted-foreground text-sm">
@@ -134,7 +142,7 @@ export function SocialDashboardPage() {
               {data.platformBreakdown.map((p) => (
                 <div
                   key={p.platform}
-                  className="bg-card border-border rounded border p-3"
+                  className="bg-card border-border/70 rounded-2xl border p-4"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{p.platform}</span>
@@ -162,7 +170,7 @@ export function SocialDashboardPage() {
               {data.bestPostingTimes.slice(0, 5).map((t, i) => (
                 <div
                   key={i}
-                  className="bg-card border-border flex items-center justify-between rounded border p-3"
+                  className="bg-card border-border/70 flex items-center justify-between rounded-2xl border p-4"
                 >
                   <span className="text-sm font-medium">
                     {t.day} at {t.hour}:00
@@ -186,7 +194,7 @@ export function SocialDashboardPage() {
               {data.contentThatDrivesDonations.slice(0, 5).map((c) => (
                 <div
                   key={c.topic}
-                  className="bg-card border-border flex items-center justify-between rounded border p-3"
+                  className="bg-card border-border/70 flex items-center justify-between rounded-2xl border p-4"
                 >
                   <span className="text-sm font-medium">{c.topic}</span>
                   <span className="text-muted-foreground text-sm">
@@ -204,10 +212,12 @@ export function SocialDashboardPage() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-card border-border rounded-lg border p-4 text-center">
-      <p className="text-primary text-2xl font-bold">{value}</p>
-      <p className="text-muted-foreground mt-1 text-xs">{label}</p>
-    </div>
+    <Card className="border-border/70 bg-card/95">
+      <CardContent className="p-5 text-center">
+        <p className="text-primary text-2xl font-extrabold">{value}</p>
+        <p className="text-muted-foreground mt-2 text-xs">{label}</p>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -222,13 +232,17 @@ function StatWithChange({
 }) {
   const positive = change >= 0
   return (
-    <div className="bg-card border-border rounded-lg border p-4 text-center">
-      <p className="text-primary text-2xl font-bold">{value}</p>
-      <p className="text-muted-foreground mt-1 text-xs">{label}</p>
-      <p className={`mt-1 text-xs font-medium ${positive ? 'text-green-600' : 'text-red-600'}`}>
+    <Card className="border-border/70 bg-card/95">
+      <CardContent className="p-5 text-center">
+      <p className="text-primary text-2xl font-extrabold">{value}</p>
+      <p className="text-muted-foreground mt-2 text-xs">{label}</p>
+      <p
+        className={`mt-2 text-xs font-semibold ${positive ? 'text-primary' : 'text-destructive'}`}
+      >
         {positive ? '+' : ''}
         {change.toFixed(1)}% MoM
       </p>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

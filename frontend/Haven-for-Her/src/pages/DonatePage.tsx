@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/client'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 const DONATION_TYPES = [
   { value: 'Monetary', label: 'Monetary' },
@@ -10,6 +13,9 @@ const DONATION_TYPES = [
   { value: 'Time', label: 'Time / Volunteering' },
   { value: 'Skills', label: 'Professional Skills' },
 ]
+
+const selectClassName =
+  'border-input bg-background focus-visible:border-ring focus-visible:ring-ring/18 w-full rounded-lg border px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus-visible:ring-4'
 
 export function DonatePage() {
   const [donationType, setDonationType] = useState('Monetary')
@@ -46,92 +52,126 @@ export function DonatePage() {
 
   if (success) {
     return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <h1 className="mb-4 text-2xl font-bold">Thank you!</h1>
-        <p className="text-muted-foreground mb-6">
-          Your donation has been recorded. Your generosity makes a real
-          difference in the lives of survivors.
-        </p>
-        <Link to="/">
-          <Button>Back to Home</Button>
-        </Link>
+      <div className="px-5 py-16 md:px-10 md:py-24">
+        <Card className="mx-auto max-w-xl border-primary/20 bg-primary/7 text-center">
+          <CardContent className="p-8">
+            <h1 className="font-heading text-4xl font-semibold text-accent">
+              Thank you
+            </h1>
+            <p className="text-muted-foreground mx-auto mt-4 max-w-md leading-7 text-pretty">
+              Your donation has been recorded. Your generosity makes a real
+              difference in the lives of survivors.
+            </p>
+            <Link to="/" className="mt-6 inline-flex">
+              <Button>Back to Home</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-12">
-      <h1 className="mb-2 text-2xl font-bold">Make a Donation</h1>
-      <p className="text-muted-foreground mb-8 text-sm">
-        Every contribution helps provide safety, care, and hope to survivors.{' '}
-        <Link to="/donate/anonymous" className="underline">
-          Donate without an account
-        </Link>
-      </p>
-
-      {error && (
-        <div className="bg-destructive/10 text-destructive mb-4 rounded-md p-3 text-sm">
-          {error}
+    <div className="px-5 py-16 md:px-10 md:py-24">
+      <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="space-y-5">
+          <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+            Donor giving
+          </p>
+          <h1 className="font-heading text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
+            Support care in the way that fits your capacity best.
+          </h1>
+          <p className="text-muted-foreground max-w-lg leading-8 text-pretty">
+            Whether you give financially, donate goods, volunteer time, or
+            contribute professional skills, every contribution strengthens the
+            support network around survivors.
+          </p>
+          <Card className="border-border/70 bg-card/95">
+            <CardContent className="p-6">
+              <p className="font-semibold text-accent">Prefer a faster path?</p>
+              <p className="text-muted-foreground mt-2 text-sm leading-6">
+                You can still use the low-friction public option if you do not
+                need donation history attached to your account.
+              </p>
+              <Link
+                to="/donate/anonymous"
+                className="text-accent mt-4 inline-flex text-sm font-semibold underline underline-offset-4"
+              >
+                Donate without an account
+              </Link>
+            </CardContent>
+          </Card>
         </div>
-      )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Donation type</span>
-          <select
-            value={donationType}
-            onChange={(e) => setDonationType(e.target.value)}
-            className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-          >
-            {DONATION_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Card className="border-border/70 bg-card/95">
+          <CardContent className="p-8">
+            <h2 className="font-heading text-3xl font-semibold text-accent">
+              Make a donation
+            </h2>
 
-        {donationType === 'Monetary' && (
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">Amount (PHP)</span>
-            <input
-              type="number"
-              required
-              min="1"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-              placeholder="0.00"
-            />
-          </label>
-        )}
+            {error && (
+              <div className="bg-destructive/10 text-destructive mt-6 rounded-2xl border border-destructive/20 p-3 text-sm">
+                {error}
+              </div>
+            )}
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Campaign (optional)</span>
-          <input
-            type="text"
-            value={campaign}
-            onChange={(e) => setCampaign(e.target.value)}
-            className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-            placeholder="e.g. Holiday Giving 2026"
-          />
-        </label>
+            <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-semibold">Donation type</span>
+                <select
+                  value={donationType}
+                  onChange={(e) => setDonationType(e.target.value)}
+                  className={selectClassName}
+                >
+                  {DONATION_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Notes (optional)</span>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-            rows={3}
-          />
-        </label>
+              {donationType === 'Monetary' && (
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-semibold">Amount (PHP)</span>
+                  <Input
+                    type="number"
+                    required
+                    min="1"
+                    step="0.01"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </label>
+              )}
 
-        <Button type="submit" disabled={loading}>
-          {loading ? 'Processing...' : 'Donate'}
-        </Button>
-      </form>
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-semibold">Campaign (optional)</span>
+                <Input
+                  type="text"
+                  value={campaign}
+                  onChange={(e) => setCampaign(e.target.value)}
+                  placeholder="e.g. Holiday Giving 2026"
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-semibold">Notes (optional)</span>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                />
+              </label>
+
+              <Button type="submit" disabled={loading} className="mt-2">
+                {loading ? 'Processing...' : 'Donate'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

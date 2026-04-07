@@ -1,5 +1,3 @@
-import type { DesignVariantId } from "@/features/public/designReview"
-
 export interface ImpactStats {
   totalResidentsServed: number
   activeResidents: number
@@ -7,10 +5,9 @@ export interface ImpactStats {
   totalDonationValuePhp: number
   activeSafehouses: number
   activePartners: number
-}
-
-export interface HomeVariantProps {
-  variant: DesignVariantId
-  stats: ImpactStats | null
-  isLoading: boolean
+  latestSnapshot: {
+    headline: string
+    summaryText: string
+    publishedAt: string
+  } | null
 }

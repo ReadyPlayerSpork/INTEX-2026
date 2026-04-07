@@ -15,11 +15,14 @@ export function CookieConsent() {
   if (!visible) return null
 
   return (
-    <div className="bg-card border-border fixed inset-x-0 bottom-0 z-50 border-t p-4 shadow-lg">
-      <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
-        <p className="text-sm">
+    <div className="bg-card/95 border-border fixed inset-x-0 bottom-4 z-50 mx-4 rounded-2xl border px-4 py-4 shadow-[0_18px_40px_-28px_rgba(74,44,94,0.42)] backdrop-blur sm:mx-auto sm:max-w-5xl">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm leading-6 text-pretty">
           We use essential cookies for authentication and session management.{' '}
-          <Link to="/privacy" className="underline">
+          <Link
+            to="/privacy"
+            className="text-accent underline underline-offset-4 transition-colors hover:text-primary"
+          >
             Privacy Policy
           </Link>
         </p>

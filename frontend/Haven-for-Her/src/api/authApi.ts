@@ -9,6 +9,11 @@ export interface RegisterPayload {
   acquisitionDetail?: string
 }
 
+export interface ExternalProvider {
+  name: string
+  displayName: string
+}
+
 export const authApi = {
   /** Get current user session */
   me(): Promise<SessionResponse> {
@@ -28,5 +33,9 @@ export const authApi = {
   /** Sign in with email + password via Identity API */
   login(email: string, password: string): Promise<void> {
     return api.post('/api/auth/login', { email, password })
+  },
+
+  providers(): Promise<ExternalProvider[]> {
+    return api.get<ExternalProvider[]>('/api/auth/providers')
   },
 }

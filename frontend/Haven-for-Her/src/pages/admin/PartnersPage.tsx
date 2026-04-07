@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 
 /* ---------- Types ---------- */
 
@@ -167,55 +169,65 @@ export function PartnersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Partners</h1>
+        <div>
+          <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+            Admin partnerships
+          </p>
+          <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
+            Partners
+          </h1>
+        </div>
         <Button onClick={openCreate}>+ New Partner</Button>
       </div>
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-destructive mb-4">{error}</p>}
 
       {/* Filters */}
       <div className="flex gap-3 mb-4">
-        <input
+        <Input
           type="text"
           placeholder="Filter region..."
           value={filterRegion}
           onChange={(e) => { setFilterRegion(e.target.value); setPage(1) }}
-          className="border rounded px-3 py-1 text-sm"
+          className="max-w-xs"
         />
-        <input
+        <Input
           type="text"
           placeholder="Filter status..."
           value={filterStatus}
           onChange={(e) => { setFilterStatus(e.target.value); setPage(1) }}
-          className="border rounded px-3 py-1 text-sm"
+          className="max-w-xs"
         />
       </div>
 
       {/* Create / Edit form */}
       {showForm && (
-        <div className="border rounded p-4 mb-6 space-y-3">
+        <Card className="mb-6 border-border/70 bg-card/95">
+          <CardContent className="space-y-3 p-4">
           <h2 className="font-semibold">{editingId ? 'Edit Partner' : 'Create Partner'}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <input placeholder="Name" value={form.name} onChange={(e) => updateField('name', e.target.value)} className="border rounded px-2 py-1 text-sm" />
-            <input placeholder="Type" value={form.type} onChange={(e) => updateField('type', e.target.value)} className="border rounded px-2 py-1 text-sm" />
-            <input placeholder="Role" value={form.role} onChange={(e) => updateField('role', e.target.value)} className="border rounded px-2 py-1 text-sm" />
-            <input placeholder="Contact" value={form.contact} onChange={(e) => updateField('contact', e.target.value)} className="border rounded px-2 py-1 text-sm" />
-            <input placeholder="Email" value={form.email} onChange={(e) => updateField('email', e.target.value)} className="border rounded px-2 py-1 text-sm" />
-            <input placeholder="Region" value={form.region} onChange={(e) => updateField('region', e.target.value)} className="border rounded px-2 py-1 text-sm" />
-            <input placeholder="Status" value={form.status} onChange={(e) => updateField('status', e.target.value)} className="border rounded px-2 py-1 text-sm" />
+            <Input placeholder="Name" value={form.name} onChange={(e) => updateField('name', e.target.value)} />
+            <Input placeholder="Type" value={form.type} onChange={(e) => updateField('type', e.target.value)} />
+            <Input placeholder="Role" value={form.role} onChange={(e) => updateField('role', e.target.value)} />
+            <Input placeholder="Contact" value={form.contact} onChange={(e) => updateField('contact', e.target.value)} />
+            <Input placeholder="Email" value={form.email} onChange={(e) => updateField('email', e.target.value)} />
+            <Input placeholder="Region" value={form.region} onChange={(e) => updateField('region', e.target.value)} />
+            <Input placeholder="Status" value={form.status} onChange={(e) => updateField('status', e.target.value)} />
           </div>
           <div className="flex gap-2">
             <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
             <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
           </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Assignments detail panel */}
       {selectedPartner && (
-        <div className="border rounded p-4 mb-6">
+        <Card className="mb-6 border-border/70 bg-card/95">
+          <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">Assignments for {selectedPartner.name}</h2>
             <Button variant="outline" size="sm" onClick={() => setSelectedPartner(null)}>Close</Button>
@@ -223,11 +235,11 @@ export function PartnersPage() {
           {loadingAssignments ? (
             <p className="animate-pulse">Loading assignments...</p>
           ) : assignments.length === 0 ? (
-            <p className="text-gray-500 text-sm">No assignments found.</p>
+            <p className="text-muted-foreground text-sm">No assignments found.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left">
+                <tr className="border-border border-b text-left">
                   <th className="px-3 py-2">ID</th>
                   <th className="px-3 py-2">Description</th>
                   <th className="px-3 py-2">Status</th>
@@ -236,7 +248,7 @@ export function PartnersPage() {
               </thead>
               <tbody>
                 {assignments.map((a) => (
-                  <tr key={a.assignmentId} className="border-b">
+                  <tr key={a.assignmentId} className="border-border/70 border-b">
                     <td className="px-3 py-2">{a.assignmentId}</td>
                     <td className="px-3 py-2">{a.description}</td>
                     <td className="px-3 py-2">{a.status}</td>
@@ -246,7 +258,8 @@ export function PartnersPage() {
               </tbody>
             </table>
           )}
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Table */}
@@ -254,10 +267,12 @@ export function PartnersPage() {
         <p className="animate-pulse">Loading...</p>
       ) : (
         <>
+          <Card className="overflow-hidden border-border/70 bg-card/95">
+            <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left">
+                <tr className="border-border bg-secondary/50 border-b text-left">
                   <th className="px-3 py-2">Name</th>
                   <th className="px-3 py-2">Type</th>
                   <th className="px-3 py-2">Role</th>
@@ -271,7 +286,7 @@ export function PartnersPage() {
               </thead>
               <tbody>
                 {items.map((p) => (
-                  <tr key={p.partnerId} className="border-b hover:bg-gray-50">
+                  <tr key={p.partnerId} className="border-border/70 hover:bg-secondary/40 border-b transition-colors">
                     <td className="px-3 py-2">
                       <button className="underline text-left" onClick={() => viewAssignments(p)}>{p.name}</button>
                     </td>
@@ -296,15 +311,17 @@ export function PartnersPage() {
                   </tr>
                 ))}
                 {items.length === 0 && (
-                  <tr><td colSpan={9} className="px-3 py-4 text-center text-gray-500">No partners found.</td></tr>
+                  <tr><td colSpan={9} className="text-muted-foreground px-3 py-4 text-center">No partners found.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+            </CardContent>
+          </Card>
 
           {totalPages > 1 && (
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-gray-500">Page {page} of {totalPages} ({totalCount} total)</p>
+              <p className="text-muted-foreground text-sm">Page {page} of {totalPages} ({totalCount} total)</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
                 <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>

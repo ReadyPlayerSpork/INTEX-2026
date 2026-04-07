@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/client'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 interface CounselingRequest {
   id: number
@@ -16,6 +19,8 @@ interface CounselingRequest {
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const TIMES = ['Morning', 'Afternoon', 'Evening']
+const selectClassName =
+  'border-input bg-background focus-visible:border-ring focus-visible:ring-ring/18 w-full rounded-lg border px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus-visible:ring-4'
 
 export function CounselingPage() {
   const [requests, setRequests] = useState<CounselingRequest[]>([])
@@ -67,20 +72,28 @@ export function CounselingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
+    <div className="mx-auto max-w-4xl px-5 py-16 md:px-10 md:py-20">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Counseling</h1>
+        <div>
+          <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+            Survivor support
+          </p>
+          <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
+            Counseling
+          </h1>
+        </div>
         <Button onClick={() => setShowForm(!showForm)}>
           {showForm ? 'Cancel' : 'Request counseling'}
         </Button>
       </div>
 
       {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="bg-card border-border mb-8 rounded-lg border p-6"
-        >
-          <h2 className="mb-4 text-lg font-semibold">New counseling request</h2>
+        <Card className="mb-8 border-border/70 bg-card/95">
+          <CardContent className="p-6">
+          <form onSubmit={handleSubmit}>
+          <h2 className="font-heading mb-4 text-2xl font-semibold text-accent">
+            New counseling request
+          </h2>
 
           {error && (
             <div className="bg-destructive/10 text-destructive mb-4 rounded-md p-3 text-sm">
@@ -93,11 +106,10 @@ export function CounselingPage() {
               <span className="text-sm font-medium">
                 What would you like help with?
               </span>
-              <textarea
+              <Textarea
                 required
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="border-input bg-background rounded-md border px-3 py-2 text-sm"
                 rows={3}
               />
             </label>
@@ -108,7 +120,7 @@ export function CounselingPage() {
                 <select
                   value={preferredDay}
                   onChange={(e) => setPreferredDay(e.target.value)}
-                  className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+                  className={selectClassName}
                 >
                   <option value="">No preference</option>
                   {DAYS.map((d) => (
@@ -122,7 +134,7 @@ export function CounselingPage() {
                 <select
                   value={preferredTime}
                   onChange={(e) => setPreferredTime(e.target.value)}
-                  className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+                  className={selectClassName}
                 >
                   <option value="">No preference</option>
                   {TIMES.map((t) => (
@@ -136,11 +148,10 @@ export function CounselingPage() {
               <span className="text-muted-foreground text-sm">
                 Additional notes (optional)
               </span>
-              <input
+              <Input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="border-input bg-background rounded-md border px-3 py-2 text-sm"
               />
             </label>
 
@@ -149,6 +160,8 @@ export function CounselingPage() {
             </Button>
           </div>
         </form>
+        </CardContent>
+        </Card>
       )}
 
       {/* My requests */}
@@ -160,7 +173,7 @@ export function CounselingPage() {
           {requests.map((r) => (
             <div
               key={r.id}
-              className="bg-card border-border rounded-lg border p-4"
+              className="bg-card border-border/70 rounded-2xl border p-4"
             >
               <div className="flex items-start justify-between">
                 <p className="text-sm font-medium">{r.reason}</p>
@@ -190,14 +203,14 @@ export function CounselingPage() {
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    Open: 'bg-yellow-100 text-yellow-800',
-    Assigned: 'bg-blue-100 text-blue-800',
-    Completed: 'bg-green-100 text-green-800',
-    Cancelled: 'bg-gray-100 text-gray-500',
+    Open: 'bg-secondary text-secondary-foreground',
+    Assigned: 'bg-accent/12 text-accent',
+    Completed: 'bg-primary/15 text-primary',
+    Cancelled: 'bg-muted text-muted-foreground',
   }
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-500'}`}
+      className={`rounded-full px-3 py-1 text-xs font-semibold ${colors[status] ?? 'bg-muted text-muted-foreground'}`}
     >
       {status}
     </span>

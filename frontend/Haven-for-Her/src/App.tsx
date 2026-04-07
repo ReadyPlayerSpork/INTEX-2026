@@ -17,12 +17,6 @@ import { VolunteerPage } from '@/pages/VolunteerPage'
 import { ResourcesPage } from '@/pages/ResourcesPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
-// Design review pages
-import { DesignReviewIndexPage } from '@/pages/design-review/DesignReviewIndexPage'
-import { DesignReviewHomePage } from '@/pages/design-review/DesignReviewHomePage'
-import { DesignReviewDonatePage } from '@/pages/design-review/DesignReviewDonatePage'
-import { DesignReviewLoginPage } from '@/pages/design-review/DesignReviewLoginPage'
-
 // Donor pages
 import { DonorDashboardPage } from '@/pages/donor/DonorDashboardPage'
 
@@ -79,19 +73,6 @@ function App() {
           <Route path="/donate" element={<DonateRouter />} />
           <Route path="/volunteer" element={<VolunteerPage />} />
           <Route path="/resources" element={<ResourcesPage />} />
-          <Route path="/design-review" element={<DesignReviewIndexPage />} />
-          <Route
-            path="/design-review/home/:variant"
-            element={<DesignReviewHomePage />}
-          />
-          <Route
-            path="/design-review/donate/:variant"
-            element={<DesignReviewDonatePage />}
-          />
-          <Route
-            path="/design-review/login/:variant"
-            element={<DesignReviewLoginPage />}
-          />
 
           {/* Protected: Donor */}
           <Route element={<ProtectedRoute allowedRoles={['Donor']} />}>

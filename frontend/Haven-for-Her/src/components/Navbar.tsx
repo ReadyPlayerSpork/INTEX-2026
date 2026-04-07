@@ -44,10 +44,12 @@ export function Navbar() {
   }
 
   return (
-    <header className="border-border bg-background sticky top-0 z-50 border-b">
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
-        <Link to="/" className="text-lg font-semibold whitespace-nowrap">
-          Haven for Her
+    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-4">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 rounded-full border border-border/70 bg-card/95 px-4 py-3 shadow-[0_16px_35px_-26px_rgba(74,44,94,0.4)] backdrop-blur">
+        <Link to="/" className="min-w-0 whitespace-nowrap">
+          <span className="font-heading text-xl font-semibold text-accent">
+            Haven for Her
+          </span>
         </Link>
 
         <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
@@ -55,7 +57,7 @@ export function Navbar() {
             <Link
               key={item.to}
               to={item.to}
-              className="text-muted-foreground hover:text-foreground rounded-md px-3 py-1.5 text-sm transition-colors"
+              className="text-muted-foreground hover:bg-secondary hover:text-foreground rounded-full px-3 py-2 text-sm font-medium transition-[background-color,color]"
             >
               {item.label}
             </Link>
@@ -65,7 +67,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           {isLoading ? null : isAuthenticated ? (
             <>
-              <span className="text-muted-foreground hidden text-sm sm:inline">
+              <span className="text-muted-foreground hidden max-w-48 truncate text-sm sm:inline">
                 {email}
               </span>
               <Button variant="outline" size="sm" onClick={handleLogout}>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface DonorDashboard {
   totalDonations: number
@@ -47,9 +48,16 @@ export function DonorDashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Donor Dashboard</h1>
+    <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+            Donor dashboard
+          </p>
+          <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
+            Your giving history
+          </h1>
+        </div>
         <Link to="/donate">
           <Button>Make a donation</Button>
         </Link>
@@ -68,10 +76,12 @@ export function DonorDashboardPage() {
       {data.recentDonations.length === 0 ? (
         <p className="text-muted-foreground text-sm">No donations yet.</p>
       ) : (
-        <div className="overflow-x-auto">
+        <Card className="overflow-hidden border-border/70 bg-card/95">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-border border-b text-left">
+              <tr className="border-border bg-secondary/50 border-b text-left">
                 <th className="px-3 py-2 font-medium">Date</th>
                 <th className="px-3 py-2 font-medium">Type</th>
                 <th className="px-3 py-2 font-medium">Amount</th>
@@ -81,7 +91,7 @@ export function DonorDashboardPage() {
             </thead>
             <tbody>
               {data.recentDonations.map((d) => (
-                <tr key={d.donationId} className="border-border border-b">
+                <tr key={d.donationId} className="border-border/70 border-b last:border-b-0">
                   <td className="px-3 py-2">{d.donationDate}</td>
                   <td className="px-3 py-2">{d.donationType}</td>
                   <td className="px-3 py-2">
@@ -95,7 +105,9 @@ export function DonorDashboardPage() {
               ))}
             </tbody>
           </table>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
@@ -103,9 +115,11 @@ export function DonorDashboardPage() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-card border-border rounded-lg border p-6 text-center">
-      <p className="text-primary text-3xl font-bold">{value}</p>
-      <p className="text-muted-foreground mt-1 text-sm">{label}</p>
-    </div>
+    <Card className="border-border/70 bg-card/95">
+      <CardContent className="p-6 text-center">
+        <p className="text-primary text-3xl font-extrabold">{value}</p>
+        <p className="text-muted-foreground mt-2 text-sm">{label}</p>
+      </CardContent>
+    </Card>
   )
 }

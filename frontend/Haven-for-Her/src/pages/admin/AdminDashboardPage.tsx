@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/api/client'
+import { Card, CardContent } from '@/components/ui/card'
 
 /* ---------- Types ---------- */
 
@@ -125,14 +126,21 @@ export function AdminDashboardPage() {
   }, [])
 
   if (loading) return <p className="p-8 animate-pulse">Loading dashboard...</p>
-  if (error) return <p className="p-8 text-red-600">{error}</p>
+  if (error) return <p className="text-destructive p-8">{error}</p>
   if (!data) return null
 
   const { financial: fin, residents: res, social: soc } = data
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+    <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
+      <div className="mb-6">
+        <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+          Admin dashboard
+        </p>
+        <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
+          Admin Dashboard
+        </h1>
+      </div>
 
       {/* Quick stats bar */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
@@ -146,19 +154,20 @@ export function AdminDashboardPage() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Financial section */}
-        <section className="border rounded p-4">
+        <Card className="border-border/70 bg-card/95">
+          <CardContent className="p-4">
           <h2 className="text-lg font-semibold mb-3">
             <a href="/admin/donations" className="underline">Financial</a>
           </h2>
 
           <div className="flex gap-4 mb-3 text-sm">
             <div>
-              <span className="text-gray-500">This month:</span> {php(fin.thisMonth)}
+              <span className="text-muted-foreground">This month:</span> {php(fin.thisMonth)}
             </div>
             <div>
-              <span className="text-gray-500">Last month:</span> {php(fin.lastMonth)}
+              <span className="text-muted-foreground">Last month:</span> {php(fin.lastMonth)}
             </div>
-            <div className={fin.changePercent >= 0 ? 'text-green-600' : 'text-red-600'}>
+            <div className={fin.changePercent >= 0 ? 'text-primary' : 'text-destructive'}>
               {pct(fin.changePercent)}
             </div>
           </div>
@@ -187,10 +196,12 @@ export function AdminDashboardPage() {
               Donor Health — Active: {fin.activeDonors}, Lapsed: {fin.lapsedDonors}, Churned: {fin.churnedDonors}
             </div>
           </div>
-        </section>
+          </CardContent>
+        </Card>
 
         {/* Residents section */}
-        <section className="border rounded p-4">
+        <Card className="border-border/70 bg-card/95">
+          <CardContent className="p-4">
           <h2 className="text-lg font-semibold mb-3">
             <a href="/admin/residents" className="underline">Residents</a>
           </h2>
@@ -200,7 +211,7 @@ export function AdminDashboardPage() {
           <h3 className="text-sm font-medium mb-1">Risk Distribution</h3>
           <ul className="text-sm mb-3 ml-4 list-disc">
             {res.riskDistribution.map((r) => (
-              <li key={r.level} className={r.level === 'Critical' ? 'text-red-600 font-semibold' : ''}>
+              <li key={r.level} className={r.level === 'Critical' ? 'text-destructive font-semibold' : ''}>
                 {r.level}: {r.count}
               </li>
             ))}
@@ -212,10 +223,12 @@ export function AdminDashboardPage() {
           <AlertList title="Unresolved Incidents" items={res.unresolvedIncidents} />
           <AlertList title="Missed Sessions" items={res.missedSessions} />
           <AlertList title="Follow-up Needed" items={res.followUpNeeded} />
-        </section>
+          </CardContent>
+        </Card>
 
         {/* Social section */}
-        <section className="border rounded p-4">
+        <Card className="border-border/70 bg-card/95">
+          <CardContent className="p-4">
           <h2 className="text-lg font-semibold mb-3">
             <a href="/admin/social" className="underline">Social</a>
           </h2>
@@ -231,13 +244,14 @@ export function AdminDashboardPage() {
             <div className="text-sm">
               <h3 className="font-medium mb-1">Top Post</h3>
               <p>{soc.topPost.title}</p>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 {soc.topPost.impressions.toLocaleString()} impressions,{' '}
                 {soc.topPost.engagement.toLocaleString()} engagements
               </p>
             </div>
           )}
-        </section>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
@@ -255,8 +269,8 @@ function StatCard({
   href: string
 }) {
   return (
-    <a href={href} className="border rounded p-3 hover:bg-gray-50 block">
-      <div className="text-xs text-gray-500">{label}</div>
+    <a href={href} className="border-border/70 bg-card/95 hover:bg-secondary/55 block rounded-2xl border p-4 transition-colors">
+      <div className="text-muted-foreground text-xs">{label}</div>
       <div className="text-lg font-semibold">{value}</div>
     </a>
   )

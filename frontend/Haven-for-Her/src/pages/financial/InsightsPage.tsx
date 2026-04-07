@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/api/client'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface Insights {
   activeDonors: number
@@ -40,23 +41,29 @@ export function InsightsPage() {
       <h1 className="mb-8 text-2xl font-bold">Donor Retention Insights</h1>
 
       <div className="mb-8 grid grid-cols-2 gap-6 sm:grid-cols-3">
-        <div className="bg-card border-border rounded-lg border p-6 text-center">
-          <p className="text-3xl font-bold text-green-600">{data.activeDonors}</p>
+        <Card className="border-border/70 bg-card/95">
+          <CardContent className="p-6 text-center">
+          <p className="text-primary text-3xl font-extrabold">{data.activeDonors}</p>
           <p className="text-muted-foreground mt-1 text-sm">
             Active donors (last 6 months)
           </p>
-        </div>
-        <div className="bg-card border-border rounded-lg border p-6 text-center">
-          <p className="text-3xl font-bold text-yellow-600">{data.lapsedDonors}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/70 bg-card/95">
+          <CardContent className="p-6 text-center">
+          <p className="text-accent text-3xl font-extrabold">{data.lapsedDonors}</p>
           <p className="text-muted-foreground mt-1 text-sm">
             Lapsed donors (6-12 months)
           </p>
-        </div>
-        <div className="bg-card border-border rounded-lg border p-6 text-center">
+          </CardContent>
+        </Card>
+        <Card className="border-border/70 bg-card/95">
+          <CardContent className="p-6 text-center">
           <p className="text-muted-foreground text-sm">
             ML churn predictions will appear here once Pipeline 1 is deployed.
           </p>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       <h2 className="mb-4 text-lg font-semibold">Top Donors by Total Giving</h2>

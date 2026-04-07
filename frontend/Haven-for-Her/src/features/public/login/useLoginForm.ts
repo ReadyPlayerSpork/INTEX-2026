@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from "react"
+import { useEffect, useMemo, useState, type FormEvent } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { authApi } from "@/api/authApi"
 import { ApiError } from "@/api/client"
 import { useAuth } from "@/hooks/useAuth"
+import { getGoogleSignInUrl } from "@/lib/auth"
 import { getLandingPath } from "@/lib/roles"
 
 export function useLoginForm() {
@@ -16,6 +17,30 @@ export function useLoginForm() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(externalError)
   const [loading, setLoading] = useState(false)
+  const [googleAvailable, setGoogleAvailable] = useState(false)
+
+  useEffect(() => {
+    let isActive = true
+
+    authApi
+      .providers()
+      .then((providers) => {
+        if (!isActive) return
+        setGoogleAvailable(
+          providers.some((provider) => provider.name.toLowerCase() === "google"),
+        )
+      })
+      .catch(() => {
+        if (!isActive) return
+        setGoogleAvailable(false)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
+  const googleSignInUrl = useMemo(() => getGoogleSignInUrl("/"), [])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -43,6 +68,8 @@ export function useLoginForm() {
     password,
     error,
     loading,
+    googleAvailable,
+    googleSignInUrl,
     onEmailChange: setEmail,
     onPasswordChange: setPassword,
     onSubmit: handleSubmit,
