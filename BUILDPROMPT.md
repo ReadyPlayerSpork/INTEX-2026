@@ -1,6 +1,6 @@
 # INTEX-2026 Build Prompt
 
-You are building a full-stack web application for a nonprofit that operates safe homes for girls who are survivors of sexual abuse and trafficking in the Philippines. The tech stack is **React + TypeScript + Vite** on the frontend, **Tailwind CSS + shadcn/ui** for styling, **ASP.NET Core (.NET 10)** on the backend, and Entity Framework Core with **SQLite for development** and **PostgreSQL for production**. The backend authentication skeleton already exists (ASP.NET Identity + Google OAuth, CORS, CSP headers, secure cookies). All 17 EF Core domain models are already built and registered in `HavenForHerBackendDbContext`. A frontend scaffold already exists and should be extended rather than recreated from scratch.
+You are building a full-stack web application for a nonprofit that operates safe homes for girls who are survivors of sexual abuse and trafficking in the Philippines. The tech stack is **React 19 + TypeScript 6 + Vite 8** on the frontend, **Tailwind CSS 4 + shadcn/ui** for styling, **ASP.NET Core (.NET 10)** on the backend, and Entity Framework Core 10 with **SQLite for development** and **PostgreSQL for production**. The backend authentication skeleton already exists (ASP.NET Identity + Google OAuth, CORS, CSP headers, secure cookies, 7 seeded roles). All 17 EF Core domain models are built and registered in `HavenForHerBackendDbContext` with initial migrations applied. A typed frontend API client (`src/api/`) and backend DTOs (`Dtos/`) are in place. The frontend scaffold exists with Tailwind + shadcn configured and should be extended rather than recreated from scratch.
 
 Follow this process **in order**. Complete each phase before moving to the next. Within each phase, build the pieces in the numbered order listed. Always verify the build compiles and the app runs before moving on. Complete only one phase at a time, then ask if we're ready to implement the next phase. 
 
@@ -27,7 +27,7 @@ These rules exist to prevent technical debt. Follow them across every phase.
 5. **The frontend must be strongly typed and API-driven.**
    - Use TypeScript throughout.
    - Centralize API access in a typed client layer instead of scattered ad hoc calls.
-   - Prefer plain React patterns the team already knows: React Router, `fetch()`, `useEffect`, and `useState`.
+   - Prefer plain React patterns the team already knows: React Router, the typed `fetch()` wrapper in `src/api/client.ts`, `useEffect`, and `useState`.
    - Do not assume TanStack Query, React Hook Form, or Zod are available or required.
    - Generate or maintain frontend API contracts from backend OpenAPI so DTO drift does not accumulate over time.
 6. **All forms need shared validation rules on both client and server.**
@@ -69,33 +69,33 @@ A phase is not complete until all of the following are true:
 
 ## Phase 0: Foundation & Project Scaffolding
 
-1. **Use the existing React + Vite + TypeScript frontend scaffold** in `frontend/Haven-for-Her`. Install React Router and a typed `fetch()` wrapper for API calls. Configure Vite to proxy API requests to `https://localhost:7229` during development.
-   - Use **Tailwind CSS + shadcn/ui** for the UI system (tokens/components), and keep styling decisions composable and role-safe.
-   - Keep styling decisions isolated so the team can swap the chosen UI system cleanly (avoid global assumptions in layout/components).
+> **Status:** Partially complete. Items marked [DONE] are already in the codebase and should be verified, not recreated.
+
+1. [DONE] **Frontend scaffold** exists in `frontend/Haven-for-Her` with Vite 8, React 19, TypeScript 6, **Tailwind CSS 4 + shadcn/ui**, and a `@/` path alias. Vite is configured to proxy `/api` to `https://localhost:7229`.
+   - **Remaining:** Install `react-router-dom` and wire up a `<BrowserRouter>` in `main.tsx`.
+   - Keep styling decisions composable and role-safe via Tailwind + shadcn components.
 2. **Set up a shared layout** with a persistent navbar/sidebar and a main content area. The navbar should be role-aware — it only shows links the current user is authorized to see. Include a footer with the organization name and a link to the privacy policy.
 3. **Create an auth context/provider** on the frontend that calls `GET /api/auth/me` on app load to hydrate the current user session (isAuthenticated, email, roles). Expose login, logout, and register functions. Persist auth state across page refreshes via the existing cookie-based session.
 4. **Create a `<ProtectedRoute>` component** that accepts a list of allowed roles. If the user is not authenticated, redirect to login. If authenticated but missing the required role, show a 403 Forbidden page.
-5. **Create a typed API foundation.**
-   - Define shared DTOs/contracts or generate frontend types from OpenAPI.
-   - Create a centralized API client with auth-aware error handling.
-   - Standardize response shapes for paginated lists, validation errors, and success payloads.
-6. **Create a project-wide environment/config strategy.**
-   - Add `.env.example` files for frontend, backend, and ML service.
-   - Separate dev vs production configuration clearly.
-   - Do not hardcode frontend URLs, callback URLs, or third-party tokens.
-7. **Add baseline quality tooling before feature work expands.**
-   - Frontend: ESLint, Prettier, and TypeScript strict mode.
-   - Backend: analyzers, nullable reference types, and a test project scaffold.
-   - Add a root README section explaining how to run frontend, backend, and ML service locally.
-8. **Publish API contracts early.**
-   - Enable and maintain OpenAPI for the backend in development.
-   - Use it to keep frontend contracts, request/response shapes, and error handling aligned as the app grows.
+5. [DONE] **Typed API foundation** exists in `src/api/`:
+   - `client.ts` — centralized `fetch()` wrapper with `ApiError` class and `get`/`post`/`put`/`del` helpers (credentials: include).
+   - `types.ts` — `SessionResponse`, `PaginatedResponse<T>`, `ErrorResponse`, `PaginationParams`.
+   - `authApi.ts` — typed `me()`, `logout()`, `register()`, `login()` functions.
+   - **Remaining:** Extend with new endpoint modules as features are built. Generate or keep frontend API contracts in sync with backend OpenAPI.
+6. [DONE] **Environment/config strategy** — `.env.example` files exist for both frontend and backend with all required variables documented.
+   - **Remaining:** Add ML service `.env.example` when Pipeline work starts. Do not hardcode frontend URLs, callback URLs, or third-party tokens.
+7. [PARTIALLY DONE] **Baseline quality tooling:**
+   - [DONE] Frontend: ESLint configured. TypeScript strict mode enabled.
+   - [DONE] Backend: nullable reference types enabled. xUnit test project exists (`Haven-for-Her-Backend.Tests/` with 9 passing tests covering role definitions).
+   - **Remaining:** Add Prettier config. Add a root README section explaining how to run frontend, backend, and ML service locally. Expand test coverage as features are built.
+8. [DONE] **OpenAPI** — Swagger/OpenAPI is enabled in development mode (`app.MapOpenApi()`).
+   - **Remaining:** Keep it in sync as endpoints grow. Use it to validate frontend contracts.
 
 ---
 
 ## Phase 1: Role & Access System
 
-The application uses **additive roles**, not mutually exclusive account types. Replace the existing "Customer" role concept with these user-facing roles. A single authenticated account may have multiple roles at once (for example `Donor + Admin`, `Donor + Employee`, or `Donor + SocialMedia`). All role assignments beyond the default baseline are managed by Admin users.
+The application uses **additive roles**, not mutually exclusive account types. All seven roles are already defined and seeded in the backend. A single authenticated account may have multiple roles at once (for example `Donor + Admin`, `Donor + Employee`, or `Donor + SocialMedia`). All role assignments beyond the default baseline are managed by Admin users.
 
 ### Roles
 
@@ -111,7 +111,7 @@ The application uses **additive roles**, not mutually exclusive account types. R
 
 ### Implementation Steps
 
-1. **Extend the backend role system.** Update `AuthRoles.cs` to define all seven roles: Admin, Financial, Counselor, SocialMedia, Employee, Donor, Survivor. Update `AuthIdentityGenerator` to seed all roles on startup. Keep the default admin user.
+1. [DONE] **Backend role system** — `AuthRoles.cs` defines all seven roles with a static `All` array. `AuthIdentityGenerator` seeds all roles on startup and creates a default admin with both Admin and Donor roles. `AuthController` exposes `GET /api/auth/me` returning `SessionResponse` (isAuthenticated, userName, email, roles[]), plus Google OAuth endpoints and logout.
    - `Donor` should be treated as the baseline authenticated role.
    - Roles must be additive. Do not build the authorization system around mutually exclusive personas.
 2. **Update the registration flow.** Modify the registration endpoint (or add a post-registration step) so that new users select one of three account types: "Volunteer/Employee," "Donor," or "Survivor." Based on selection, assign the corresponding default role. All users implicitly have access to the volunteer page, donate page, and resources page — these are public-authenticated pages, not role-gated.
