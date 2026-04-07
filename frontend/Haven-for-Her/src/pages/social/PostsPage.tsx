@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
@@ -44,7 +44,9 @@ export function PostsPage() {
   const pageSize = 20
 
   useEffect(() => {
-    setLoading(true)
+    startTransition(() => {
+      setLoading(true)
+    })
     const params = new URLSearchParams({
       page: String(page),
       pageSize: String(pageSize),

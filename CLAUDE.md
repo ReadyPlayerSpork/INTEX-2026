@@ -74,7 +74,7 @@ Roles currently defined: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Empl
 - `Controllers/DonorController.cs` — `GET /api/donor/dashboard` returns `givingTotalsByCurrency` (`{ currencyCode, total }[]` for donations with an amount, sorted by currency, no FX conversion).
 
 ### Frontend Structure
-Vite + React app under `frontend/Haven-for-Her/`. Uses Tailwind CSS 4 + shadcn/ui for styling. Routing, API client, and forms stack are per the build plan (see `BUILDPROMPT.md`).
+Vite + React app under `frontend/Haven-for-Her/`. Uses Tailwind CSS 4 + shadcn/ui for styling. Routing, API client, and forms stack are per the build plan (see `BUILDPROMPT.md`). **Nav:** [`components/Navbar.tsx`](frontend/Haven-for-Her/src/components/Navbar.tsx) — primary links inline from `md+`; **Account** dropdown (email, role-gated routes, log out) on desktop; **mobile** menu is a left **Sheet** (Explore + Account sections) instead of horizontal link scrolling.
 
 ### Design System
 All visual design follows `STYLE_GUIDE.md` (the Bloom theme). Design context and principles live in `.impeccable.md`. Key points:
