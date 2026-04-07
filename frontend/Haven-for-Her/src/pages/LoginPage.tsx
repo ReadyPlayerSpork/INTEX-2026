@@ -4,6 +4,7 @@ import { authApi } from '@/api/authApi'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/api/client'
+import { getLandingPath } from '@/lib/roles'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -23,8 +24,9 @@ export function LoginPage() {
 
     try {
       await authApi.login(email, password)
+      const session = await authApi.me()
       await refresh()
-      navigate('/')
+      navigate(getLandingPath(session.roles))
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.status === 401 ? 'Invalid email or password.' : err.message)

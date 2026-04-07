@@ -6,6 +6,7 @@ import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { RolesPage } from '@/pages/admin/RolesPage'
 
 function App() {
   return (
@@ -19,12 +20,13 @@ function App() {
 
           {/* Protected: any authenticated user */}
           <Route element={<ProtectedRoute />}>
-            {/* Placeholder — pages will be added in later phases */}
+            {/* Placeholder — shared authenticated pages added in Phase 2 */}
           </Route>
 
           {/* Protected: Admin only */}
           <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
-            {/* Placeholder — admin pages added in Phase 7 */}
+            <Route path="/admin/roles" element={<RolesPage />} />
+            {/* Placeholder — more admin pages added in Phase 7 */}
           </Route>
 
           {/* Protected: Financial */}
@@ -40,6 +42,11 @@ function App() {
           {/* Protected: SocialMedia */}
           <Route element={<ProtectedRoute allowedRoles={['SocialMedia']} />}>
             {/* Placeholder — social media pages added in Phase 6 */}
+          </Route>
+
+          {/* Protected: Survivor */}
+          <Route element={<ProtectedRoute allowedRoles={['Survivor']} />}>
+            {/* Placeholder — survivor pages added in Phase 3 */}
           </Route>
 
           {/* Catch-all */}

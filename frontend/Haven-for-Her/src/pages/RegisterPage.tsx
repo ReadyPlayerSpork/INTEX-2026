@@ -5,6 +5,22 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/api/client'
 
+const PERSONAS = [
+  { value: 'Donor', label: 'Donor / Supporter' },
+  { value: 'Volunteer', label: 'Volunteer / Employee' },
+  { value: 'Survivor', label: 'Survivor seeking resources' },
+]
+
+const ACQUISITION_SOURCES = [
+  { value: 'SocialMedia', label: 'Social media' },
+  { value: 'SearchEngine', label: 'Search engine' },
+  { value: 'WordOfMouth', label: 'Word of mouth' },
+  { value: 'Event', label: 'Event' },
+  { value: 'Partner', label: 'Partner organization' },
+  { value: 'News', label: 'News / media' },
+  { value: 'Other', label: 'Other' },
+]
+
 export function RegisterPage() {
   const navigate = useNavigate()
   const { refresh } = useAuth()
@@ -12,6 +28,9 @@ export function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [persona, setPersona] = useState('')
+  const [acquisitionSource, setAcquisitionSource] = useState('')
+  const [acquisitionDetail, setAcquisitionDetail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -29,12 +48,26 @@ export function RegisterPage() {
       return
     }
 
+    if (!persona) {
+      setError('Please select which best describes you.')
+      return
+    }
+
+    if (!acquisitionSource) {
+      setError('Please tell us how you heard about us.')
+      return
+    }
+
     setLoading(true)
 
     try {
-      await authApi.register(email, password)
-      // Auto-login after successful registration
-      await authApi.login(email, password)
+      await authApi.register({
+        email,
+        password,
+        persona,
+        acquisitionSource,
+        acquisitionDetail: acquisitionDetail || undefined,
+      })
       await refresh()
       navigate('/')
     } catch (err) {
@@ -93,6 +126,56 @@ export function RegisterPage() {
             className="border-input bg-background rounded-md border px-3 py-2 text-sm"
           />
         </label>
+
+        <fieldset className="flex flex-col gap-1">
+          <legend className="text-sm font-medium">Which best describes you?</legend>
+          <div className="mt-1 flex flex-col gap-2">
+            {PERSONAS.map((p) => (
+              <label key={p.value} className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="persona"
+                  value={p.value}
+                  checked={persona === p.value}
+                  onChange={(e) => setPersona(e.target.value)}
+                />
+                {p.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium">How did you hear about us?</span>
+          <select
+            required
+            value={acquisitionSource}
+            onChange={(e) => setAcquisitionSource(e.target.value)}
+            className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+          >
+            <option value="">Select...</option>
+            {ACQUISITION_SOURCES.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {acquisitionSource && (
+          <label className="flex flex-col gap-1">
+            <span className="text-muted-foreground text-sm">
+              Any details? (optional)
+            </span>
+            <input
+              type="text"
+              value={acquisitionDetail}
+              onChange={(e) => setAcquisitionDetail(e.target.value)}
+              placeholder='e.g. "Facebook ad about counseling"'
+              className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+            />
+          </label>
+        )}
 
         <Button type="submit" disabled={loading}>
           {loading ? 'Creating account...' : 'Sign up'}
