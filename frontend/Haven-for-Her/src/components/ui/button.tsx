@@ -1,19 +1,20 @@
+import * as React from "react"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap transition-[background-color,color,border-color,transform,box-shadow] outline-none select-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap outline-none select-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 motion-safe:transition-[background-color,color,border-color,transform,box-shadow] motion-safe:duration-200 active:not-aria-[haspopup]:motion-safe:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_16px_32px_-24px_rgba(74,44,94,0.5)] hover:scale-[1.02] hover:bg-primary/90",
+          "bg-primary text-primary-foreground shadow-[0_16px_32px_-24px_rgba(74,44,94,0.5)] motion-safe:hover:scale-[1.02] hover:bg-primary/90",
         outline:
-          "border-border bg-card text-foreground hover:scale-[1.01] hover:border-accent/20 hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-foreground",
+          "border-border bg-card text-foreground motion-safe:hover:scale-[1.01] hover:border-accent/20 hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground hover:scale-[1.01] hover:bg-secondary/85 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-secondary text-secondary-foreground motion-safe:hover:scale-[1.01] hover:bg-secondary/85 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "text-accent hover:bg-accent/8 hover:text-accent aria-expanded:bg-accent/10 aria-expanded:text-accent",
         destructive:
@@ -39,19 +40,23 @@ const buttonVariants = cva(
   }
 )
 
-function Button({
-  className,
-  variant = "default",
-  size = "default",
-  ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+const Button = React.forwardRef<
+  HTMLButtonElement,
+  ButtonPrimitive.Props & VariantProps<typeof buttonVariants>
+>(function Button(
+  { className, variant = "default", size = "default", ...props },
+  ref,
+) {
   return (
     <ButtonPrimitive
+      ref={ref}
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />
   )
-}
+})
 
-export { Button }
+// Variants are shared by Link-as-button patterns; co-located with Button for styling parity.
+// eslint-disable-next-line react-refresh/only-export-components -- intentional dual export
+export { Button, buttonVariants }

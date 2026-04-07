@@ -1,7 +1,8 @@
 import { startTransition, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface SocialPost {
   postId: number
@@ -69,8 +70,11 @@ export function PostsPage() {
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Social Media Posts</h1>
-        <Link to="/social/post">
-          <Button>Create Post</Button>
+        <Link
+          to="/social/post"
+          className={cn(buttonVariants(), 'no-underline')}
+        >
+          Create Post
         </Link>
       </div>
 

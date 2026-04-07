@@ -1,41 +1,65 @@
 import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import { useImpactStats } from '@/features/public/home/useImpactStats'
+import logoWordmarkUrl from '@/assets/LogoHavenForHerTransparentBackground.svg'
 
 export function HomePage() {
   const { stats } = useImpactStats()
 
   return (
-    <div className="space-y-20 pb-10 pt-10">
-      <section className="px-5 py-16 md:px-10 md:py-24">
+    <div className="space-y-20 pb-10 pt-6 sm:pt-8">
+      <section className="px-5 pt-6 pb-16 md:px-10 md:pt-10 md:pb-24">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
-          <div className="space-y-6">
-            <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-              Safe homes. Steady care. Long-term hope.
-            </p>
-            <h1 className="font-heading text-balance text-[clamp(2.5rem,5vw,4.5rem)] leading-[1.02] font-semibold text-accent">
-              A softer, safer path forward for girls rebuilding their lives.
-            </h1>
-            <p className="text-muted-foreground max-w-2xl text-lg leading-8 text-pretty">
-              Haven for Her supports survivors of sexual abuse and trafficking
-              with trauma-informed care, safe housing, education, counseling,
-              and a community that believes healing should feel possible.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/donate">
-                <Button size="lg">Give with care</Button>
-              </Link>
-              <Link to="/volunteer">
-                <Button variant="outline" size="lg">
+          <div>
+            <img
+              src={logoWordmarkUrl}
+              alt="Haven for Her"
+              width={440}
+              height={170}
+              decoding="async"
+              fetchPriority="high"
+              className="mx-auto mb-2 w-full max-w-[min(100%,18rem)] object-contain sm:mb-2.5 sm:max-w-sm md:mx-0 md:mb-3 md:max-w-md lg:max-w-lg xl:max-w-xl"
+            />
+            <div className="flex flex-col gap-6">
+              <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+                Safe homes. Steady care. Long-term hope.
+              </p>
+              <h1 className="font-heading text-balance text-[clamp(2.5rem,5vw,4.5rem)] leading-[1.02] font-semibold text-accent">
+                A softer, safer path forward for girls rebuilding their lives.
+              </h1>
+              <p className="text-muted-foreground max-w-2xl text-lg leading-8 text-pretty">
+                Haven for Her supports survivors of sexual abuse and trafficking
+                with trauma-informed care, safe housing, education, counseling,
+                and a community that believes healing should feel possible.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  to="/donate"
+                  className={cn(buttonVariants({ size: 'lg' }), 'no-underline')}
+                >
+                  Give with care
+                </Link>
+                <Link
+                  to="/volunteer"
+                  className={cn(
+                    buttonVariants({ variant: 'outline', size: 'lg' }),
+                    'no-underline',
+                  )}
+                >
                   Volunteer
-                </Button>
-              </Link>
-              <Link to="/impact">
-                <Button variant="ghost" size="lg">
+                </Link>
+                <Link
+                  to="/impact"
+                  className={cn(
+                    buttonVariants({ variant: 'ghost', size: 'lg' }),
+                    'no-underline',
+                  )}
+                >
                   See our impact
-                </Button>
-              </Link>
+                </Link>
+              </div>
             </div>
           </div>
 

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -45,8 +46,11 @@ export function AnonymousDonatePage() {
               Your generous donation has been recorded. If you provided an
               email, a receipt will be sent to you.
             </p>
-            <Link to="/" className="mt-6 inline-flex">
-              <Button>Back to Home</Button>
+            <Link
+              to="/"
+              className={cn(buttonVariants(), 'mt-6 inline-flex no-underline')}
+            >
+              Back to Home
             </Link>
           </CardContent>
         </Card>
@@ -109,7 +113,10 @@ export function AnonymousDonatePage() {
             </p>
 
             {error && (
-              <div className="bg-destructive/10 text-destructive mt-6 rounded-2xl border border-destructive/20 p-3 text-sm">
+              <div
+                role="alert"
+                className="bg-destructive/10 text-destructive mt-6 rounded-2xl border border-destructive/20 p-3 text-sm"
+              >
                 {error}
               </div>
             )}

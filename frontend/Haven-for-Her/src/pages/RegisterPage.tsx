@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { authApi } from '@/api/authApi'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
@@ -110,7 +110,10 @@ export function RegisterPage() {
             </h2>
 
             {error && (
-              <div className="bg-destructive/10 text-destructive mt-6 rounded-2xl border border-destructive/20 p-3 text-sm">
+              <div
+                role="alert"
+                className="bg-destructive/10 text-destructive mt-6 rounded-2xl border border-destructive/20 p-3 text-sm"
+              >
                 {error}
               </div>
             )}
@@ -214,12 +217,12 @@ export function RegisterPage() {
 
             <p className="text-muted-foreground mt-4 text-center text-sm">
               Already have an account?{' '}
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="text-accent font-semibold underline underline-offset-4"
               >
                 Log in
-              </a>
+              </Link>
             </p>
           </CardContent>
         </Card>

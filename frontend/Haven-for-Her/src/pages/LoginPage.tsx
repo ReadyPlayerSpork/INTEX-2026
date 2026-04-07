@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -43,7 +44,10 @@ export function LoginPage() {
             </p>
 
             {error && (
-              <div className="bg-destructive/10 text-destructive mt-6 rounded-2xl border border-destructive/20 p-3 text-sm">
+              <div
+                role="alert"
+                className="bg-destructive/10 text-destructive mt-6 rounded-2xl border border-destructive/20 p-3 text-sm"
+              >
                 {error}
               </div>
             )}
@@ -91,12 +95,12 @@ export function LoginPage() {
 
             <p className="text-muted-foreground mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
-              <a
-                href="/register"
+              <Link
+                to="/register"
                 className="text-accent font-semibold underline underline-offset-4"
               >
                 Sign up
-              </a>
+              </Link>
             </p>
           </CardContent>
         </Card>

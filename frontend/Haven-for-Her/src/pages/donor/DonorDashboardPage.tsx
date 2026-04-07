@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
 
@@ -63,8 +64,8 @@ export function DonorDashboardPage() {
             Your giving history
           </h1>
         </div>
-        <Link to="/donate">
-          <Button>Make a donation</Button>
+        <Link to="/donate" className={cn(buttonVariants(), 'no-underline')}>
+          Make a donation
         </Link>
       </div>
 

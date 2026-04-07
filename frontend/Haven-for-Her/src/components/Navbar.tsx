@@ -6,6 +6,7 @@ import {
   navLinkClassName,
   PRIMARY_NAV,
 } from '@/components/nav-config'
+import logoMarkUrl from '@/assets/LogoH4HTransparentBackground.svg'
 
 const NavbarOverlays = lazy(() =>
   import('@/components/NavbarOverlays').then((m) => ({ default: m.NavbarOverlays })),
@@ -68,10 +69,18 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 px-3 pt-3 sm:px-4">
       <div className="mx-auto flex max-w-7xl items-center gap-3 rounded-full border border-border/70 bg-card/95 px-3 py-3 shadow-[0_16px_35px_-26px_rgba(74,44,94,0.4)] backdrop-blur sm:gap-4 sm:px-4">
-        <Link to="/" className="min-w-0 shrink-0 whitespace-nowrap">
-          <span className="font-heading text-lg font-semibold text-accent sm:text-xl">
-            Haven for Her
-          </span>
+        <Link
+          to="/"
+          className="focus-visible:border-ring inline-flex min-w-0 shrink-0 items-center rounded-md outline-none focus-visible:ring-4 focus-visible:ring-ring/20 motion-safe:transition-[box-shadow,border-color]"
+        >
+          <img
+            src={logoMarkUrl}
+            alt="Haven for Her"
+            width={96}
+            height={96}
+            decoding="async"
+            className="size-11 object-contain sm:size-12 md:size-[3.25rem]"
+          />
         </Link>
 
         <nav

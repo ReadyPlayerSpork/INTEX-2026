@@ -1,149 +1,260 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { RootLayout } from '@/layouts/RootLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { CookieConsent } from '@/components/CookieConsent'
+import { RoutePageFallback } from '@/components/RoutePageFallback'
 import { useAuth } from '@/hooks/useAuth'
 
-// Public pages
-import { HomePage } from '@/pages/HomePage'
-import { LoginPage } from '@/pages/LoginPage'
-import { RegisterPage } from '@/pages/RegisterPage'
-import { PrivacyPage } from '@/pages/PrivacyPage'
-import { ImpactPage } from '@/pages/ImpactPage'
-import { DonatePage } from '@/pages/DonatePage'
-import { AnonymousDonatePage } from '@/pages/AnonymousDonatePage'
-import { VolunteerPage } from '@/pages/VolunteerPage'
-import { ResourcesPage } from '@/pages/ResourcesPage'
-import { NotFoundPage } from '@/pages/NotFoundPage'
+const HomePage = lazy(() =>
+  import('@/pages/HomePage').then((m) => ({ default: m.HomePage })),
+)
+const LoginPage = lazy(() =>
+  import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })),
+)
+const RegisterPage = lazy(() =>
+  import('@/pages/RegisterPage').then((m) => ({ default: m.RegisterPage })),
+)
+const PrivacyPage = lazy(() =>
+  import('@/pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })),
+)
+const ImpactPage = lazy(() =>
+  import('@/pages/ImpactPage').then((m) => ({ default: m.ImpactPage })),
+)
+const DonatePage = lazy(() =>
+  import('@/pages/DonatePage').then((m) => ({ default: m.DonatePage })),
+)
+const AnonymousDonatePage = lazy(() =>
+  import('@/pages/AnonymousDonatePage').then((m) => ({
+    default: m.AnonymousDonatePage,
+  })),
+)
+const VolunteerPage = lazy(() =>
+  import('@/pages/VolunteerPage').then((m) => ({ default: m.VolunteerPage })),
+)
+const ResourcesPage = lazy(() =>
+  import('@/pages/ResourcesPage').then((m) => ({ default: m.ResourcesPage })),
+)
+const NotFoundPage = lazy(() =>
+  import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
+)
 
-// Donor pages
-import { DonorDashboardPage } from '@/pages/donor/DonorDashboardPage'
+const DonorDashboardPage = lazy(() =>
+  import('@/pages/donor/DonorDashboardPage').then((m) => ({
+    default: m.DonorDashboardPage,
+  })),
+)
 
-// Survivor pages
-import { CounselingPage } from '@/pages/survivor/CounselingPage'
-import { FindHomePage } from '@/pages/survivor/FindHomePage'
-import { MyResourcesPage } from '@/pages/survivor/MyResourcesPage'
+const CounselingPage = lazy(() =>
+  import('@/pages/survivor/CounselingPage').then((m) => ({
+    default: m.CounselingPage,
+  })),
+)
+const FindHomePage = lazy(() =>
+  import('@/pages/survivor/FindHomePage').then((m) => ({
+    default: m.FindHomePage,
+  })),
+)
+const MyResourcesPage = lazy(() =>
+  import('@/pages/survivor/MyResourcesPage').then((m) => ({
+    default: m.MyResourcesPage,
+  })),
+)
 
-// Counselor pages (Phase 5)
-import { CounselorDashboardPage } from '@/pages/counselor/CounselorDashboardPage'
-import { SessionsPage } from '@/pages/counselor/SessionsPage'
-import { VisitationsPage } from '@/pages/counselor/VisitationsPage'
+const CounselorDashboardPage = lazy(() =>
+  import('@/pages/counselor/CounselorDashboardPage').then((m) => ({
+    default: m.CounselorDashboardPage,
+  })),
+)
+const SessionsPage = lazy(() =>
+  import('@/pages/counselor/SessionsPage').then((m) => ({
+    default: m.SessionsPage,
+  })),
+)
+const VisitationsPage = lazy(() =>
+  import('@/pages/counselor/VisitationsPage').then((m) => ({
+    default: m.VisitationsPage,
+  })),
+)
 
-// Financial pages
-import { FinancialDashboardPage } from '@/pages/financial/FinancialDashboardPage'
-import { DonorManagementPage } from '@/pages/financial/DonorManagementPage'
-import { DonationRecordsPage } from '@/pages/financial/DonationRecordsPage'
-import { InsightsPage } from '@/pages/financial/InsightsPage'
-import { ReportsPage } from '@/pages/financial/ReportsPage'
+const FinancialDashboardPage = lazy(() =>
+  import('@/pages/financial/FinancialDashboardPage').then((m) => ({
+    default: m.FinancialDashboardPage,
+  })),
+)
+const DonorManagementPage = lazy(() =>
+  import('@/pages/financial/DonorManagementPage').then((m) => ({
+    default: m.DonorManagementPage,
+  })),
+)
+const DonationRecordsPage = lazy(() =>
+  import('@/pages/financial/DonationRecordsPage').then((m) => ({
+    default: m.DonationRecordsPage,
+  })),
+)
+const InsightsPage = lazy(() =>
+  import('@/pages/financial/InsightsPage').then((m) => ({
+    default: m.InsightsPage,
+  })),
+)
+const ReportsPage = lazy(() =>
+  import('@/pages/financial/ReportsPage').then((m) => ({
+    default: m.ReportsPage,
+  })),
+)
 
-// Social media pages (Phase 6)
-import { SocialDashboardPage } from '@/pages/social/SocialDashboardPage'
-import { PostsPage } from '@/pages/social/PostsPage'
-import { CreatePostPage } from '@/pages/social/CreatePostPage'
+const SocialDashboardPage = lazy(() =>
+  import('@/pages/social/SocialDashboardPage').then((m) => ({
+    default: m.SocialDashboardPage,
+  })),
+)
+const PostsPage = lazy(() =>
+  import('@/pages/social/PostsPage').then((m) => ({ default: m.PostsPage })),
+)
+const CreatePostPage = lazy(() =>
+  import('@/pages/social/CreatePostPage').then((m) => ({
+    default: m.CreatePostPage,
+  })),
+)
 
-// Admin pages (Phase 7)
-import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage'
-import { RolesPage } from '@/pages/admin/RolesPage'
-import { UsersPage } from '@/pages/admin/UsersPage'
-import { CaseloadPage } from '@/pages/admin/CaseloadPage'
-import { ResidentProfilePage } from '@/pages/admin/ResidentProfilePage'
-import { IncidentsPage } from '@/pages/admin/IncidentsPage'
-import { InterventionsPage } from '@/pages/admin/InterventionsPage'
-import { SafehousesPage } from '@/pages/admin/SafehousesPage'
-import { PartnersPage } from '@/pages/admin/PartnersPage'
+const AdminDashboardPage = lazy(() =>
+  import('@/pages/admin/AdminDashboardPage').then((m) => ({
+    default: m.AdminDashboardPage,
+  })),
+)
+const RolesPage = lazy(() =>
+  import('@/pages/admin/RolesPage').then((m) => ({ default: m.RolesPage })),
+)
+const UsersPage = lazy(() =>
+  import('@/pages/admin/UsersPage').then((m) => ({ default: m.UsersPage })),
+)
+const CaseloadPage = lazy(() =>
+  import('@/pages/admin/CaseloadPage').then((m) => ({
+    default: m.CaseloadPage,
+  })),
+)
+const ResidentProfilePage = lazy(() =>
+  import('@/pages/admin/ResidentProfilePage').then((m) => ({
+    default: m.ResidentProfilePage,
+  })),
+)
+const IncidentsPage = lazy(() =>
+  import('@/pages/admin/IncidentsPage').then((m) => ({
+    default: m.IncidentsPage,
+  })),
+)
+const InterventionsPage = lazy(() =>
+  import('@/pages/admin/InterventionsPage').then((m) => ({
+    default: m.InterventionsPage,
+  })),
+)
+const SafehousesPage = lazy(() =>
+  import('@/pages/admin/SafehousesPage').then((m) => ({
+    default: m.SafehousesPage,
+  })),
+)
+const PartnersPage = lazy(() =>
+  import('@/pages/admin/PartnersPage').then((m) => ({
+    default: m.PartnersPage,
+  })),
+)
 
 function DonateRouter() {
   const { isAuthenticated, isLoading } = useAuth()
-  if (isLoading) return null
+  if (isLoading) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center gap-2 px-4 py-24"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <p className="text-muted-foreground text-sm">Checking your session…</p>
+      </div>
+    )
+  }
   return isAuthenticated ? <DonatePage /> : <AnonymousDonatePage />
 }
 
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route element={<RootLayout />}>
-          {/* Public routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/impact" element={<ImpactPage />} />
-          <Route path="/donate" element={<DonateRouter />} />
-          <Route path="/volunteer" element={<VolunteerPage />} />
-          <Route path="/resources" element={<ResourcesPage />} />
+      <Suspense fallback={<RoutePageFallback />}>
+        <Routes>
+          <Route element={<RootLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/impact" element={<ImpactPage />} />
+            <Route path="/donate" element={<DonateRouter />} />
+            <Route path="/volunteer" element={<VolunteerPage />} />
+            <Route path="/resources" element={<ResourcesPage />} />
 
-          {/* Protected: Donor */}
-          <Route element={<ProtectedRoute allowedRoles={['Donor']} />}>
-            <Route path="/donor/dashboard" element={<DonorDashboardPage />} />
+            <Route element={<ProtectedRoute allowedRoles={['Donor']} />}>
+              <Route path="/donor/dashboard" element={<DonorDashboardPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['Survivor']} />}>
+              <Route path="/survivor/counseling" element={<CounselingPage />} />
+              <Route path="/survivor/find-home" element={<FindHomePage />} />
+              <Route path="/survivor/resources" element={<MyResourcesPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['Counselor']} />}>
+              <Route
+                path="/counselor/dashboard"
+                element={<CounselorDashboardPage />}
+              />
+              <Route path="/counselor/sessions" element={<SessionsPage />} />
+              <Route
+                path="/counselor/visitations"
+                element={<VisitationsPage />}
+              />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['Financial']} />}>
+              <Route
+                path="/financial/dashboard"
+                element={<FinancialDashboardPage />}
+              />
+              <Route path="/financial/donors" element={<DonorManagementPage />} />
+              <Route
+                path="/financial/donations"
+                element={<DonationRecordsPage />}
+              />
+              <Route path="/financial/insights" element={<InsightsPage />} />
+              <Route path="/financial/reports" element={<ReportsPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['SocialMedia']} />}>
+              <Route path="/social/dashboard" element={<SocialDashboardPage />} />
+              <Route path="/social/posts" element={<PostsPage />} />
+              <Route path="/social/post" element={<CreatePostPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
+              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+              <Route path="/admin/roles" element={<RolesPage />} />
+              <Route path="/admin/users" element={<UsersPage />} />
+              <Route path="/admin/caseload" element={<CaseloadPage />} />
+              <Route
+                path="/admin/caseload/:id"
+                element={<ResidentProfilePage />}
+              />
+              <Route path="/admin/incidents" element={<IncidentsPage />} />
+              <Route
+                path="/admin/interventions"
+                element={<InterventionsPage />}
+              />
+              <Route path="/admin/safehouses" element={<SafehousesPage />} />
+              <Route path="/admin/partners" element={<PartnersPage />} />
+            </Route>
+
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
-
-          {/* Protected: Survivor */}
-          <Route element={<ProtectedRoute allowedRoles={['Survivor']} />}>
-            <Route path="/survivor/counseling" element={<CounselingPage />} />
-            <Route path="/survivor/find-home" element={<FindHomePage />} />
-            <Route path="/survivor/resources" element={<MyResourcesPage />} />
-          </Route>
-
-          {/* Protected: Counselor (Phase 5) */}
-          <Route element={<ProtectedRoute allowedRoles={['Counselor']} />}>
-            <Route
-              path="/counselor/dashboard"
-              element={<CounselorDashboardPage />}
-            />
-            <Route path="/counselor/sessions" element={<SessionsPage />} />
-            <Route
-              path="/counselor/visitations"
-              element={<VisitationsPage />}
-            />
-          </Route>
-
-          {/* Protected: Financial */}
-          <Route element={<ProtectedRoute allowedRoles={['Financial']} />}>
-            <Route
-              path="/financial/dashboard"
-              element={<FinancialDashboardPage />}
-            />
-            <Route path="/financial/donors" element={<DonorManagementPage />} />
-            <Route
-              path="/financial/donations"
-              element={<DonationRecordsPage />}
-            />
-            <Route path="/financial/insights" element={<InsightsPage />} />
-            <Route path="/financial/reports" element={<ReportsPage />} />
-          </Route>
-
-          {/* Protected: SocialMedia (Phase 6) */}
-          <Route element={<ProtectedRoute allowedRoles={['SocialMedia']} />}>
-            <Route path="/social/dashboard" element={<SocialDashboardPage />} />
-            <Route path="/social/posts" element={<PostsPage />} />
-            <Route path="/social/post" element={<CreatePostPage />} />
-          </Route>
-
-          {/* Protected: Admin (Phase 7) */}
-          <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
-            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-            <Route path="/admin/roles" element={<RolesPage />} />
-            <Route path="/admin/users" element={<UsersPage />} />
-            <Route path="/admin/caseload" element={<CaseloadPage />} />
-            <Route
-              path="/admin/caseload/:id"
-              element={<ResidentProfilePage />}
-            />
-            <Route path="/admin/incidents" element={<IncidentsPage />} />
-            <Route
-              path="/admin/interventions"
-              element={<InterventionsPage />}
-            />
-            <Route path="/admin/safehouses" element={<SafehousesPage />} />
-            <Route path="/admin/partners" element={<PartnersPage />} />
-          </Route>
-
-          {/* Catch-all */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
+        </Routes>
+      </Suspense>
       <CookieConsent />
     </AuthProvider>
   )
