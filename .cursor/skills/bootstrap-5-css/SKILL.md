@@ -18,6 +18,10 @@ Treat **[Bootstrap 5.3 docs](https://getbootstrap.com/docs/5.3/getting-started/i
 
   If the patch version advances, update the tag to match `package.json`’s `bootstrap` version.
 
+## Coexistence with `frontend-design` (Anthropic skill)
+
+If **`frontend-design`** is also enabled, it may suggest bold typography and non-default aesthetics. **Do not** treat that as permission to bypass Bootstrap’s documented markup, grid, or accessibility. Implement distinctive visuals **through** Bootstrap: Sass variables/CSS variables, utility classes, optional custom fonts, and scoped overrides—rather than abandoning Bootstrap for bespoke layout systems.
+
 ## Quick workflow
 
 1. **Confirm setup**: HTML5 doctype, viewport meta, and global `box-sizing` expectations (Reboot). See [Important globals](https://getbootstrap.com/docs/5.3/getting-started/introduction/#important-globals) in the introduction.

@@ -58,14 +58,29 @@ Roles currently defined: `Admin`, `Customer`. The build plan expands these to: A
 ### Frontend Structure
 Vite + React app under `frontend/Haven for Her/` with **Bootstrap 5.3** (see `package.json`). Routing, API client, and forms stack are still per the build plan (see `BUILDPROMPT.md`).
 
+### Agent skills (layout and redundancy)
+
+| Location | Role |
+|---|---|
+| **`skills-lock.json`** | Records packages installed via **`npx skills add`** (or equivalent) from curated registries (e.g. `anthropics/skills`). Only lists vendor skills the installer manages. |
+| **`.agents/skills/`** | Canonical install target for **`frontend-design`** (from the lock file). |
+| **`.claude/skills/`** | Symlinks into `.agents/skills/` or `.cursor/skills/` so Claude Code discovers skills without duplicating files. Do not copy skill content here by hand. |
+| **`.cursor/skills/`** | Project-authored skills (e.g. **`bootstrap-5-css`**) used by Cursor and linked from `.claude/skills/` for the same content. |
+
+**Not redundant:** `frontend-design` exists once under `.agents/skills/`; `.claude/skills/frontend-design` is a symlink. **`bootstrap-5-css`** is project-owned, not in `skills-lock.json`, and is symlinked as `.claude/skills/bootstrap-5-css` → `.cursor/skills/bootstrap-5-css`.
+
+Re-running the skills installer may refresh vendor skills; it should not remove `.cursor/skills/`. If a symlink breaks on clone (e.g. Windows), recreate: from `.claude/skills/`, point `frontend-design` at `../../.agents/skills/frontend-design` and `bootstrap-5-css` at `../../.cursor/skills/bootstrap-5-css`.
+
 ### Frontend styling (Bootstrap) — required for Claude
 
 When editing **layout, components, or CSS** in `frontend/Haven for Her/` (including `.tsx`, `.scss`, and global styles):
 
-1. **Read and follow** the project Agent Skill at **`.cursor/skills/bootstrap-5-css/SKILL.md`** (Vite + Sass setup, utilities-first workflow, when to load Bootstrap JS).
+1. **Read and follow** the project skill **`bootstrap-5-css`** at **`.cursor/skills/bootstrap-5-css/SKILL.md`** (same file as `.claude/skills/bootstrap-5-css`): Vite + Sass setup, utilities-first workflow, when to load Bootstrap JS.
 2. For exact markup and options, prefer **Bootstrap’s MDX source** under the same release as our `bootstrap` dependency—browse [`twbs/bootstrap` → `site/src/content/docs` @ v5.3.8](https://github.com/twbs/bootstrap/tree/v5.3.8/site/src/content/docs) or fetch raw `.mdx` files (pattern documented in that skill). Use [getbootstrap.com/docs/5.3/](https://getbootstrap.com/docs/5.3/getting-started/introduction/) when you need the rendered site.
 
 Do **not** invent Bootstrap class names or patterns from memory; align with those sources.
+
+**vs `frontend-design`:** The installed **`frontend-design`** skill pushes distinctive typography and non-generic visuals. For this app, **Bootstrap structure and components take precedence** (grid, utilities, documented markup). Apply **creative direction** from `frontend-design` *inside* that boundary—e.g. CSS variables, font choices loaded via Bootstrap/theming, motion, and atmosphere—without replacing Bootstrap patterns with one-off layout systems or ignoring accessibility.
 
 ### CORS / Port Configuration
 The backend CORS policy allows credentials from `FrontendUrl` config (defaults to `http://localhost:3000`). Vite defaults to port **5173** — keep these in sync via environment config or the Vite proxy setting.
