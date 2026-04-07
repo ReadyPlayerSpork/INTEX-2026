@@ -113,6 +113,10 @@ The application has **six custom roles** beyond the existing Admin and Customer 
 
 1. **Extend the backend role system.** Update `AuthRoles.cs` to define all seven roles: Admin, Financial, Counselor, SocialMedia, Employee, Donor, Survivor. Update `AuthIdentityGenerator` to seed all roles on startup. Keep the default admin user.
 2. **Update the registration flow.** Modify the registration endpoint (or add a post-registration step) so that new users select one of three account types: "Volunteer/Employee," "Donor," or "Survivor." Based on selection, assign the corresponding default role. All users implicitly have access to the volunteer page, donate page, and resources page — these are public-authenticated pages, not role-gated.
+   - Add a required "How did you hear about us?" question during registration.
+   - Save this value in the database as structured acquisition/source data so it can be analyzed later for donors, survivors, and volunteers.
+   - Prefer a normalized or controlled set of source values over arbitrary free text, with an optional free-text detail field only if needed.
+   - This field must be available to analytics and ML features so the team can learn which outreach methods are most effective for each audience segment.
 3. **Build the Admin role assignment page** (`/admin/roles`). This page lists all users with their current roles. Admins can add or remove any role from any user. Enforce: users cannot edit their own roles unless they are Admin. Admins cannot remove Admin from themselves.
 4. **Create backend authorization policies** for each role. Apply `[Authorize(Roles = "...")]` to every controller that is role-gated. Create API endpoints for role management (list users, assign role, revoke role) gated behind Admin.
 5. **Wire up the frontend role-aware routing.** Every page below is wrapped in `<ProtectedRoute allowedRoles={[...]}>`. The navbar dynamically shows only the links the user's roles grant access to.
@@ -135,12 +139,19 @@ These pages are visible to anyone (some require authentication but no specific r
 1. **Landing Page** (`/`) — Public. Organization overview, mission statement, calls to action (donate, volunteer, learn more). Hero section, key impact stats pulled from `public_impact_snapshots`.
 2. **Login Page** (`/login`) — Public. Email/password form + Google OAuth button. On success, redirect to the user's default landing page based on their primary role.
 3. **Registration Page** (`/register`) — Public. Email, password (14+ chars), confirm password. A role selector: "I am a Volunteer/Employee," "I am a Donor," "I am a Survivor." On success, assign default role and redirect to their landing page.
+   - Include a required "How did you hear about us?" field.
+   - Save this to the database in a way that can be queried for analytics and ML by account type and eventual role grouping.
 4. **Privacy Policy Page** (`/privacy`) — Public. GDPR-compliant privacy policy. Explain data collection, usage, rights, and contact information.
 5. **Cookie Consent Banner** — Appears on first visit. Stores consent in localStorage. Must appear on every page until accepted. Links to the privacy policy.
 6. **Public Impact Dashboard** (`/impact`) — Public. Anonymized aggregate stats from `public_impact_snapshots`. Total residents served, total donations, active safehouses, active partners. Visual charts/graphs. No personally identifiable information.
 7. **Volunteer & Events Page** (`/volunteer`) — Authenticated (any role). Shows upcoming events and volunteer programs. This is the default landing page for Employee role users.
 8. **Donate Page** (`/donate`) — Authenticated (any role). Allows any user to make a donation. Form captures donation type, amount, campaign, etc. This does not require the Donor role — anyone can donate.
-9. **Resources Page** (`/resources`) — Authenticated (any role). Crisis resources, hotline numbers, nearest safe home finder (uses `safehouses` data to show active locations). This is the default landing page for Survivor role users.
+9. **Anonymous Donor Page** (`/donate/anonymous`) — Public. This is the minimum-friction donation option and must not require account creation or sign-in.
+   - Collect payment information and donation details without forcing authentication.
+   - Capture enough donor/contact information to issue receipts if the donor chooses to provide it, but keep the flow as short as possible.
+   - Allow anonymous or guest donations to be saved in the database in a way that still supports financial reporting, campaign attribution, and tax/export workflows.
+   - If the donor later creates an account, design the data model so anonymous donations can be linked retrospectively when appropriate.
+10. **Resources Page** (`/resources`) — Authenticated (any role). Crisis resources, hotline numbers, nearest safe home finder (uses `safehouses` data to show active locations). This is the default landing page for Survivor role users.
 
 ---
 
@@ -159,11 +170,13 @@ Gated behind the **Survivor** role.
 ### Donor Role Pages
 
 1. **Donor Dashboard** (`/donor/dashboard`) — Default landing page for Donor role. Shows the user's donation history (from `donations` table filtered by their supporter record), total giving, impact summary. Links to tax documents and the donate page.
+   - Where possible, include acquisition/source context so the organization can understand which outreach channels are bringing in retained donors.
 
 ### Financial Role Pages (assigned by Admin)
 
 2. **Financial Dashboard** (`/financial/dashboard`) — Overview of all donations across the organization. Summary cards: total monetary donations, in-kind value, recurring vs one-time, donations by campaign. Charts over time.
 3. **Donor Management Page** (`/financial/donors`) — Full list of all supporters with search and filtering. Click into a donor to see their profile, full donation history, and relationship with the organization. This is where ML-recommended actions will surface later.
+   - Include acquisition/source information such as "how they heard about us" so the Financial team can compare donor quality by outreach channel.
 4. **Individual Donation Records** (`/financial/donations`) — Searchable, filterable, paginated table of all donations. Filter by type, date range, campaign, safehouse allocation. Click into a donation to see allocations and in-kind items.
 5. **Tax Document Export** (`/financial/tax-export`) — Generate tax receipt PDFs or CSVs for a donor or date range. Uses `donations` and `supporters` data.
 6. **Donor Retention Insights** (`/financial/insights`) — Highlight donors who might give more or might stop donating. Placeholder for ML pipeline output. For now, show basic analytics: donors by frequency, lapsed donors (no donation in 6+ months), top donors.
@@ -790,4 +803,5 @@ Add `ml-pipelines/serve.py` startup instructions to the project README and docum
 - **No duplicate business rules:** Redirect logic, role precedence, validation rules, and permission checks should live in shared abstractions, not be reimplemented per page/controller.
 - **Prefer additive evolution over rewrites:** Build reusable tables, filters, charts, forms, and dialog patterns early so later phases compose from them instead of duplicating UI.
 - **Track attribution intentionally:** Donation, volunteer, and survivor-resource flows should preserve campaign attribution wherever ethically and legally appropriate.
+- **Capture acquisition source intentionally:** Registration and donation flows should preserve "how did you hear about us?" style source data in a structured way so outreach effectiveness can be measured across donors, survivors, and volunteers.
 - **Document what was completed at the end of each phase:** Update the README or a progress note with routes added, endpoints added, migrations created, env vars added, and tests written.
