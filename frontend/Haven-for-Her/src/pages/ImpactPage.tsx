@@ -24,7 +24,7 @@ export function ImpactPage() {
     api
       .get<ImpactStats>('/api/public/impact')
       .then(setStats)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load impact data', err))
       .finally(() => setLoading(false))
   }, [])
 
@@ -103,7 +103,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <Card className="h-full border-border/70 bg-card/95">
       <CardContent className="p-6 text-center">
-        <p className="text-primary text-3xl font-extrabold">{value}</p>
+        <p className="font-heading text-primary text-3xl font-semibold">{value}</p>
         <p className="text-muted-foreground mt-2 text-sm">{label}</p>
       </CardContent>
     </Card>

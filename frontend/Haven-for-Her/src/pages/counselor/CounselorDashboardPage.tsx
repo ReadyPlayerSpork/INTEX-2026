@@ -40,7 +40,7 @@ export function CounselorDashboardPage() {
     api
       .get<CounselorDashboard>('/api/counselor/dashboard')
       .then(setData)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load counselor dashboard', err))
       .finally(() => setLoading(false))
   }, [])
 

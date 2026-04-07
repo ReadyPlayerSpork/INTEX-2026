@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 
 export function NotFoundPage() {
@@ -17,8 +18,11 @@ export function NotFoundPage() {
             The page may have moved, or the link may be out of date. We can get
             you back to a safe starting point.
           </p>
-          <Link to="/" className="mt-6 inline-flex">
-            <Button variant="outline">Go home</Button>
+          <Link
+            to="/"
+            className={cn(buttonVariants({ variant: 'outline' }), 'mt-6 inline-flex no-underline')}
+          >
+            Go home
           </Link>
         </CardContent>
       </Card>

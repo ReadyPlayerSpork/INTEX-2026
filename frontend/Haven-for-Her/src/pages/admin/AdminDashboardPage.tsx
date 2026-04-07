@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -126,7 +127,7 @@ function AlertCount({ title, count, children }: { title: string; count: number; 
   if (count === 0) return null
   return (
     <div className="mb-3">
-      <h4 className="text-sm font-medium mb-1">{title} ({count})</h4>
+      <h4 className="text-sm font-semibold text-accent mb-1">{title} ({count})</h4>
       {children}
     </div>
   )
@@ -178,8 +179,8 @@ export function AdminDashboardPage() {
         {/* Financial section */}
         <Card className="border-border/70 bg-card/95">
           <CardContent className="p-4">
-            <h2 className="text-lg font-semibold mb-3">
-              <a href="/financial/dashboard" className="underline">Financial</a>
+            <h2 className="font-heading text-lg font-semibold text-accent mb-3">
+              <Link to="/financial/dashboard" className="underline underline-offset-4">Financial</Link>
             </h2>
 
             <div className="flex gap-4 mb-3 text-sm">
@@ -194,7 +195,7 @@ export function AdminDashboardPage() {
               </div>
             </div>
 
-            <h3 className="text-sm font-medium mb-1">Donations by Type</h3>
+            <h3 className="font-heading text-sm font-medium text-accent mb-1">Donations by Type</h3>
             <ul className="text-sm mb-3 ml-4 list-disc">
               {fin.donationsByType.map((d) => (
                 <li key={d.type}>
@@ -203,7 +204,7 @@ export function AdminDashboardPage() {
               ))}
             </ul>
 
-            <h3 className="text-sm font-medium mb-1">Top Campaigns</h3>
+            <h3 className="font-heading text-sm font-medium text-accent mb-1">Top Campaigns</h3>
             <ul className="text-sm mb-3 ml-4 list-disc">
               {fin.topCampaigns.map((c) => (
                 <li key={c.campaign}>
@@ -224,15 +225,15 @@ export function AdminDashboardPage() {
         {/* Residents section */}
         <Card className="border-border/70 bg-card/95">
           <CardContent className="p-4">
-            <h2 className="text-lg font-semibold mb-3">
-              <a href="/admin/caseload" className="underline">Residents</a>
+            <h2 className="font-heading text-lg font-semibold text-accent mb-3">
+              <Link to="/admin/caseload" className="underline underline-offset-4">Residents</Link>
             </h2>
 
             <p className="text-sm mb-3">Active: {res.totalActive}</p>
 
             {res.bySafehouse.length > 0 && (
               <>
-                <h3 className="text-sm font-medium mb-1">By Safehouse</h3>
+                <h3 className="font-heading text-sm font-medium text-accent mb-1">By Safehouse</h3>
                 <ul className="text-sm mb-3 ml-4 list-disc">
                   {res.bySafehouse.map((s) => (
                     <li key={s.safehouseName}>
@@ -243,7 +244,7 @@ export function AdminDashboardPage() {
               </>
             )}
 
-            <h3 className="text-sm font-medium mb-1">Risk Distribution</h3>
+            <h3 className="font-heading text-sm font-medium text-accent mb-1">Risk Distribution</h3>
             <ul className="text-sm mb-3 ml-4 list-disc">
               {res.riskDistribution.map((r) => (
                 <li key={r.level} className={r.level === 'Critical' ? 'text-destructive font-semibold' : ''}>
@@ -252,14 +253,14 @@ export function AdminDashboardPage() {
               ))}
             </ul>
 
-            <h3 className="text-sm font-medium mb-2">Alerts</h3>
+            <h3 className="font-heading text-sm font-medium text-accent mb-2">Alerts</h3>
             <AlertCount title="Escalating Risk" count={res.alerts.escalatingRisk.length}>
               <ul className="text-sm ml-4 list-disc">
                 {res.alerts.escalatingRisk.map((r) => (
                   <li key={r.residentId}>
-                    <a href={`/admin/caseload/${r.residentId}`} className="underline">
+                    <Link to={`/admin/caseload/${r.residentId}`} className="underline underline-offset-4">
                       #{r.residentId}
-                    </a>{' '}
+                    </Link>{' '}
                     {r.initialRiskLevel} → {r.currentRiskLevel} ({r.safehouse})
                   </li>
                 ))}
@@ -269,9 +270,9 @@ export function AdminDashboardPage() {
               <ul className="text-sm ml-4 list-disc">
                 {res.alerts.recentConcerns.map((c) => (
                   <li key={c.recordingId}>
-                    <a href={`/admin/caseload/${c.residentId}`} className="underline">
+                    <Link to={`/admin/caseload/${c.residentId}`} className="underline underline-offset-4">
                       Resident #{c.residentId}
-                    </a>{' '}
+                    </Link>{' '}
                     — {c.sessionDate}
                   </li>
                 ))}
@@ -281,9 +282,9 @@ export function AdminDashboardPage() {
               <ul className="text-sm ml-4 list-disc">
                 {res.alerts.unresolvedIncidents.map((i) => (
                   <li key={i.incidentId}>
-                    <a href={`/admin/caseload/${i.residentId}`} className="underline">
+                    <Link to={`/admin/caseload/${i.residentId}`} className="underline underline-offset-4">
                       Resident #{i.residentId}
-                    </a>{' '}
+                    </Link>{' '}
                     — {i.severity} ({i.incidentDate})
                   </li>
                 ))}
@@ -293,9 +294,9 @@ export function AdminDashboardPage() {
               <ul className="text-sm ml-4 list-disc">
                 {res.alerts.missedSessions.map((m) => (
                   <li key={m.residentId}>
-                    <a href={`/admin/caseload/${m.residentId}`} className="underline">
+                    <Link to={`/admin/caseload/${m.residentId}`} className="underline underline-offset-4">
                       #{m.residentId}
-                    </a>{' '}
+                    </Link>{' '}
                     ({m.safehouse})
                   </li>
                 ))}
@@ -305,9 +306,9 @@ export function AdminDashboardPage() {
               <ul className="text-sm ml-4 list-disc">
                 {res.alerts.followUpNeeded.map((f) => (
                   <li key={f.residentId}>
-                    <a href={`/admin/caseload/${f.residentId}`} className="underline">
+                    <Link to={`/admin/caseload/${f.residentId}`} className="underline underline-offset-4">
                       #{f.residentId}
-                    </a>{' '}
+                    </Link>{' '}
                     — {f.reintegrationStatus}
                   </li>
                 ))}
@@ -319,8 +320,8 @@ export function AdminDashboardPage() {
         {/* Social section */}
         <Card className="border-border/70 bg-card/95">
           <CardContent className="p-4">
-            <h2 className="text-lg font-semibold mb-3">
-              <a href="/social/dashboard" className="underline">Social</a>
+            <h2 className="font-heading text-lg font-semibold text-accent mb-3">
+              <Link to="/social/dashboard" className="underline underline-offset-4">Social</Link>
             </h2>
 
             <div className="text-sm space-y-1 mb-3">
@@ -332,7 +333,7 @@ export function AdminDashboardPage() {
 
             {soc.topPost && (
               <div className="text-sm">
-                <h3 className="font-medium mb-1">Top Post This Month</h3>
+                <h3 className="font-heading font-medium text-accent mb-1">Top Post This Month</h3>
                 <p>{soc.topPost.contentTopic} ({soc.topPost.platform})</p>
                 <p className="text-muted-foreground">
                   {soc.topPost.impressions.toLocaleString()} impressions,{' '}
@@ -359,9 +360,9 @@ function StatCard({
   href: string
 }) {
   return (
-    <a href={href} className="border-border/70 bg-card/95 hover:bg-secondary/55 block rounded-2xl border p-4 transition-colors">
+    <Link to={href} className="border-border/70 bg-card/95 hover:bg-secondary/55 block rounded-2xl border p-4 transition-colors no-underline">
       <div className="text-muted-foreground text-xs">{label}</div>
       <div className="text-lg font-semibold">{value}</div>
-    </a>
+    </Link>
   )
 }

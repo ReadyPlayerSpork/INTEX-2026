@@ -33,7 +33,7 @@ export function DonorDashboardPage() {
     api
       .get<DonorDashboard>('/api/donor/dashboard')
       .then(setData)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load donor dashboard', err))
       .finally(() => setLoading(false))
   }, [])
 
@@ -75,7 +75,7 @@ export function DonorDashboardPage() {
         <Stat label="Recurring" value={data.recurringDonations} />
       </div>
 
-      <h2 className="mb-4 text-lg font-semibold">Recent Donations</h2>
+      <h2 className="font-heading mb-4 text-lg font-semibold text-accent">Recent Donations</h2>
       {data.recentDonations.length === 0 ? (
         <p className="text-muted-foreground text-sm">No donations yet.</p>
       ) : (
@@ -118,7 +118,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <Card className="border-border/70 bg-card/95">
       <CardContent className="flex flex-col items-center justify-center gap-2 p-6 text-center">
-        <p className="text-primary text-3xl font-extrabold sm:text-4xl">{value}</p>
+        <p className="font-heading text-primary text-3xl font-semibold sm:text-4xl">{value}</p>
         <p className="text-muted-foreground text-sm">{label}</p>
       </CardContent>
     </Card>
@@ -150,7 +150,7 @@ function GivingTotalsCard({ rows }: { rows: GivingTotalRow[] }) {
               <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                 {row.currencyCode}
               </span>
-              <span className="text-primary text-xl font-extrabold sm:text-2xl">
+              <span className="font-heading text-primary text-xl font-semibold sm:text-2xl">
                 {formatCurrencyAmount(row.currencyCode, row.total)}
               </span>
             </li>

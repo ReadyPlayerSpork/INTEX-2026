@@ -60,7 +60,7 @@ export function PostsPage() {
     api
       .get<PostsResponse>(`/api/social/posts?${params}`)
       .then(setData)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load posts', err))
       .finally(() => setLoading(false))
   }, [page, platform, sortBy, sortDir])
 
@@ -69,7 +69,7 @@ export function PostsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Social Media Posts</h1>
+        <h1 className="font-heading text-4xl font-semibold text-accent">Social Media Posts</h1>
         <Link
           to="/social/post"
           className={cn(buttonVariants(), 'no-underline')}
@@ -83,7 +83,7 @@ export function PostsPage() {
         <div>
           <label className="text-muted-foreground mb-1 block text-xs">Platform</label>
           <select
-            className="border-border rounded border bg-transparent px-3 py-1.5 text-sm"
+            className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/18 w-full rounded-lg border px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus-visible:ring-4"
             value={platform}
             onChange={(e) => {
               setPlatform(e.target.value)
@@ -100,7 +100,7 @@ export function PostsPage() {
         <div>
           <label className="text-muted-foreground mb-1 block text-xs">Sort By</label>
           <select
-            className="border-border rounded border bg-transparent px-3 py-1.5 text-sm"
+            className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/18 w-full rounded-lg border px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus-visible:ring-4"
             value={sortBy}
             onChange={(e) => {
               setSortBy(e.target.value)
@@ -117,7 +117,7 @@ export function PostsPage() {
         <div>
           <label className="text-muted-foreground mb-1 block text-xs">Direction</label>
           <select
-            className="border-border rounded border bg-transparent px-3 py-1.5 text-sm"
+            className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/18 w-full rounded-lg border px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus-visible:ring-4"
             value={sortDir}
             onChange={(e) => {
               setSortDir(e.target.value as 'asc' | 'desc')
@@ -140,8 +140,18 @@ export function PostsPage() {
 
       {!loading && data && (
         <>
-          {/* Table */}
-          <div className="overflow-x-auto">
+          {/* Mobile card view */}
+          <div className="flex flex-col gap-4 md:hidden">
+            {data.items.length === 0 && (
+              <p className="text-muted-foreground py-8 text-center">No posts found.</p>
+            )}
+            {data.items.map((post) => (
+              <PostCard key={post.postId} post={post} />
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-border text-muted-foreground border-b text-xs">
@@ -241,7 +251,7 @@ function PostRow({
         <td className="px-3 py-2 text-right">{post.donationReferrals}</td>
         <td className="px-3 py-2 text-center">
           {post.isBoosted && (
-            <span className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-800">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               Boosted
             </span>
           )}
@@ -255,5 +265,43 @@ function PostRow({
         </tr>
       )}
     </>
+  )
+}
+
+function PostCard({ post }: { post: SocialPost }) {
+  const date = new Date(post.createdAt).toLocaleDateString()
+  return (
+    <div className="rounded-2xl border border-border/70 bg-card/95 p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-muted-foreground text-xs">{date}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium">{post.platform}</span>
+          {post.isBoosted && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              Boosted
+            </span>
+          )}
+        </div>
+      </div>
+      <p className="text-sm leading-relaxed line-clamp-3">{post.caption}</p>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <span className="text-muted-foreground">Impressions</span>
+          <p className="font-semibold">{post.impressions.toLocaleString()}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Reach</span>
+          <p className="font-semibold">{post.reach.toLocaleString()}</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Eng. Rate</span>
+          <p className="font-semibold">{post.engagementRate.toFixed(2)}%</p>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Don. Ref.</span>
+          <p className="font-semibold">{post.donationReferrals}</p>
+        </div>
+      </div>
+    </div>
   )
 }

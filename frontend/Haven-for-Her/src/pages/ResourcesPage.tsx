@@ -19,7 +19,7 @@ export function ResourcesPage() {
     api
       .get<SafehouseInfo[]>('/api/public/safehouses')
       .then(setSafehouses)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load resources', err))
       .finally(() => setLoading(false))
   }, [])
 

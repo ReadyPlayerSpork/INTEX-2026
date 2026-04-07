@@ -17,7 +17,7 @@ export function useImpactStats() {
           setStats(response)
         }
       })
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load impact stats', err))
       .finally(() => {
         if (isMounted) {
           setIsLoading(false)

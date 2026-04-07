@@ -77,7 +77,7 @@ export function HomePage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl border border-border/60 bg-card/85 p-5">
-                  <p className="text-primary text-3xl font-extrabold">
+                  <p className="font-heading text-primary text-3xl font-semibold">
                     {stats ? stats.activeResidents : '...'}
                   </p>
                   <p className="text-muted-foreground mt-1 text-sm">
@@ -85,7 +85,7 @@ export function HomePage() {
                   </p>
                 </div>
                 <div className="rounded-2xl border border-border/60 bg-card/85 p-5">
-                  <p className="text-primary text-3xl font-extrabold">
+                  <p className="font-heading text-primary text-3xl font-semibold">
                     {stats ? stats.activeSafehouses : '...'}
                   </p>
                   <p className="text-muted-foreground mt-1 text-sm">
@@ -178,7 +178,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <Card className="h-full border-border/70 bg-card/95">
       <CardContent className="p-6 text-center">
-        <p className="text-primary text-3xl font-extrabold">{value}</p>
+        <p className="font-heading text-primary text-3xl font-semibold">{value}</p>
         <p className="text-muted-foreground mt-2 text-sm">{label}</p>
       </CardContent>
     </Card>

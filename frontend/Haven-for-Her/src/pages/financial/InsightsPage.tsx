@@ -16,7 +16,7 @@ export function InsightsPage() {
     api
       .get<Insights>('/api/financial/insights')
       .then(setData)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load insights', err))
       .finally(() => setLoading(false))
   }, [])
 

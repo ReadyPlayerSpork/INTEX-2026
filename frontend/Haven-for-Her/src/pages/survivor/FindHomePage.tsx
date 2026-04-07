@@ -19,7 +19,7 @@ export function FindHomePage() {
     api
       .get<SafehouseInfo[]>('/api/public/safehouses')
       .then(setSafehouses)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load safehouses', err))
       .finally(() => setLoading(false))
   }, [])
 

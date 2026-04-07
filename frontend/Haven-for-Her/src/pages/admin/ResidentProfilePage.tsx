@@ -77,7 +77,7 @@ export function ResidentProfilePage() {
     api
       .get<ResidentProfile>(`/api/caseload/${id}`)
       .then(setResident)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load resident profile', err))
       .finally(() => setLoading(false))
   }, [id])
 

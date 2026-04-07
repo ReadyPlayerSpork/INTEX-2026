@@ -21,7 +21,7 @@ export function FinancialDashboardPage() {
     api
       .get<FinancialDashboard>('/api/financial/dashboard')
       .then(setData)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load financial dashboard', err))
       .finally(() => setLoading(false))
   }, [])
 

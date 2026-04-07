@@ -64,7 +64,7 @@ export function SocialDashboardPage() {
     api
       .get<SocialDashboard>('/api/social/dashboard')
       .then(setData)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load social dashboard', err))
       .finally(() => setLoading(false))
   }, [])
 

@@ -169,7 +169,7 @@ export function RegisterPage() {
                         value={p.value}
                         checked={persona === p.value}
                         onChange={(e) => setPersona(e.target.value)}
-                        className="accent-[oklch(0.528_0.094_139)]"
+                        className="accent-primary"
                       />
                       {p.label}
                     </label>

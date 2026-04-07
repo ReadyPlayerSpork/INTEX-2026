@@ -1,4 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export function VolunteerPage() {
   return (
@@ -55,6 +57,12 @@ export function VolunteerPage() {
               involved. We&apos;ll match you with a program that fits your skills
               and availability.
             </p>
+            <a
+              href="mailto:volunteer@havenforher.org"
+              className={cn(buttonVariants(), 'mt-5 inline-flex no-underline')}
+            >
+              Get in touch
+            </a>
           </CardContent>
         </Card>
       </div>

@@ -89,7 +89,7 @@ export function AnonymousDonatePage() {
                     key={tier.blurb}
                     className="rounded-2xl border border-border/60 bg-card/90 p-4"
                   >
-                    <p className="text-primary text-2xl font-extrabold">
+                    <p className="font-heading text-primary text-2xl font-semibold">
                       {formatCurrencyAmount(currencyCode, tier.amount)}
                     </p>
                     <p className="text-muted-foreground mt-1 text-xs">

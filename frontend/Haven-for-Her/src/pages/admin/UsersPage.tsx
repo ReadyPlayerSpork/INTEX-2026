@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
@@ -64,9 +66,12 @@ export function UsersPage() {
             Users
           </h1>
         </div>
-        <a href="/admin/roles">
-          <Button variant="outline">Manage Roles</Button>
-        </a>
+        <Link
+          to="/admin/roles"
+          className={cn(buttonVariants({ variant: 'outline' }), 'no-underline')}
+        >
+          Manage Roles
+        </Link>
       </div>
 
       {error && <p className="text-destructive mb-4">{error}</p>}
