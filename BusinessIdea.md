@@ -1,4 +1,4 @@
-Sweet Chariot/Swing Low is a Sexual Assault Survivor Assistance organization that is focussed on sexual assault in urban areas of the United States, especially in underpriveleged communities.
+Haven for Her (H4H) is a Sexual Assault Survivor Assistance organization that is focussed on sexual assault in urban areas of the United States, especially in underpriveleged urban communities.
 
 The idea is to start in the South Side of Chicago, then expand programs to NYC, Atlanta, Birmingham, LA. 
 Our objective is to help young women escape cyclical abuse and poverty by providing counseling and support structures to those in abusive situations.
