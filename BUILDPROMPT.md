@@ -71,6 +71,7 @@ A phase is not complete until all of the following are true:
 
 1. **Scaffold the React + Vite + TypeScript frontend** in a `frontend/` directory at the project root. Install React Router and an HTTP client (Axios or a typed `fetch()` wrapper). Configure Vite to proxy API requests to `https://localhost:7229` during development.
    - Do **not** install or use Bootstrap (the project is switching CSS/UI libraries).
+   - Use **Tailwind CSS + shadcn/ui** for the UI system (tokens/components), and keep styling decisions composable and role-safe.
    - Keep styling decisions isolated so the team can swap the chosen UI system cleanly (avoid global assumptions in layout/components).
 2. **Set up a shared layout** with a persistent navbar/sidebar and a main content area. The navbar should be role-aware — it only shows links the current user is authorized to see. Include a footer with the organization name and a link to the privacy policy.
 3. **Create an auth context/provider** on the frontend that calls `GET /api/auth/me` on app load to hydrate the current user session (isAuthenticated, email, roles). Expose login, logout, and register functions. Persist auth state across page refreshes via the existing cookie-based session.

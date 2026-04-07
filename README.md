@@ -10,7 +10,7 @@ Built by **BYU INTEX Section 2, Group 15**.
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 19, TypeScript, Vite 8 |
+| Frontend | React 19, TypeScript, Vite 8, Tailwind CSS, shadcn/ui |
 | Backend | ASP.NET Core / .NET 10 |
 | ORM | Entity Framework Core 10 |
 | Auth | ASP.NET Identity + Google OAuth, cookie-based sessions |

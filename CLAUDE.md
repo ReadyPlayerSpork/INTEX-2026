@@ -30,7 +30,7 @@ Swagger UI is available in development at `/swagger`.
 ### Tech Stack
 | Layer | Technology |
 |---|---|
-| Frontend | React 19, TypeScript ~6.0, Vite 8 |
+| Frontend | React 19, TypeScript ~6.0, Vite 8, Tailwind CSS, shadcn/ui |
 | Backend | ASP.NET Core / .NET 10 |
 | ORM | Entity Framework Core 10 |
 | Auth | ASP.NET Identity + Google OAuth, cookie-based sessions |
