@@ -1,6 +1,0 @@
-@Intex_Placeholder_HostAddress = http://localhost:5064
-
-GET {{Intex_Placeholder_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

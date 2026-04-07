@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/backend/Intex-Placeholder/Intex-Placeholder.sln",
+                "${workspaceFolder}/backend/Haven-for-Her-Backend/Haven-for-Her-Backend.sln",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/backend/Intex-Placeholder/Intex-Placeholder.sln",
+                "${workspaceFolder}/backend/Haven-for-Her-Backend/Haven-for-Her-Backend.sln",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/backend/Intex-Placeholder/Intex-Placeholder.sln"
+                "${workspaceFolder}/backend/Haven-for-Her-Backend/Haven-for-Her-Backend.sln"
             ],
             "problemMatcher": "$msCompile"
         }

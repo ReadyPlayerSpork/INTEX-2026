@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/backend/Intex-Placeholder/bin/Debug/net10.0/Intex-Placeholder.dll",
+            "program": "${workspaceFolder}/backend/Haven-for-Her-Backend/bin/Debug/net10.0/Haven-for-Her-Backend.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/backend/Intex-Placeholder",
+            "cwd": "${workspaceFolder}/backend/Haven-for-Her-Backend",
             "stopAtEntry": false,
             // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
             "serverReadyAction": {

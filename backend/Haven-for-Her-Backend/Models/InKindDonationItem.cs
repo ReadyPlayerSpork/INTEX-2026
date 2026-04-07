@@ -1,0 +1,40 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Haven_for_Her_Backend.Models;
+
+[Table("in_kind_donation_items")]
+public class InKindDonationItem
+{
+    [Key]
+    [Column("item_id")]
+    public int ItemId { get; set; }
+
+    [Column("donation_id")]
+    public int DonationId { get; set; }
+
+    [Column("item_name")]
+    public string ItemName { get; set; } = null!;
+
+    [Column("item_category")]
+    public string ItemCategory { get; set; } = null!;
+
+    [Column("quantity")]
+    public int Quantity { get; set; }
+
+    [Column("unit_of_measure")]
+    public string UnitOfMeasure { get; set; } = null!;
+
+    [Column("estimated_unit_value")]
+    public decimal EstimatedUnitValue { get; set; }
+
+    [Column("intended_use")]
+    public string IntendedUse { get; set; } = null!;
+
+    [Column("received_condition")]
+    public string ReceivedCondition { get; set; } = null!;
+
+    // Navigation properties
+    [ForeignKey(nameof(DonationId))]
+    public Donation Donation { get; set; } = null!;
+}
