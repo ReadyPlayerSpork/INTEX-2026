@@ -2,13 +2,29 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Keep agent guidance up to date (important)
+
+This file is a **living source of truth**. If you discover that any instruction here is wrong, incomplete, or has drifted from the codebase, **update `CLAUDE.md` in the same PR/commit as the change (or immediately after the discovery)** so future agents don’t repeat the same mistake.
+
+Update this document when you confirm changes to (examples):
+- Dev commands, working directories, or required tooling (npm/dotnet scripts, build steps)
+- Local ports, URLs, proxy rules, or CORS/credentials behavior
+- Auth behavior (cookie/session settings, `/api/auth/me` shape), roles/policies, or seeded credentials
+- DB contexts, migrations/DB files, or environment/config keys that agents rely on
+- Canonical “key files” lists when files move/rename
+
+When updating:
+- Prefer **specific, verifiable facts** (exact paths, endpoints, ports, config keys).
+- If behavior differs by environment (dev vs prod), state that explicitly.
+- Avoid speculative notes; if you’re not sure, either verify quickly or omit.
+
 ## Project Overview
 
 **Haven for Her** — A full-stack case management and donor platform for a sexual assault survivor assistance nonprofit. Built by BYU INTEX Section 2, Group 15.
 
 ## Commands
 
-### Frontend (`frontend/haven-for-her/`)
+### Frontend (`frontend/Haven-for-Her/`)
 ```bash
 npm run dev        # Vite dev server (port 5173)
 npm run build      # tsc -b && vite build
