@@ -1,368 +1,396 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { api } from '@/api/client'
-import { Card, CardContent } from '@/components/ui/card'
+/**
+ * pages/admin/AdminDashboardPage.tsx
+ * Admin overview dashboard — Bloom palette.
+ *
+ * Data flow:
+ *   Fetches GET /api/admin/dashboard once on mount.
+ *   Passes typed slices down to purpose-built components.
+ *   All type definitions mirror the AdminDashboardController response exactly.
+ *
+ * Layout (top → bottom):
+ *   1. Page header + QuickActions
+ *   2. Six stat cards (links to sub-pages)
+ *   3. Three-column: SafehouseOccupancy | RiskChart | DonorHealth
+ *   4. Two-column:   FinancialSnapshot (wider) | AlertsSection (narrower)
+ */
 
-/* ---------- Types matching AdminDashboardController response ---------- */
+import { useEffect, useState } from 'react';
+import { api } from '@/api/client';
+import { QuickActions }        from '@/components/admin/QuickActions';
+import { SafehouseOccupancy }  from '@/components/admin/SafehouseOccupancy';
+import { RiskChart }           from '@/components/admin/RiskChart';
+import { DonorHealth }         from '@/components/admin/DonorHealth';
+import { FinancialSnapshot }   from '@/components/admin/FinancialSnapshot';
+import { AlertsSection }       from '@/components/admin/AlertsSection';
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Types — must stay in sync with AdminDashboardController response shape
+ * ───────────────────────────────────────────────────────────────────────── */
 
 interface DonationByType {
-  type: string
-  total: number
-  count: number
+  type: string;
+  total: number;
+  count: number;
 }
 
 interface TopCampaign {
-  campaign: string
-  total: number
-  count: number
+  campaign: string;
+  total: number;
+  count: number;
 }
 
 interface RiskLevel {
-  level: string
-  count: number
+  level: string;
+  count: number;
 }
 
 interface EscalatingRiskAlert {
-  residentId: number
-  currentRiskLevel: string
-  initialRiskLevel: string
-  safehouse: string
+  residentId: number;
+  currentRiskLevel: string;
+  initialRiskLevel: string;
+  safehouse: string;
 }
 
 interface ConcernAlert {
-  recordingId: number
-  residentId: number
-  sessionDate: string
+  recordingId: number;
+  residentId: number;
+  sessionDate: string;
 }
 
 interface IncidentAlert {
-  incidentId: number
-  residentId: number
-  safehouseId: number
-  incidentDate: string
-  severity: string
+  incidentId: number;
+  residentId: number;
+  safehouseId: number;
+  incidentDate: string;
+  severity: string;
 }
 
 interface MissedSessionAlert {
-  residentId: number
-  safehouse: string
+  residentId: number;
+  safehouse: string;
 }
 
 interface FollowUpAlert {
-  residentId: number
-  reintegrationStatus: string
-  dateClosed: string | null
+  residentId: number;
+  reintegrationStatus: string;
+  dateClosed: string | null;
 }
 
-interface SafehouseOccupancy {
-  safehouseName: string
-  activeCount: number
-  capacity: number
+interface SafehouseOccupancyItem {
+  safehouseName: string;
+  activeCount: number;
+  capacity: number;
 }
 
 interface TopPost {
-  postId: number
-  platform: string
-  contentTopic: string
-  engagementRate: number
-  impressions: number
+  postId: number;
+  platform: string;
+  contentTopic: string;
+  engagementRate: number;
+  impressions: number;
 }
 
 interface DashboardData {
   quickStats: {
-    totalActiveResidents: number
-    activeSafehouses: number
-    donationsThisMonth: number
-    activeDonors: number
-    unresolvedIncidents: number
-    engagementRateThisMonth: number
-  }
+    totalActiveResidents: number;
+    activeSafehouses: number;
+    donationsThisMonth: number;
+    activeDonors: number;
+    unresolvedIncidents: number;
+    engagementRateThisMonth: number;
+  };
   financial: {
-    totalDonationsThisMonth: number
-    totalDonationsLastMonth: number
-    percentChange: number
-    donationsByType: DonationByType[]
-    topCampaigns: TopCampaign[]
-    recurringVsOneTime: { recurring: number; oneTime: number }
-    donorHealth: { active: number; lapsed: number; churned: number }
-  }
+    totalDonationsThisMonth: number;
+    totalDonationsLastMonth: number;
+    percentChange: number;
+    donationsByType: DonationByType[];
+    topCampaigns: TopCampaign[];
+    recurringVsOneTime: { recurring: number; oneTime: number };
+    donorHealth: { active: number; lapsed: number; churned: number };
+  };
   residents: {
-    totalActive: number
-    bySafehouse: SafehouseOccupancy[]
-    riskDistribution: RiskLevel[]
+    totalActive: number;
+    bySafehouse: SafehouseOccupancyItem[];
+    riskDistribution: RiskLevel[];
     alerts: {
-      escalatingRisk: EscalatingRiskAlert[]
-      recentConcerns: ConcernAlert[]
-      unresolvedIncidents: IncidentAlert[]
-      missedSessions: MissedSessionAlert[]
-      followUpNeeded: FollowUpAlert[]
-    }
-  }
+      escalatingRisk: EscalatingRiskAlert[];
+      recentConcerns: ConcernAlert[];
+      unresolvedIncidents: IncidentAlert[];
+      missedSessions: MissedSessionAlert[];
+      followUpNeeded: FollowUpAlert[];
+    };
+  };
   social: {
-    totalImpressions: number
-    totalReach: number
-    avgEngagementRate: number
-    topPost: TopPost | null
-    activeCampaigns: string[]
-  }
+    totalImpressions: number;
+    totalReach: number;
+    avgEngagementRate: number;
+    topPost: TopPost | null;
+    activeCampaigns: string[];
+  };
 }
 
-/* ---------- Helpers ---------- */
+/* ─────────────────────────────────────────────────────────────────────────
+ * Helpers
+ * ───────────────────────────────────────────────────────────────────────── */
 
 function php(amount: number): string {
   return new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency: 'PHP',
-  }).format(amount)
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
-function pct(value: number): string {
-  const sign = value >= 0 ? '+' : ''
-  return `${sign}${value.toFixed(1)}%`
+/* ─────────────────────────────────────────────────────────────────────────
+ * Stat card (top row)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  href: string;
+  /** Optional: 'destructive' tints the value red (e.g. unresolved incidents) */
+  variant?: 'default' | 'destructive';
 }
 
-/* ---------- Sub-components ---------- */
-
-function AlertCount({ title, count, children }: { title: string; count: number; children?: React.ReactNode }) {
-  if (count === 0) return null
+function StatCard({ label, value, href, variant = 'default' }: StatCardProps) {
   return (
-    <div className="mb-3">
-      <h4 className="text-sm font-semibold text-accent mb-1">{title} ({count})</h4>
-      {children}
-    </div>
-  )
+    <a
+      href={href}
+      className="block rounded-2xl border border-border bg-card hover:bg-secondary/55 p-4 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+      <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">
+        {label}
+      </p>
+      <p
+        className={[
+          'font-heading font-semibold text-xl tabular-nums',
+          variant === 'destructive' ? 'text-destructive' : 'text-card-foreground',
+        ].join(' ')}
+      >
+        {value}
+      </p>
+    </a>
+  );
 }
 
-/* ---------- Page ---------- */
+/* ─────────────────────────────────────────────────────────────────────────
+ * Loading skeleton
+ * ───────────────────────────────────────────────────────────────────────── */
+
+function DashboardSkeleton() {
+  return (
+    <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20 space-y-6 animate-pulse">
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="h-3 w-28 rounded-full bg-muted" />
+        <div className="h-8 w-64 rounded-xl bg-muted" />
+      </div>
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-20 rounded-2xl bg-muted" />
+        ))}
+      </div>
+      {/* Three-column row */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-56 rounded-2xl bg-muted" />
+        ))}
+      </div>
+      {/* Two-column row */}
+      <div className="grid lg:grid-cols-[3fr_2fr] gap-6">
+        <div className="h-80 rounded-2xl bg-muted" />
+        <div className="h-80 rounded-2xl bg-muted" />
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Page
+ * ───────────────────────────────────────────────────────────────────────── */
 
 export function AdminDashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [data, setData]       = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
 
   useEffect(() => {
     api
       .get<DashboardData>('/api/admin/dashboard')
       .then(setData)
       .catch((err) => setError(String(err)))
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setLoading(false));
+  }, []);
 
-  if (loading) return <p className="p-8 animate-pulse">Loading dashboard...</p>
-  if (error) return <p className="text-destructive p-8">{error}</p>
-  if (!data) return null
+  if (loading) return <DashboardSkeleton />;
+  if (error)   return <p className="text-destructive p-8 text-sm">{error}</p>;
+  if (!data)   return null;
 
-  const { financial: fin, residents: res, social: soc, quickStats: qs } = data
+  const { financial: fin, residents: res, social: soc, quickStats: qs } = data;
+
+  const totalAlerts =
+    res.alerts.escalatingRisk.length +
+    res.alerts.recentConcerns.length +
+    res.alerts.unresolvedIncidents.length +
+    res.alerts.missedSessions.length +
+    res.alerts.followUpNeeded.length;
 
   return (
-    <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
-      <div className="mb-6">
-        <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-          Admin dashboard
-        </p>
-        <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
-          Admin Dashboard
-        </h1>
+    <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20 space-y-8">
+
+      {/* ── Page header ─────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            Admin Dashboard
+          </p>
+          <h1 className="font-heading font-semibold text-4xl text-accent mt-1">
+            Overview
+          </h1>
+        </div>
+        <QuickActions />
       </div>
 
-      {/* Quick stats bar */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <StatCard label="Active Residents" value={qs.totalActiveResidents} href="/admin/caseload" />
-        <StatCard label="Active Safehouses" value={qs.activeSafehouses} href="/admin/safehouses" />
-        <StatCard label="Donations (Month)" value={php(qs.donationsThisMonth)} href="/financial/donations" />
-        <StatCard label="Active Donors" value={qs.activeDonors} href="/financial/donors" />
-        <StatCard label="Unresolved Incidents" value={qs.unresolvedIncidents} href="/admin/incidents" />
-        <StatCard label="Engagement Rate" value={`${(qs.engagementRateThisMonth * 100).toFixed(1)}%`} href="/social/dashboard" />
+      {/* ── Six stat cards ──────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <StatCard
+          label="Active Residents"
+          value={qs.totalActiveResidents}
+          href="/admin/caseload"
+        />
+        <StatCard
+          label="Safehouses"
+          value={qs.activeSafehouses}
+          href="/admin/safehouses"
+        />
+        <StatCard
+          label="Donations (mo.)"
+          value={php(qs.donationsThisMonth)}
+          href="/financial/donations"
+        />
+        <StatCard
+          label="Active Donors"
+          value={qs.activeDonors}
+          href="/financial/donors"
+        />
+        <StatCard
+          label="Unresolved Incidents"
+          value={qs.unresolvedIncidents}
+          href="/admin/incidents"
+          variant={qs.unresolvedIncidents > 0 ? 'destructive' : 'default'}
+        />
+        <StatCard
+          label="Engagement Rate"
+          value={`${(qs.engagementRateThisMonth * 100).toFixed(1)}%`}
+          href="/social/dashboard"
+        />
       </div>
 
+      {/* ── Row 1: Residents overview ──────────────────────── */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Financial section */}
-        <Card className="border-border/70 bg-card/95">
-          <CardContent className="p-4">
-            <h2 className="font-heading text-lg font-semibold text-accent mb-3">
-              <Link to="/financial/dashboard" className="underline underline-offset-4">Financial</Link>
-            </h2>
+        <SafehouseOccupancy safehouses={res.bySafehouse} />
+        <RiskChart riskDistribution={res.riskDistribution} />
+        <DonorHealth
+          active={fin.donorHealth.active}
+          lapsed={fin.donorHealth.lapsed}
+          churned={fin.donorHealth.churned}
+        />
+      </div>
 
-            <div className="flex gap-4 mb-3 text-sm">
-              <div>
-                <span className="text-muted-foreground">This month:</span> {php(fin.totalDonationsThisMonth)}
-              </div>
-              <div>
-                <span className="text-muted-foreground">Last month:</span> {php(fin.totalDonationsLastMonth)}
-              </div>
-              <div className={fin.percentChange >= 0 ? 'text-primary' : 'text-destructive'}>
-                {pct(fin.percentChange)}
-              </div>
+      {/* ── Row 2: Financial + Alerts ──────────────────────── */}
+      <div className="grid lg:grid-cols-[3fr_2fr] gap-6">
+        <FinancialSnapshot
+          totalDonationsThisMonth={fin.totalDonationsThisMonth}
+          totalDonationsLastMonth={fin.totalDonationsLastMonth}
+          percentChange={fin.percentChange}
+          donationsByType={fin.donationsByType}
+          topCampaigns={fin.topCampaigns}
+          recurringVsOneTime={fin.recurringVsOneTime}
+        />
+        <AlertsSection
+          escalatingRisk={res.alerts.escalatingRisk}
+          recentConcerns={res.alerts.recentConcerns}
+          unresolvedIncidents={res.alerts.unresolvedIncidents}
+          missedSessions={res.alerts.missedSessions}
+          followUpNeeded={res.alerts.followUpNeeded}
+        />
+      </div>
+
+      {/* ── Social media strip ─────────────────────────────── */}
+      {(soc.totalImpressions > 0 || soc.activeCampaigns.length > 0) && (
+        <div className="rounded-2xl bg-card border border-border p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-heading font-semibold text-base text-card-foreground">
+              Social Media
+            </h3>
+            <a
+              href="/social/dashboard"
+              className="text-xs font-semibold text-primary hover:text-accent transition-colors duration-150"
+            >
+              Full analytics →
+            </a>
+          </div>
+          <div className="flex flex-wrap gap-6">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">
+                Impressions
+              </p>
+              <p className="font-heading font-semibold text-lg text-card-foreground tabular-nums">
+                {soc.totalImpressions.toLocaleString()}
+              </p>
             </div>
-
-            <h3 className="font-heading text-sm font-medium text-accent mb-1">Donations by Type</h3>
-            <ul className="text-sm mb-3 ml-4 list-disc">
-              {fin.donationsByType.map((d) => (
-                <li key={d.type}>
-                  {d.type}: {php(d.total)} ({d.count})
-                </li>
-              ))}
-            </ul>
-
-            <h3 className="font-heading text-sm font-medium text-accent mb-1">Top Campaigns</h3>
-            <ul className="text-sm mb-3 ml-4 list-disc">
-              {fin.topCampaigns.map((c) => (
-                <li key={c.campaign}>
-                  {c.campaign}: {php(c.total)} — {c.count} donations
-                </li>
-              ))}
-            </ul>
-
-            <div className="text-sm space-y-1">
-              <div>Recurring: {fin.recurringVsOneTime.recurring} | One-time: {fin.recurringVsOneTime.oneTime}</div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">
+                Reach
+              </p>
+              <p className="font-heading font-semibold text-lg text-card-foreground tabular-nums">
+                {soc.totalReach.toLocaleString()}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">
+                Avg Engagement
+              </p>
+              <p className="font-heading font-semibold text-lg text-card-foreground tabular-nums">
+                {(soc.avgEngagementRate * 100).toFixed(2)}%
+              </p>
+            </div>
+            {soc.activeCampaigns.length > 0 && (
               <div>
-                Donor Health — Active: {fin.donorHealth.active}, Lapsed: {fin.donorHealth.lapsed}, Churned: {fin.donorHealth.churned}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Residents section */}
-        <Card className="border-border/70 bg-card/95">
-          <CardContent className="p-4">
-            <h2 className="font-heading text-lg font-semibold text-accent mb-3">
-              <Link to="/admin/caseload" className="underline underline-offset-4">Residents</Link>
-            </h2>
-
-            <p className="text-sm mb-3">Active: {res.totalActive}</p>
-
-            {res.bySafehouse.length > 0 && (
-              <>
-                <h3 className="font-heading text-sm font-medium text-accent mb-1">By Safehouse</h3>
-                <ul className="text-sm mb-3 ml-4 list-disc">
-                  {res.bySafehouse.map((s) => (
-                    <li key={s.safehouseName}>
-                      {s.safehouseName}: {s.activeCount} / {s.capacity}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-
-            <h3 className="font-heading text-sm font-medium text-accent mb-1">Risk Distribution</h3>
-            <ul className="text-sm mb-3 ml-4 list-disc">
-              {res.riskDistribution.map((r) => (
-                <li key={r.level} className={r.level === 'Critical' ? 'text-destructive font-semibold' : ''}>
-                  {r.level}: {r.count}
-                </li>
-              ))}
-            </ul>
-
-            <h3 className="font-heading text-sm font-medium text-accent mb-2">Alerts</h3>
-            <AlertCount title="Escalating Risk" count={res.alerts.escalatingRisk.length}>
-              <ul className="text-sm ml-4 list-disc">
-                {res.alerts.escalatingRisk.map((r) => (
-                  <li key={r.residentId}>
-                    <Link to={`/admin/caseload/${r.residentId}`} className="underline underline-offset-4">
-                      #{r.residentId}
-                    </Link>{' '}
-                    {r.initialRiskLevel} → {r.currentRiskLevel} ({r.safehouse})
-                  </li>
-                ))}
-              </ul>
-            </AlertCount>
-            <AlertCount title="Concerns Flagged" count={res.alerts.recentConcerns.length}>
-              <ul className="text-sm ml-4 list-disc">
-                {res.alerts.recentConcerns.map((c) => (
-                  <li key={c.recordingId}>
-                    <Link to={`/admin/caseload/${c.residentId}`} className="underline underline-offset-4">
-                      Resident #{c.residentId}
-                    </Link>{' '}
-                    — {c.sessionDate}
-                  </li>
-                ))}
-              </ul>
-            </AlertCount>
-            <AlertCount title="Unresolved Incidents" count={res.alerts.unresolvedIncidents.length}>
-              <ul className="text-sm ml-4 list-disc">
-                {res.alerts.unresolvedIncidents.map((i) => (
-                  <li key={i.incidentId}>
-                    <Link to={`/admin/caseload/${i.residentId}`} className="underline underline-offset-4">
-                      Resident #{i.residentId}
-                    </Link>{' '}
-                    — {i.severity} ({i.incidentDate})
-                  </li>
-                ))}
-              </ul>
-            </AlertCount>
-            <AlertCount title="Missed Sessions (30d)" count={res.alerts.missedSessions.length}>
-              <ul className="text-sm ml-4 list-disc">
-                {res.alerts.missedSessions.map((m) => (
-                  <li key={m.residentId}>
-                    <Link to={`/admin/caseload/${m.residentId}`} className="underline underline-offset-4">
-                      #{m.residentId}
-                    </Link>{' '}
-                    ({m.safehouse})
-                  </li>
-                ))}
-              </ul>
-            </AlertCount>
-            <AlertCount title="Follow-up Needed" count={res.alerts.followUpNeeded.length}>
-              <ul className="text-sm ml-4 list-disc">
-                {res.alerts.followUpNeeded.map((f) => (
-                  <li key={f.residentId}>
-                    <Link to={`/admin/caseload/${f.residentId}`} className="underline underline-offset-4">
-                      #{f.residentId}
-                    </Link>{' '}
-                    — {f.reintegrationStatus}
-                  </li>
-                ))}
-              </ul>
-            </AlertCount>
-          </CardContent>
-        </Card>
-
-        {/* Social section */}
-        <Card className="border-border/70 bg-card/95">
-          <CardContent className="p-4">
-            <h2 className="font-heading text-lg font-semibold text-accent mb-3">
-              <Link to="/social/dashboard" className="underline underline-offset-4">Social</Link>
-            </h2>
-
-            <div className="text-sm space-y-1 mb-3">
-              <div>Impressions: {soc.totalImpressions.toLocaleString()}</div>
-              <div>Reach: {soc.totalReach.toLocaleString()}</div>
-              <div>Avg Engagement: {(soc.avgEngagementRate * 100).toFixed(2)}%</div>
-              <div>Active Campaigns: {soc.activeCampaigns.length}</div>
-            </div>
-
-            {soc.topPost && (
-              <div className="text-sm">
-                <h3 className="font-heading font-medium text-accent mb-1">Top Post This Month</h3>
-                <p>{soc.topPost.contentTopic} ({soc.topPost.platform})</p>
-                <p className="text-muted-foreground">
-                  {soc.topPost.impressions.toLocaleString()} impressions,{' '}
-                  {(soc.topPost.engagementRate * 100).toFixed(2)}% engagement
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">
+                  Active Campaigns
+                </p>
+                <p className="font-heading font-semibold text-lg text-card-foreground tabular-nums">
+                  {soc.activeCampaigns.length}
                 </p>
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+            {soc.topPost && (
+              <div className="ml-auto text-right">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">
+                  Top Post
+                </p>
+                <p className="text-xs font-semibold text-card-foreground">
+                  {soc.topPost.contentTopic}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {soc.topPost.platform} · {soc.topPost.impressions.toLocaleString()} impressions
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Footer meta ────────────────────────────────────── */}
+      <p className="text-[10px] text-muted-foreground text-center pb-4">
+        {totalAlerts > 0
+          ? `${totalAlerts} active alert${totalAlerts !== 1 ? 's' : ''} require attention · `
+          : ''}
+        Data from <span className="font-semibold">/api/admin/dashboard</span>
+      </p>
     </div>
-  )
-}
-
-/* ---------- Stat card ---------- */
-
-function StatCard({
-  label,
-  value,
-  href,
-}: {
-  label: string
-  value: string | number
-  href: string
-}) {
-  return (
-    <Link to={href} className="border-border/70 bg-card/95 hover:bg-secondary/55 block rounded-2xl border p-4 transition-colors no-underline">
-      <div className="text-muted-foreground text-xs">{label}</div>
-      <div className="text-lg font-semibold">{value}</div>
-    </Link>
-  )
+  );
 }
