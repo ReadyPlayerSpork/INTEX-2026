@@ -72,7 +72,16 @@ Roles currently defined: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Empl
 - `Controllers/AuthController.cs` — `/api/auth/me`, external login, logout
 
 ### Frontend Structure
-Vite + React app under `frontend/Haven-for-Her/`. Uses Tailwind CSS + shadcn/ui for styling. Routing, API client, and forms stack are per the build plan (see `BUILDPROMPT.md`).
+Vite + React app under `frontend/Haven-for-Her/`. Uses Tailwind CSS 4 + shadcn/ui for styling. Routing, API client, and forms stack are per the build plan (see `BUILDPROMPT.md`).
+
+### Design System
+All visual design follows `STYLE_GUIDE.md` (the Bloom theme). Design context and principles live in `.impeccable.md`. Key points:
+- **Fonts:** Fraunces (headings) + Nunito (body), loaded via Google Fonts `<link>` tags
+- **Palette:** Lavender/Sage/Plum/Blush/Cream — all defined as oklch values in `:root` CSS variables
+- **Sage green is `#4E7842`** (darkened from original `#7A9E70` to pass WCAG AA contrast)
+- **Implementation:** Tailwind utility classes + shadcn components only — no inline styles, no custom CSS, no `@apply`
+- **Light mode only** — no `.dark` block, no `dark:` variants
+- **Motion:** moderate, all wrapped in `motion-safe:`, no bounce/elastic easing
 
 ### Agent skills (layout and redundancy)
 
@@ -89,6 +98,17 @@ If a symlink breaks on clone (e.g. Windows), recreate: from `.claude/skills/`, p
 
 ### CORS / Port Configuration
 The backend CORS policy allows credentials from `FrontendUrls` / `FrontendUrl` config and defaults to `http://localhost:5173`. Vite is configured to use port **5173** and proxy `/api` to the backend at `https://localhost:7229`.
+
+## Agent Guidance Files
+
+All agent guidance files live at the **project root** for auto-discovery:
+
+| File | Purpose |
+|------|---------|
+| `CLAUDE.md` | Agent onboarding — commands, architecture, key files |
+| `.impeccable.md` | Design context — brand personality, audiences, design principles |
+| `STYLE_GUIDE.md` | Bloom theme — palette, typography, components, anti-patterns |
+| `BUILDPROMPT.md` | Feature roadmap with phased deliverables |
 
 ## Build Plan
 The project has a detailed roadmap in `BUILDPROMPT.md`. The backend auth skeleton is complete, and the frontend now has a basic scaffold plus dev proxy wiring. Phase 0 still covers the foundational work needed before feature-heavy pages are built.

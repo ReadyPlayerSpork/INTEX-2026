@@ -248,6 +248,15 @@ focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-v
 
 ## Component Conventions
 
+> **shadcn audit rule:** When creating, modifying, or reviewing any shadcn/ui component, agents **must** consult the `/shadcn` skill (`SKILL.md` and its `rules/` sub-files). Specifically:
+>
+> 1. **Before writing component code** — run `npx shadcn@latest docs <component>` and fetch the returned URLs to confirm the correct API and composition patterns.
+> 2. **After writing or editing** — verify the code against the Critical Rules in the shadcn skill: correct spacing (`gap-*` not `space-*`), proper composition (`render` for base, items inside groups, full Card structure), semantic colors (no raw Tailwind color values), and correct icon usage (`data-icon`, no sizing classes).
+> 3. **Forms** — use `FieldGroup` + `Field` layout, `data-invalid`/`aria-invalid` for validation, and `ToggleGroup` for small option sets. Never use raw `div` wrappers with `space-y-*`.
+> 4. **Third-party registry components** — after installing, read the added files and fix any hardcoded import paths, missing sub-components, or Radix-specific APIs that need adapting to `base`.
+>
+> This project uses **`base`** (not `radix`) as its primitive library. Use `render` (not `asChild`) for custom triggers, scalar `defaultValue` on `Slider`, and the `items` prop on `Select`. See `rules/base-vs-radix.md` in the shadcn skill for the full API differences.
+
 ### Buttons
 
 Use the shadcn `<Button>` component. All buttons in this design are `rounded-full` (pill-shaped).

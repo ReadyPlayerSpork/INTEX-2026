@@ -137,32 +137,87 @@ The application uses **additive roles**, not mutually exclusive account types. A
 
 ---
 
-## Phase 2: Public & Shared Pages
+## Phase 2: Wireframed Pages (Landing, Donor Dashboard, Admin Dashboard)
 
-These pages are visible to anyone (some require authentication but no specific role).
+> **Design source:** The `Figma Wireframes/` directory at the project root contains three reference implementations — `Landing Page/`, `Donor Page/`, and `Admin Page/`. These are the **canonical design targets** for this phase. Build each page to match the wireframe's layout, component structure, and content hierarchy, then apply the Bloom theme from `STYLE_GUIDE.md` and audit all shadcn components per the `/shadcn` skill rules.
+>
+> The wireframes were generated as Next.js code. When adapting them for this project's Vite + React Router stack: replace `next/link` with React Router `<Link>`, remove `"use client"` directives, replace `next/image` with standard `<img>` tags, and adjust any Next.js-specific patterns. The wireframes use `radix`-style shadcn APIs (e.g. `asChild`); convert to `base`-style APIs (e.g. `render`) since this project uses the `base` primitive library.
 
-1. **Landing Page** (`/`) — Public. Organization overview, mission statement, calls to action (donate, volunteer, learn more). Hero section, key impact stats pulled from `public_impact_snapshots`.
-2. **Login Page** (`/login`) — Public. Email/password form + Google OAuth button. On success, redirect to the user's default landing page based on their highest-priority role set.
-3. **Registration Page** (`/register`) — Public. Email, password (14+ chars), confirm password. Do not require mutually exclusive role selection at signup.
+These are the first three pages to build because they have validated wireframe designs. Complete all three before moving to other pages.
+
+### 2A. Landing Page (`/`)
+
+**Wireframe:** `Figma Wireframes/Landing Page/app/donate/page.tsx` and `components/landing/`
+
+Public page. The primary entry point for the organization. Compose from these sections (matching the wireframe):
+
+1. **Landing Header** — Fixed top navbar with logo (Fraunces, plum), nav links (Our Impact, Programs, Stories, About), and a "Donate Now" CTA button. Apply the pill-shaped nav style from `STYLE_GUIDE.md`.
+2. **Hero Section** — Full-viewport hero with headline ("Every Girl Deserves a Chance to Shine" or adapted copy), body text, primary CTA ("Donate Now"), and secondary CTA ("See Our Impact"). Subtle background pattern with blurred circles.
+3. **Impact Stats** — Dark (plum) background section with 4 stat cards: girls helped, success rate, scholarships, countries reached. Stats pulled from `public_impact_snapshots` when the API is ready; hardcode placeholder values initially.
+4. **Donation Usage** — Section explaining where donations go. Match the wireframe's layout.
+5. **Testimonials** — Survivor/donor testimonial cards on blush background.
+6. **Donation Selector** — Donation amount picker with preset amounts and custom input. This is a simplified inline donate widget; the full donate form is built in Phase 3.
+7. **Landing Footer** — 4-column footer with brand, About links, Programs links, Support links, and a bottom bar with privacy/terms links.
+
+### 2B. Donor Dashboard (`/donor/dashboard`)
+
+**Wireframe:** `Figma Wireframes/Donor Page/app/donor/page.tsx` and `components/donor/`
+
+Authenticated (Donor role baseline). The default landing page for users whose highest-priority role is Donor. Compose from:
+
+1. **Donor Sidebar** — Fixed left sidebar with navigation: Dashboard, My Donations, Tax Documents, Impact, Settings. Logo and support card at bottom.
+2. **Donor Header** — Top bar with search, notifications bell, and user avatar/menu.
+3. **Impact Summary** — 4 metric cards: Total Donated, Lives Impacted, Programs Supported, Impact Score. Each with icon, value, subtext, and trend indicator.
+4. **Donation CTA** — Prominent card encouraging the user to make their next donation.
+5. **Allocation Chart** — Pie/donut chart showing how the donor's contributions are allocated across programs.
+6. **Recent Activity** — List of recent donation transactions with date, amount, and campaign.
+7. **Impact Stories** — Cards featuring stories of residents helped by donations.
+
+Wire up the Impact Summary metrics to pull from `GET /api/donors/{id}/summary` (or equivalent) when the API exists. Use placeholder data initially.
+
+### 2C. Admin Dashboard (`/admin/dashboard`)
+
+**Wireframe:** `Figma Wireframes/Admin Page/app/page.tsx` and `components/dashboard/`
+
+Gated behind the Admin role. The executive command center. Compose from:
+
+1. **Admin Sidebar** — Fixed left sidebar with navigation: Dashboard, Residents, Donations, Reports, Settings. Logo and support card at bottom.
+2. **Header** — Top bar with search input, notification bell, and admin user avatar/menu.
+3. **Quick Actions** — Button group for common admin tasks (e.g. Add Resident, New Report).
+4. **Metrics Cards** — Summary cards across the top: total residents, active cases, donations this month, unresolved incidents (or similar metrics matching the wireframe).
+5. **Donations Chart** — Line or bar chart showing donation trends over time. Takes 2/3 width on desktop.
+6. **Alerts Section** — Right column showing alerts that need attention (residents at risk, overdue sessions, etc.).
+7. **Residents Table** — Paginated, searchable table of residents with key columns (name/code, safehouse, status, risk level, last session date).
+
+Wire up to backend list/summary endpoints when available. Use placeholder data initially. The full Admin Dashboard specification in Phase 8 adds more panels (financial health, social media overview, etc.) — build those additions when that phase is reached.
+
+---
+
+## Phase 3: Public & Shared Pages
+
+These pages are visible to anyone (some require authentication but no specific role). The Landing Page was built in Phase 2; the items below cover the remaining public and shared pages.
+
+1. **Login Page** (`/login`) — Public. Email/password form + Google OAuth button. On success, redirect to the user's default landing page based on their highest-priority role set.
+2. **Registration Page** (`/register`) — Public. Email, password (14+ chars), confirm password. Do not require mutually exclusive role selection at signup.
    - Every new authenticated user should receive the `Donor` role by default.
    - If desired, include an onboarding question such as "Which best describes you?" with options like Volunteer/Employee, Donor/Supporter, or Survivor seeking resources, but use that for personalization and routing rather than exclusive RBAC.
    - Include a required "How did you hear about us?" field.
    - Save this to the database in a way that can be queried for analytics and ML by account type and eventual role grouping.
-4. **Privacy Policy Page** (`/privacy`) — Public. GDPR-compliant privacy policy. Explain data collection, usage, rights, and contact information.
-5. **Cookie Consent Banner** — Appears on first visit. Stores consent in localStorage. Must appear on every page until accepted. Links to the privacy policy.
-6. **Public Impact Dashboard** (`/impact`) — Public. Anonymized aggregate stats from `public_impact_snapshots`. Total residents served, total donations, active safehouses, active partners. Visual charts/graphs. No personally identifiable information.
-7. **Volunteer & Events Page** (`/volunteer`) — Authenticated (any role). Shows upcoming events and volunteer programs. This is the default landing page for Employee role users.
-8. **Donate Page** (`/donate`) — Authenticated (any role). Allows any user to make a donation. Form captures donation type, amount, campaign, etc. This does not require the Donor role — anyone can donate.
-9. **Anonymous Donor Page** (`/donate/anonymous`) — Public. This is the minimum-friction donation option and must not require account creation or sign-in.
+3. **Privacy Policy Page** (`/privacy`) — Public. GDPR-compliant privacy policy. Explain data collection, usage, rights, and contact information.
+4. **Cookie Consent Banner** — Appears on first visit. Stores consent in localStorage. Must appear on every page until accepted. Links to the privacy policy.
+5. **Public Impact Dashboard** (`/impact`) — Public. Anonymized aggregate stats from `public_impact_snapshots`. Total residents served, total donations, active safehouses, active partners. Visual charts/graphs. No personally identifiable information.
+6. **Volunteer & Events Page** (`/volunteer`) — Authenticated (any role). Shows upcoming events and volunteer programs. This is the default landing page for Employee role users.
+7. **Donate Page** (`/donate`) — Authenticated (any role). Full donation form that captures donation type, amount, campaign, etc. This extends the inline donation selector on the Landing Page with a complete submission flow. This does not require the Donor role — anyone can donate.
+8. **Anonymous Donor Page** (`/donate/anonymous`) — Public. This is the minimum-friction donation option and must not require account creation or sign-in.
    - Collect payment information and donation details without forcing authentication.
    - Capture enough donor/contact information to issue receipts if the donor chooses to provide it, but keep the flow as short as possible.
    - Allow anonymous or guest donations to be saved in the database in a way that still supports financial reporting, campaign attribution, and tax/export workflows.
    - If the donor later creates an account, design the data model so anonymous donations can be linked retrospectively when appropriate.
-10. **Resources Page** (`/resources`) — Authenticated (any role). Crisis resources, hotline numbers, nearest safe home finder (uses `safehouses` data to show active locations). This is the default landing page for Survivor role users.
+9. **Resources Page** (`/resources`) — Authenticated (any role). Crisis resources, hotline numbers, nearest safe home finder (uses `safehouses` data to show active locations). This is the default landing page for Survivor role users.
 
 ---
 
-## Phase 3: Survivor-Specific Pages
+## Phase 4: Survivor-Specific Pages
 
 Gated behind the **Survivor** role.
 
@@ -172,12 +227,13 @@ Gated behind the **Survivor** role.
 
 ---
 
-## Phase 4: Donor Dashboard & Financial Pages
+## Phase 5: Donor Dashboard Extensions & Financial Pages
+
+> The Donor Dashboard shell was built in Phase 2 from the Figma wireframe. This phase wires it to real backend data and adds the Financial role pages.
 
 ### Donor Role Pages
 
-1. **Donor Dashboard** (`/donor/dashboard`) — Default landing page for the baseline authenticated donor experience. Shows the user's donation history (from `donations` table filtered by their supporter record), total giving, impact summary. Links to tax documents and the donate page.
-   - Where possible, include acquisition/source context so the organization can understand which outreach channels are bringing in retained donors.
+1. **Donor Dashboard data integration** (`/donor/dashboard`) — Connect the Phase 2 wireframe components to live API endpoints: donation history from `donations` filtered by the user's supporter record, total giving, impact summary, allocation chart, and recent activity. Add acquisition/source context where possible so the organization can understand which outreach channels are bringing in retained donors.
 
 ### Financial Role Pages (assigned by Admin)
 
@@ -191,7 +247,7 @@ Gated behind the **Survivor** role.
 
 ---
 
-## Phase 5: Case Management & Counselor Pages
+## Phase 6: Case Management & Counselor Pages
 
 ### Counselor Role Pages
 
@@ -208,7 +264,7 @@ Gated behind the **Survivor** role.
 
 ---
 
-## Phase 6: Social Media Pages
+## Phase 7: Social Media Pages
 
 Gated behind the **SocialMedia** role.
 
@@ -304,11 +360,11 @@ Gated behind the **SocialMedia** role.
 
 ---
 
-## Phase 7: Admin Dashboard & System Management
+## Phase 8: Admin Dashboard Extensions & System Management
 
-Gated behind the **Admin** role. The admin dashboard is the executive command center — it should give leadership a complete picture of organizational health at a glance without needing to navigate to individual tools.
+Gated behind the **Admin** role. The admin dashboard shell (sidebar, header, metrics cards, donations chart, alerts, residents table) was built in Phase 2 from the Figma wireframe. This phase extends it into the full executive command center with live data, additional panels, and the remaining admin management pages.
 
-1. **Admin Executive Dashboard** (`/admin/dashboard`) — A single-page overview with the following sections/cards:
+1. **Admin Executive Dashboard extensions** (`/admin/dashboard`) — Expand the Phase 2 wireframe dashboard into a comprehensive single-page overview. Wire existing components to real API data and add the following sections/cards:
 
    ### Financial Health Overview
    - **Total donations this month** vs last month (with % change arrow, green/red)
@@ -353,15 +409,15 @@ Gated behind the **Admin** role. The admin dashboard is the executive command ce
 
 ---
 
-## Phase 8: Security Hardening (IS 414 Requirements)
+## Phase 9: Security Hardening (IS 414 Requirements)
 
 Complete these security requirements across the entire application:
 
 1. **HTTPS/TLS** — Ensure all traffic uses HTTPS. Redirect HTTP to HTTPS. Deploy with a valid TLS certificate.
 2. **HSTS Header** — Add `Strict-Transport-Security` header in production.
 3. **CSP Headers** — Already implemented. Verify they cover the frontend assets once deployed.
-4. **Cookie Consent** — Built in Phase 2. Verify GDPR compliance.
-5. **Privacy Policy** — Built in Phase 2. Review for completeness.
+4. **Cookie Consent** — Built in Phase 3. Verify GDPR compliance.
+5. **Privacy Policy** — Built in Phase 3. Review for completeness.
 6. **Input Validation & Sanitization** — Add server-side validation on all API endpoints using Data Annotations and FluentValidation. Sanitize all user inputs to prevent XSS and SQL injection.
 7. **Deletion Confirmations** — Every delete action in the UI must show a confirmation dialog before executing.
 8. **Credential Security** — Move all secrets (Google OAuth keys, connection strings, API keys) to environment variables or a secrets manager. Never commit secrets to the repo. Create an `.env.example` file documenting required variables. Production secrets must be injected through **Dokploy environment variables/secrets**, not hardcoded in compose files or committed manifests.
@@ -372,7 +428,7 @@ Complete these security requirements across the entire application:
 
 ---
 
-## Phase 9: ML Pipeline Integration (IS 455 Requirements)
+## Phase 10: ML Pipeline Integration (IS 455 Requirements)
 
 **Scoring:** 20 points total. Quality > quantity, but both matter. Each pipeline is graded on: Problem Framing, Data Prep & Exploration, Modeling & Feature Selection, Evaluation & Interpretation, Causal Analysis, and Deployment Integration. A poorly executed pipeline hurts more than it helps — do each one well before starting the next.
 
@@ -779,7 +835,7 @@ Add `ml-pipelines/serve.py` startup instructions to the project README and docum
 
 ---
 
-## Phase 10: Deployment & Final Polish
+## Phase 11: Deployment & Final Polish
 
 1. **Deploy with Dokploy** as the production platform. Create Dokploy services for the frontend, ASP.NET backend, ML service, and production database. Use PostgreSQL for production unless there is a strong reason otherwise. Configure environment variables and secrets through Dokploy.
 2. **Define Dokploy routing/domain setup** so the frontend and backend are served under the production domain with proper HTTPS/TLS termination. Configure CORS for the real Dokploy production URLs only.
