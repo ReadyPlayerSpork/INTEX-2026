@@ -1,0 +1,258 @@
+import { useCallback, useEffect, useState } from 'react'
+import { api } from '@/api/client'
+import { Button } from '@/components/ui/button'
+import type { PaginatedResponse } from '@/api/types'
+
+interface Intervention {
+  interventionPlanId: number
+  residentId: number
+  residentCode: string | null
+  interventionCategory: string
+  description: string | null
+  servicesProvided: string | null
+  targetDate: string | null
+  status: string
+}
+
+const EMPTY_FORM = {
+  residentId: '',
+  interventionCategory: '',
+  description: '',
+  servicesProvided: '',
+  targetDate: '',
+  status: '',
+  goalsSet: '',
+  progressNotes: '',
+}
+
+export function InterventionsPage() {
+  const [interventions, setInterventions] = useState<Intervention[]>([])
+  const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [editId, setEditId] = useState<number | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const pageSize = 20
+
+  const fetchInterventions = useCallback(async () => {
+    setLoading(true)
+    try {
+      const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+      if (categoryFilter) qs.set('category', categoryFilter)
+      if (statusFilter) qs.set('status', statusFilter)
+      const res = await api.get<PaginatedResponse<Intervention>>(`/api/interventions?${qs}`)
+      setInterventions(res.items)
+      setTotalCount(res.totalCount)
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
+  }, [page, categoryFilter, statusFilter])
+
+  useEffect(() => {
+    void fetchInterventions()
+  }, [fetchInterventions])
+
+  const totalPages = Math.ceil(totalCount / pageSize)
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+    const target = e.target
+    setForm((prev) => ({ ...prev, [target.name]: target.value }))
+  }
+
+  function startEdit(item: Intervention) {
+    setEditId(item.interventionPlanId)
+    setForm({
+      residentId: String(item.residentId),
+      interventionCategory: item.interventionCategory,
+      description: item.description ?? '',
+      servicesProvided: item.servicesProvided ?? '',
+      targetDate: item.targetDate ?? '',
+      status: item.status,
+      goalsSet: '',
+      progressNotes: '',
+    })
+    setShowForm(true)
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      const body = {
+        residentId: Number(form.residentId),
+        interventionCategory: form.interventionCategory,
+        description: form.description || null,
+        servicesProvided: form.servicesProvided || null,
+        targetDate: form.targetDate || null,
+        status: form.status,
+        goalsSet: form.goalsSet || null,
+        progressNotes: form.progressNotes || null,
+      }
+      if (editId) {
+        await api.put(`/api/interventions/${editId}`, body)
+      } else {
+        await api.post('/api/interventions', body)
+      }
+      setForm(EMPTY_FORM)
+      setEditId(null)
+      setShowForm(false)
+      void fetchInterventions()
+    } catch {
+      // ignore
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function cancelForm() {
+    setForm(EMPTY_FORM)
+    setEditId(null)
+    setShowForm(false)
+  }
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Intervention Plans</h1>
+        <Button onClick={() => (showForm ? cancelForm() : setShowForm(true))}>
+          {showForm ? 'Cancel' : 'New Plan'}
+        </Button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleSubmit} className="bg-card border-border mb-6 rounded-lg border p-6">
+          <h2 className="mb-4 text-lg font-semibold">{editId ? 'Edit Plan' : 'New Intervention Plan'}</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-sm font-medium">Resident ID</span>
+              <input name="residentId" type="number" required value={form.residentId} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium">Category</span>
+              <input name="interventionCategory" type="text" required value={form.interventionCategory} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium">Target Date</span>
+              <input name="targetDate" type="date" value={form.targetDate} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium">Status</span>
+              <select name="status" required value={form.status} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm">
+                <option value="">Select...</option>
+                <option value="Planned">Planned</option>
+                <option value="InProgress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="OnHold">On Hold</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </label>
+            <label className="col-span-2 block">
+              <span className="text-sm font-medium">Description</span>
+              <textarea name="description" rows={2} value={form.description} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+            </label>
+            <label className="col-span-2 block">
+              <span className="text-sm font-medium">Services Provided</span>
+              <textarea name="servicesProvided" rows={2} value={form.servicesProvided} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+            </label>
+            <label className="col-span-2 block">
+              <span className="text-sm font-medium">Goals Set</span>
+              <textarea name="goalsSet" rows={2} value={form.goalsSet} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+            </label>
+            <label className="col-span-2 block">
+              <span className="text-sm font-medium">Progress Notes</span>
+              <textarea name="progressNotes" rows={2} value={form.progressNotes} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+            </label>
+          </div>
+          <div className="mt-4">
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Saving...' : editId ? 'Update Plan' : 'Save Plan'}
+            </Button>
+          </div>
+        </form>
+      )}
+
+      <div className="mb-4 flex flex-wrap gap-3">
+        <input
+          type="text"
+          placeholder="Filter by category..."
+          value={categoryFilter}
+          onChange={(e) => { setCategoryFilter(e.target.value); setPage(1) }}
+          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
+          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+        >
+          <option value="">All statuses</option>
+          <option value="Planned">Planned</option>
+          <option value="InProgress">In Progress</option>
+          <option value="Completed">Completed</option>
+          <option value="OnHold">On Hold</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <p className="text-muted-foreground animate-pulse">Loading...</p>
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-border border-b text-left">
+                  <th className="px-3 py-2 font-medium">Resident</th>
+                  <th className="px-3 py-2 font-medium">Category</th>
+                  <th className="px-3 py-2 font-medium">Description</th>
+                  <th className="px-3 py-2 font-medium">Services</th>
+                  <th className="px-3 py-2 font-medium">Target Date</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {interventions.map((item) => (
+                  <tr key={item.interventionPlanId} className="border-border border-b">
+                    <td className="px-3 py-2">{item.residentCode ?? item.residentId}</td>
+                    <td className="px-3 py-2">{item.interventionCategory}</td>
+                    <td className="max-w-xs truncate px-3 py-2">{item.description ?? '-'}</td>
+                    <td className="max-w-xs truncate px-3 py-2">{item.servicesProvided ?? '-'}</td>
+                    <td className="px-3 py-2">{item.targetDate ?? '-'}</td>
+                    <td className="px-3 py-2">{item.status}</td>
+                    <td className="px-3 py-2">
+                      <button onClick={() => startEdit(item)} className="text-primary text-xs underline">
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between">
+              <p className="text-muted-foreground text-sm">
+                Page {page} of {totalPages} ({totalCount} records)
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                  Previous
+                </Button>
+                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
