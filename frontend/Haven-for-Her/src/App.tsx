@@ -14,6 +14,12 @@ import { VolunteerPage } from '@/pages/VolunteerPage'
 import { ResourcesPage } from '@/pages/ResourcesPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { RolesPage } from '@/pages/admin/RolesPage'
+import { DonorDashboardPage } from '@/pages/donor/DonorDashboardPage'
+import { FinancialDashboardPage } from '@/pages/financial/FinancialDashboardPage'
+import { DonorManagementPage } from '@/pages/financial/DonorManagementPage'
+import { DonationRecordsPage } from '@/pages/financial/DonationRecordsPage'
+import { InsightsPage } from '@/pages/financial/InsightsPage'
+import { ReportsPage } from '@/pages/financial/ReportsPage'
 import { CounselingPage } from '@/pages/survivor/CounselingPage'
 import { FindHomePage } from '@/pages/survivor/FindHomePage'
 import { MyResourcesPage } from '@/pages/survivor/MyResourcesPage'
@@ -38,6 +44,11 @@ function App() {
             <Route path="/resources" element={<ResourcesPage />} />
           </Route>
 
+          {/* Protected: Donor */}
+          <Route element={<ProtectedRoute allowedRoles={['Donor']} />}>
+            <Route path="/donor/dashboard" element={<DonorDashboardPage />} />
+          </Route>
+
           {/* Protected: Admin only */}
           <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
             <Route path="/admin/roles" element={<RolesPage />} />
@@ -46,7 +57,11 @@ function App() {
 
           {/* Protected: Financial */}
           <Route element={<ProtectedRoute allowedRoles={['Financial']} />}>
-            {/* Financial pages added in Phase 4 */}
+            <Route path="/financial/dashboard" element={<FinancialDashboardPage />} />
+            <Route path="/financial/donors" element={<DonorManagementPage />} />
+            <Route path="/financial/donations" element={<DonationRecordsPage />} />
+            <Route path="/financial/insights" element={<InsightsPage />} />
+            <Route path="/financial/reports" element={<ReportsPage />} />
           </Route>
 
           {/* Protected: Counselor */}
