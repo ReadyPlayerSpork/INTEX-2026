@@ -95,7 +95,7 @@ A phase is not complete until all of the following are true:
 
 ## Phase 1: Role & Access System
 
-The application has **six custom roles** beyond the existing Admin and Customer roles. Replace the existing "Customer" role concept with these user-facing roles. All role assignments (except the initial default) are managed by Admin users.
+The application uses **additive roles**, not mutually exclusive account types. Replace the existing "Customer" role concept with these user-facing roles. A single authenticated account may have multiple roles at once (for example `Donor + Admin`, `Donor + Employee`, or `Donor + SocialMedia`). All role assignments beyond the default baseline are managed by Admin users.
 
 ### Roles
 
@@ -105,14 +105,19 @@ The application has **six custom roles** beyond the existing Admin and Customer 
 | **Financial** | — (assigned by Admin) | Access to the financial dashboard, tax document generation, individual donation records, donor management page, and donor ML recommendations (when built). |
 | **Counselor** | — (assigned by Admin) | Access to the counselor dashboard, ability to volunteer for and manage counseling appointments, take session notes (process recordings), and view/manage assigned residents. |
 | **SocialMedia** | — (assigned by Admin) | Access to the social media analytics dashboard and the cross-posting tool (Meta + TikTok APIs). |
-| **Employee** | Selected at registration ("volunteer/employee") | Default landing page shows upcoming events and volunteer programs. Can be granted additional roles by Admin. Has access to whatever tools their additional roles provide. |
-| **Donor** | Selected at registration ("donor") | Default landing page is the donor dashboard showing their donation history, impact metrics, and tax receipts. Also has access to volunteer and resource pages. |
-| **Survivor** | Selected at registration ("survivor") | Default landing page shows crisis resources, nearest safe home finder, and the ability to apply for counseling. Also has access to volunteer and donate pages. |
+| **Employee** | optional, assigned by Admin or by approved registration workflow | Default landing page shows upcoming events and volunteer programs. Can be granted additional roles by Admin. Has access to whatever tools their additional roles provide. |
+| **Donor** | baseline for all authenticated users | Authenticated users can view their own donation history, impact metrics, and tax receipts. This role is additive and may coexist with Admin, Employee, SocialMedia, Counselor, etc. |
+| **Survivor** | optional, assigned by Admin or by approved registration workflow | Grants survivor-specific pages like counseling requests and personalized resources. Also has access to public/authenticated shared pages. |
 
 ### Implementation Steps
 
 1. **Extend the backend role system.** Update `AuthRoles.cs` to define all seven roles: Admin, Financial, Counselor, SocialMedia, Employee, Donor, Survivor. Update `AuthIdentityGenerator` to seed all roles on startup. Keep the default admin user.
+   - `Donor` should be treated as the baseline authenticated role.
+   - Roles must be additive. Do not build the authorization system around mutually exclusive personas.
 2. **Update the registration flow.** Modify the registration endpoint (or add a post-registration step) so that new users select one of three account types: "Volunteer/Employee," "Donor," or "Survivor." Based on selection, assign the corresponding default role. All users implicitly have access to the volunteer page, donate page, and resources page — these are public-authenticated pages, not role-gated.
+   - Override the earlier mutually-exclusive interpretation: every newly registered authenticated user should receive the `Donor` role by default.
+   - If onboarding asks "Which best describes you?" treat that answer as a primary persona or UX preference, not as an exclusive RBAC choice.
+   - If the project chooses to grant `Employee` or `Survivor` during registration, those roles must be additive on top of `Donor`, not replacements for it.
    - Add a required "How did you hear about us?" question during registration.
    - Save this value in the database as structured acquisition/source data so it can be analyzed later for donors, survivors, and volunteers.
    - Prefer a normalized or controlled set of source values over arbitrary free text, with an optional free-text detail field only if needed.
@@ -137,8 +142,10 @@ The application has **six custom roles** beyond the existing Admin and Customer 
 These pages are visible to anyone (some require authentication but no specific role).
 
 1. **Landing Page** (`/`) — Public. Organization overview, mission statement, calls to action (donate, volunteer, learn more). Hero section, key impact stats pulled from `public_impact_snapshots`.
-2. **Login Page** (`/login`) — Public. Email/password form + Google OAuth button. On success, redirect to the user's default landing page based on their primary role.
-3. **Registration Page** (`/register`) — Public. Email, password (14+ chars), confirm password. A role selector: "I am a Volunteer/Employee," "I am a Donor," "I am a Survivor." On success, assign default role and redirect to their landing page.
+2. **Login Page** (`/login`) — Public. Email/password form + Google OAuth button. On success, redirect to the user's default landing page based on their highest-priority role set.
+3. **Registration Page** (`/register`) — Public. Email, password (14+ chars), confirm password. Do not require mutually exclusive role selection at signup.
+   - Every new authenticated user should receive the `Donor` role by default.
+   - If desired, include an onboarding question such as "Which best describes you?" with options like Volunteer/Employee, Donor/Supporter, or Survivor seeking resources, but use that for personalization and routing rather than exclusive RBAC.
    - Include a required "How did you hear about us?" field.
    - Save this to the database in a way that can be queried for analytics and ML by account type and eventual role grouping.
 4. **Privacy Policy Page** (`/privacy`) — Public. GDPR-compliant privacy policy. Explain data collection, usage, rights, and contact information.
@@ -169,7 +176,7 @@ Gated behind the **Survivor** role.
 
 ### Donor Role Pages
 
-1. **Donor Dashboard** (`/donor/dashboard`) — Default landing page for Donor role. Shows the user's donation history (from `donations` table filtered by their supporter record), total giving, impact summary. Links to tax documents and the donate page.
+1. **Donor Dashboard** (`/donor/dashboard`) — Default landing page for the baseline authenticated donor experience. Shows the user's donation history (from `donations` table filtered by their supporter record), total giving, impact summary. Links to tax documents and the donate page.
    - Where possible, include acquisition/source context so the organization can understand which outreach channels are bringing in retained donors.
 
 ### Financial Role Pages (assigned by Admin)
