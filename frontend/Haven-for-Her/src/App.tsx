@@ -10,6 +10,7 @@ import { PrivacyPage } from '@/pages/PrivacyPage'
 import { ImpactPage } from '@/pages/ImpactPage'
 import { DonatePage } from '@/pages/DonatePage'
 import { AnonymousDonatePage } from '@/pages/AnonymousDonatePage'
+import { useAuth } from '@/contexts/AuthContext'
 import { VolunteerPage } from '@/pages/VolunteerPage'
 import { ResourcesPage } from '@/pages/ResourcesPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -24,6 +25,12 @@ import { CounselingPage } from '@/pages/survivor/CounselingPage'
 import { FindHomePage } from '@/pages/survivor/FindHomePage'
 import { MyResourcesPage } from '@/pages/survivor/MyResourcesPage'
 
+function DonateRouter() {
+  const { isAuthenticated, isLoading } = useAuth()
+  if (isLoading) return null
+  return isAuthenticated ? <DonatePage /> : <AnonymousDonatePage />
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -35,14 +42,9 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/impact" element={<ImpactPage />} />
-          <Route path="/donate/anonymous" element={<AnonymousDonatePage />} />
-
-          {/* Protected: any authenticated user */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/donate" element={<DonatePage />} />
-            <Route path="/volunteer" element={<VolunteerPage />} />
-            <Route path="/resources" element={<ResourcesPage />} />
-          </Route>
+          <Route path="/donate" element={<DonateRouter />} />
+          <Route path="/volunteer" element={<VolunteerPage />} />
+          <Route path="/resources" element={<ResourcesPage />} />
 
           {/* Protected: Donor */}
           <Route element={<ProtectedRoute allowedRoles={['Donor']} />}>

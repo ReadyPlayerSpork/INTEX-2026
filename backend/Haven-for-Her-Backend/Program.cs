@@ -24,9 +24,9 @@ builder.Services.AddDbContext<HavenForHerBackendDbContext>(options =>
 builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("HavenForHerBackendIdentityConnection")));
 
-builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<AuthIdentityDbContext>();
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<AuthIdentityDbContext>()
+    .AddDefaultTokenProviders();
 
 if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
 {
@@ -65,9 +65,20 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.SlidingExpiration = true;
+    // Return 401/403 JSON for API calls instead of redirecting to a login page
+    options.Events.OnRedirectToLogin = ctx =>
+    {
+        ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = ctx =>
+    {
+        ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddCors(options =>
@@ -106,7 +117,5 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Identity login/register endpoints under /api/auth (used by AccountController and direct login)
-app.MapGroup("/api/auth").MapIdentityApi<ApplicationUser>();
 
 app.Run();

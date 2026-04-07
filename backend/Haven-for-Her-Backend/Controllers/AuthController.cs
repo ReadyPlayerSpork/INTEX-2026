@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Haven_for_Her_Backend.Data;
+using Haven_for_Her_Backend.Dtos;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -158,6 +159,26 @@ public class AuthController(
 
         await signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
         return Redirect(BuildFrontendSuccessUrl(returnPath));
+    }
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        var user = await userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+        {
+            return Unauthorized(new { message = "Invalid email or password." });
+        }
+
+        var result = await signInManager.PasswordSignInAsync(
+            user, request.Password, isPersistent: false, lockoutOnFailure: false);
+
+        if (!result.Succeeded)
+        {
+            return Unauthorized(new { message = "Invalid email or password." });
+        }
+
+        return Ok(new { message = "Login successful." });
     }
 
     [HttpPost("logout")]
