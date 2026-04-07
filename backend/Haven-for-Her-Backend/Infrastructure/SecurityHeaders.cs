@@ -11,7 +11,7 @@ namespace Haven_for_Her_Backend.Infrastructure
             {
                 context.Response.OnStarting(() =>
                 {
-                    if (!(environment.IsDevelopment() && context.Request.Path.StartsWithSegments("/swagger")))
+                    if (!(environment.IsDevelopment() && context.Request.Path.StartsWithSegments("/openapi")))
                     {
                         context.Response.Headers["Content-Security-Policy"] = ContentSecurityPolicy;
                     }

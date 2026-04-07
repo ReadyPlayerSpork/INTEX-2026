@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Intex_Placeholder.Data;
+using Haven_for_Her_Backend.Data;
 using Microsoft.AspNetCore.Identity;
-using Intex_Placeholder.Infrastructure;
+using Haven_for_Her_Backend.Infrastructure;
 using Microsoft.AspNetCore.Authentication.Google;
 
 var builder = WebApplication.CreateBuilder(args);
