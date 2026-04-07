@@ -53,25 +53,25 @@ export function DonorDashboardPage() {
   }
 
   return (
-    <div className=”mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20”>
-      <div className=”mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between”>
+    <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className=”text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase”>
+          <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
             Donor dashboard
           </p>
-          <h1 className=”font-heading mt-2 text-4xl font-semibold text-accent”>
+          <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
             Your giving history
           </h1>
         </div>
-        <Link to=”/donate”>
+        <Link to="/donate">
           <Button>Make a donation</Button>
         </Link>
       </div>
 
-      <div className=”mb-8 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-3”>
-        <Stat label=”Total donations” value={data.totalDonations} />
+      <div className="mb-8 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-3">
+        <Stat label="Total donations" value={data.totalDonations} />
         <GivingTotalsCard rows={data.givingTotalsByCurrency} />
-        <Stat label=”Recurring” value={data.recurringDonations} />
+        <Stat label="Recurring" value={data.recurringDonations} />
       </div>
 
       <h2 className="mb-4 text-lg font-semibold">Recent Donations</h2>
