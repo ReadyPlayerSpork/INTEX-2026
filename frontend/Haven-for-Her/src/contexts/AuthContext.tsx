@@ -1,44 +1,15 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { authApi } from '@/api/authApi'
 import type { SessionResponse } from '@/api/types'
-
-interface AuthState {
-  isAuthenticated: boolean
-  userName: string | null
-  email: string | null
-  roles: string[]
-  isLoading: boolean
-}
-
-interface AuthContextValue extends AuthState {
-  /** Re-fetch the session from the backend */
-  refresh: () => Promise<void>
-  /** Log out and clear session */
-  logout: () => Promise<void>
-  /** Check if the user has at least one of the given roles */
-  hasRole: (...roles: string[]) => boolean
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
-
-const INITIAL_STATE: AuthState = {
-  isAuthenticated: false,
-  userName: null,
-  email: null,
-  roles: [],
-  isLoading: true,
-}
+import {
+  AuthContext,
+  INITIAL_AUTH_STATE,
+  type AuthContextValue,
+  type AuthState,
+} from '@/contexts/auth-context'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>(INITIAL_STATE)
+  const [state, setState] = useState<AuthState>(INITIAL_AUTH_STATE)
 
   const hydrate = useCallback(async () => {
     try {
@@ -51,13 +22,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
       })
     } catch {
-      setState({ ...INITIAL_STATE, isLoading: false })
+      setState({ ...INITIAL_AUTH_STATE, isLoading: false })
     }
   }, [])
 
   const logout = useCallback(async () => {
     await authApi.logout()
-    setState({ ...INITIAL_STATE, isLoading: false })
+    setState({ ...INITIAL_AUTH_STATE, isLoading: false })
   }, [])
 
   const hasRole = useCallback(
@@ -67,7 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   useEffect(() => {
-    void hydrate()
+    const timerId = window.setTimeout(() => {
+      void hydrate()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timerId)
+    }
   }, [hydrate])
 
   const value = useMemo<AuthContextValue>(
@@ -76,10 +53,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within <AuthProvider>')
-  return ctx
 }

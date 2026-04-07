@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/hooks/useAuth'
 
 interface ProtectedRouteProps {
   /** Roles that are allowed to access this route. If empty, any authenticated user can access. */

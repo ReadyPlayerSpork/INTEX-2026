@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { adminApi, type UserDto } from '@/api/adminApi'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/hooks/useAuth'
 
 const ALL_ROLES = [
   'Admin',

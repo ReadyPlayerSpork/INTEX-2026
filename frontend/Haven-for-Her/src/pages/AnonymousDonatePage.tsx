@@ -1,44 +1,24 @@
-import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '@/api/client'
-import { ApiError } from '@/api/client'
 import { Button } from '@/components/ui/button'
+import { useAnonymousDonateForm } from '@/features/public/donate/useAnonymousDonateForm'
 
 export function AnonymousDonatePage() {
-  const [amount, setAmount] = useState('')
-  const [campaign, setCampaign] = useState('')
-  const [donorName, setDonorName] = useState('')
-  const [donorEmail, setDonorEmail] = useState('')
-  const [notes, setNotes] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    try {
-      await api.post('/api/donations/anonymous', {
-        donationType: 'Monetary',
-        amount: parseFloat(amount),
-        campaignName: campaign || null,
-        donorName: donorName || null,
-        donorEmail: donorEmail || null,
-        notes: notes || null,
-      })
-      setSuccess(true)
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message)
-      } else {
-        setError('An unexpected error occurred.')
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
+  const {
+    amount,
+    campaign,
+    donorName,
+    donorEmail,
+    notes,
+    loading,
+    success,
+    error,
+    onAmountChange,
+    onCampaignChange,
+    onDonorNameChange,
+    onDonorEmailChange,
+    onNotesChange,
+    onSubmit,
+  } = useAnonymousDonateForm()
 
   if (success) {
     return (
@@ -69,7 +49,7 @@ export function AnonymousDonatePage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Amount (PHP)</span>
           <input
@@ -78,7 +58,7 @@ export function AnonymousDonatePage() {
             min="1"
             step="0.01"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => onAmountChange(e.target.value)}
             className="border-input bg-background rounded-md border px-3 py-2 text-sm"
             placeholder="0.00"
           />
@@ -89,7 +69,7 @@ export function AnonymousDonatePage() {
           <input
             type="text"
             value={campaign}
-            onChange={(e) => setCampaign(e.target.value)}
+            onChange={(e) => onCampaignChange(e.target.value)}
             className="border-input bg-background rounded-md border px-3 py-2 text-sm"
             placeholder="e.g. Holiday Giving 2026"
           />
@@ -102,7 +82,7 @@ export function AnonymousDonatePage() {
           <input
             type="text"
             value={donorName}
-            onChange={(e) => setDonorName(e.target.value)}
+            onChange={(e) => onDonorNameChange(e.target.value)}
             className="border-input bg-background rounded-md border px-3 py-2 text-sm"
           />
         </label>
@@ -114,7 +94,7 @@ export function AnonymousDonatePage() {
           <input
             type="email"
             value={donorEmail}
-            onChange={(e) => setDonorEmail(e.target.value)}
+            onChange={(e) => onDonorEmailChange(e.target.value)}
             className="border-input bg-background rounded-md border px-3 py-2 text-sm"
           />
         </label>
@@ -125,7 +105,7 @@ export function AnonymousDonatePage() {
           </span>
           <textarea
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(e) => onNotesChange(e.target.value)}
             className="border-input bg-background rounded-md border px-3 py-2 text-sm"
             rows={2}
           />

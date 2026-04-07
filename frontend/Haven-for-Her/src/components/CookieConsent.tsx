@@ -1,17 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 
 const STORAGE_KEY = 'cookie-consent-accepted'
 
 export function CookieConsent() {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      setVisible(true)
-    }
-  }, [])
+  const [visible, setVisible] = useState(() => !localStorage.getItem(STORAGE_KEY))
 
   const accept = () => {
     localStorage.setItem(STORAGE_KEY, 'true')

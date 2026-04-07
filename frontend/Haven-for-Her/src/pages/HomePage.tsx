@@ -1,23 +1,9 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
-
-interface ImpactStats {
-  totalResidentsServed: number
-  activeResidents: number
-  totalDonations: number
-  totalDonationValuePhp: number
-  activeSafehouses: number
-  activePartners: number
-}
+import { useImpactStats } from '@/features/public/home/useImpactStats'
 
 export function HomePage() {
-  const [stats, setStats] = useState<ImpactStats | null>(null)
-
-  useEffect(() => {
-    api.get<ImpactStats>('/api/public/impact').then(setStats).catch(() => {})
-  }, [])
+  const { stats } = useImpactStats()
 
   return (
     <div>
