@@ -8,4 +8,17 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  // https://getbootstrap.com/docs/5.3/getting-started/vite/
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: [
+          'import',
+          'color-functions',
+          'global-builtin',
+          'if-function',
+        ],
+      },
+    },
+  },
 })
