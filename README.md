@@ -26,13 +26,33 @@ Built by **BYU INTEX Section 2, Group 15**.
 - Node.js 20+
 - .NET 10 SDK
 
-### Frontend
+### 1. Backend
 
 ```bash
-cd frontend/haven-for-her
+cd backend/Haven-for-Her-Backend
+cp .env.example .env           # Fill in any values you need (Google OAuth, etc.)
+dotnet run                     # Runs on http://localhost:5064 / https://localhost:7229
+```
+
+Other backend commands:
+
+```bash
+dotnet build       # Build only
+dotnet watch       # Hot-reload dev server
+dotnet test        # Run xUnit tests (from backend/Haven-for-Her-Backend.Tests/)
+```
+
+In development, the OpenAPI JSON document is served at `/openapi/v1.json` (`Microsoft.AspNetCore.OpenApi`). There is no bundled Swagger UI; use that URL with an OpenAPI client or external UI if needed.
+
+### 2. Frontend
+
+```bash
+cd frontend/Haven-for-Her
 npm install
 npm run dev        # Vite dev server on http://localhost:5173
 ```
+
+The Vite dev server proxies `/api` requests to the backend at `https://localhost:7229`, so both must be running for the app to work.
 
 Other frontend commands:
 
@@ -42,21 +62,13 @@ npm run lint       # ESLint
 npm run preview    # Preview production build
 ```
 
-### Backend
+### 3. ML Service (future)
 
 ```bash
-cd backend/Haven-for-Her-Backend
-dotnet run         # Runs on http://localhost:5064 / https://localhost:7229
+cd ml-pipelines
+pip install -r requirements.txt
+python serve.py                # Flask/FastAPI microservice (not yet implemented)
 ```
-
-Other backend commands:
-
-```bash
-dotnet build       # Build only
-dotnet watch       # Hot-reload dev server
-```
-
-In development, the OpenAPI JSON document is served at `/openapi/v1.json` (`Microsoft.AspNetCore.OpenApi`). There is no bundled Swagger UI; use that URL with an OpenAPI client or external UI if needed.
 
 ---
 
@@ -65,9 +77,11 @@ In development, the OpenAPI JSON document is served at `/openapi/v1.json` (`Micr
 ```text
 INTEX-2026/
 |-- frontend/
-|   `-- haven-for-her/           # React + Vite app
-`-- backend/
-    `-- Haven-for-Her-Backend/   # ASP.NET Core API
+|   `-- Haven-for-Her/                  # React + Vite app (Tailwind + shadcn/ui)
+|-- backend/
+|   |-- Haven-for-Her-Backend/          # ASP.NET Core API
+|   `-- Haven-for-Her-Backend.Tests/    # xUnit test project
+`-- ml-pipelines/                       # ML notebooks & model serving (future)
 ```
 
 ### Backend
