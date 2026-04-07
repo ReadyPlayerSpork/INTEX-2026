@@ -5,6 +5,21 @@ export interface SessionResponse {
   userName: string | null;
   email: string | null;
   roles: string[];
+  twoFactorEnabled: boolean;
+}
+
+export interface LoginResponse {
+  requiresTwoFactor: boolean;
+  message: string;
+}
+
+export interface TwoFactorSetupResponse {
+  sharedKey: string;
+  authenticatorUri: string;
+}
+
+export interface TwoFactorStatusResponse {
+  isEnabled: boolean;
 }
 
 // ---- Shared ----

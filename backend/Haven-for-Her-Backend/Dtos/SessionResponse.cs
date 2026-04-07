@@ -7,5 +7,6 @@ public record SessionResponse(
     bool IsAuthenticated,
     string? UserName,
     string? Email,
-    IReadOnlyList<string> Roles
+    IReadOnlyList<string> Roles,
+    bool TwoFactorEnabled = false
 );

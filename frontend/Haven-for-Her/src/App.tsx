@@ -39,6 +39,11 @@ const ResourcesPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 )
+const SecuritySettingsPage = lazy(() =>
+  import('@/pages/SecuritySettingsPage').then((m) => ({
+    default: m.SecuritySettingsPage,
+  })),
+)
 
 const DonorDashboardPage = lazy(() =>
   import('@/pages/donor/DonorDashboardPage').then((m) => ({
@@ -190,6 +195,13 @@ function App() {
             <Route path="/donate" element={<DonateRouter />} />
             <Route path="/volunteer" element={<VolunteerPage />} />
             <Route path="/resources" element={<ResourcesPage />} />
+
+            <Route element={<ProtectedRoute />}>
+              <Route
+                path="/account/security"
+                element={<SecuritySettingsPage />}
+              />
+            </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['Donor']} />}>
               <Route path="/donor/dashboard" element={<DonorDashboardPage />} />

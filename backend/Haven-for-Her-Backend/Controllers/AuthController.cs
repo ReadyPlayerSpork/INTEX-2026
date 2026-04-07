@@ -15,7 +15,7 @@ public class AuthController(
     SignInManager<ApplicationUser> signInManager,
     IConfiguration configuration) : ControllerBase
 {
-    private const string DefaultFrontendUrl = "http://localhost:5173";
+    private const string DefaultFrontendUrl = "https://localhost:5173";
     private const string DefaultExternalReturnPath = "/";
 
     [HttpGet("me")]
@@ -34,11 +34,14 @@ public class AuthController(
             .OrderBy(role => role)
             .ToArray();
 
+        var twoFactorEnabled = user is not null && await userManager.GetTwoFactorEnabledAsync(user);
+
         return Ok(new SessionResponse(
             true,
             user?.UserName ?? User.Identity?.Name,
             user?.Email,
-            roles));
+            roles,
+            twoFactorEnabled));
     }
 
     [HttpGet("providers")]
@@ -158,19 +161,106 @@ public class AuthController(
     {
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user is null)
-        {
             return Unauthorized(new { message = "Invalid email or password." });
-        }
 
         var result = await signInManager.PasswordSignInAsync(
             user, request.Password, isPersistent: false, lockoutOnFailure: false);
 
+        if (result.RequiresTwoFactor)
+            return Ok(new { requiresTwoFactor = true, message = "Two-factor authentication required." });
+
         if (!result.Succeeded)
-        {
             return Unauthorized(new { message = "Invalid email or password." });
-        }
+
+        return Ok(new { requiresTwoFactor = false, message = "Login successful." });
+    }
+
+    [HttpPost("login-2fa")]
+    public async Task<IActionResult> LoginTwoFactor([FromBody] LoginTwoFactorRequest request)
+    {
+        var user = await signInManager.GetTwoFactorAuthenticationUserAsync();
+        if (user is null)
+            return Unauthorized(new { message = "Two-factor session expired. Please log in again." });
+
+        var result = await signInManager.TwoFactorAuthenticatorSignInAsync(
+            request.Code, isPersistent: false, rememberClient: false);
+
+        if (!result.Succeeded)
+            return Unauthorized(new { message = "Invalid authenticator code." });
 
         return Ok(new { message = "Login successful." });
+    }
+
+    // ── 2FA Management ──────────────────────────────────────────────
+
+    [HttpGet("2fa/status")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> GetTwoFactorStatus()
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
+
+        var isEnabled = await userManager.GetTwoFactorEnabledAsync(user);
+        return Ok(new TwoFactorStatusResponse(isEnabled));
+    }
+
+    [HttpPost("2fa/setup")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> SetupTwoFactor()
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
+
+        await userManager.ResetAuthenticatorKeyAsync(user);
+        var unformattedKey = await userManager.GetAuthenticatorKeyAsync(user);
+        if (string.IsNullOrEmpty(unformattedKey))
+            return Problem("Unable to generate authenticator key.");
+
+        var email = await userManager.GetEmailAsync(user) ?? "user";
+        var uri = $"otpauth://totp/HavenForHer:{Uri.EscapeDataString(email)}?secret={unformattedKey}&issuer=HavenForHer&digits=6";
+
+        return Ok(new TwoFactorSetupResponse(FormatKey(unformattedKey), uri));
+    }
+
+    [HttpPost("2fa/verify")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> VerifyAndEnableTwoFactor([FromBody] TwoFactorVerifyRequest request)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
+
+        var code = request.Code.Replace(" ", "").Replace("-", "");
+        var isValid = await userManager.VerifyTwoFactorTokenAsync(
+            user, userManager.Options.Tokens.AuthenticatorTokenProvider, code);
+
+        if (!isValid)
+            return BadRequest(new { message = "Invalid verification code. Please try again." });
+
+        await userManager.SetTwoFactorEnabledAsync(user, true);
+        return Ok(new { message = "Two-factor authentication has been enabled." });
+    }
+
+    [HttpPost("2fa/disable")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<IActionResult> DisableTwoFactor()
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
+
+        await userManager.SetTwoFactorEnabledAsync(user, false);
+        await userManager.ResetAuthenticatorKeyAsync(user);
+        return Ok(new { message = "Two-factor authentication has been disabled." });
+    }
+
+    private static string FormatKey(string unformattedKey)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (var i = 0; i < unformattedKey.Length; i++)
+        {
+            if (i > 0 && i % 4 == 0) sb.Append(' ');
+            sb.Append(unformattedKey[i]);
+        }
+        return sb.ToString();
     }
 
     [HttpPost("logout")]

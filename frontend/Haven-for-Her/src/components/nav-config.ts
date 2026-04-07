@@ -21,6 +21,7 @@ export const ACCOUNT_NAV: NavItem[] = [
   { label: 'Counselor', to: '/counselor/dashboard', roles: ['Counselor'] },
   { label: 'Social Media', to: '/social/dashboard', roles: ['SocialMedia'] },
   { label: 'Admin', to: '/admin/dashboard', roles: ['Admin'] },
+  { label: 'Security', to: '/account/security', roles: [] },
 ]
 
 export function filterVisibleAccountItems(
@@ -28,7 +29,9 @@ export function filterVisibleAccountItems(
   hasRole: (...roles: string[]) => boolean,
 ): NavItem[] {
   if (!isAuthenticated) return []
-  return ACCOUNT_NAV.filter((item) => hasRole(...item.roles))
+  return ACCOUNT_NAV.filter(
+    (item) => item.roles.length === 0 || hasRole(...item.roles),
+  )
 }
 
 export const navLinkClassName =

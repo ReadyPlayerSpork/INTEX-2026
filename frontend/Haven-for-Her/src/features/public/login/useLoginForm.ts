@@ -7,14 +7,18 @@ import { useAuth } from "@/hooks/useAuth"
 import { getGoogleSignInUrl } from "@/lib/auth"
 import { getLandingPath } from "@/lib/roles"
 
+export type LoginStep = "credentials" | "two-factor"
+
 export function useLoginForm() {
   const navigate = useNavigate()
   const { refresh } = useAuth()
   const [searchParams] = useSearchParams()
   const externalError = searchParams.get("externalError")
 
+  const [step, setStep] = useState<LoginStep>("credentials")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [twoFactorCode, setTwoFactorCode] = useState("")
   const [error, setError] = useState<string | null>(externalError)
   const [loading, setLoading] = useState(false)
   const [googleAvailable, setGoogleAvailable] = useState(false)
@@ -42,16 +46,24 @@ export function useLoginForm() {
 
   const googleSignInUrl = useMemo(() => getGoogleSignInUrl("/"), [])
 
+  const completeLogin = async () => {
+    const session = await authApi.me()
+    await refresh()
+    navigate(getLandingPath(session.roles))
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
     setLoading(true)
 
     try {
-      await authApi.login(email, password)
-      const session = await authApi.me()
-      await refresh()
-      navigate(getLandingPath(session.roles))
+      const result = await authApi.login(email, password)
+      if (result.requiresTwoFactor) {
+        setStep("two-factor")
+      } else {
+        await completeLogin()
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.status === 401 ? "Invalid email or password." : err.message)
@@ -63,15 +75,45 @@ export function useLoginForm() {
     }
   }
 
+  const handleTwoFactorSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    try {
+      await authApi.loginTwoFactor(email, twoFactorCode)
+      await completeLogin()
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.status === 401 ? "Invalid authenticator code." : err.message)
+      } else {
+        setError("An unexpected error occurred.")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const backToCredentials = () => {
+    setStep("credentials")
+    setTwoFactorCode("")
+    setError(null)
+  }
+
   return {
+    step,
     email,
     password,
+    twoFactorCode,
     error,
     loading,
     googleAvailable,
     googleSignInUrl,
     onEmailChange: setEmail,
     onPasswordChange: setPassword,
+    onTwoFactorCodeChange: setTwoFactorCode,
     onSubmit: handleSubmit,
+    onTwoFactorSubmit: handleTwoFactorSubmit,
+    backToCredentials,
   }
 }

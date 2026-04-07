@@ -1,5 +1,10 @@
 import { api } from './client'
-import type { SessionResponse } from './types'
+import type {
+  LoginResponse,
+  SessionResponse,
+  TwoFactorSetupResponse,
+  TwoFactorStatusResponse,
+} from './types'
 
 export interface RegisterPayload {
   email: string
@@ -15,27 +20,44 @@ export interface ExternalProvider {
 }
 
 export const authApi = {
-  /** Get current user session */
   me(): Promise<SessionResponse> {
     return api.get<SessionResponse>('/api/auth/me')
   },
 
-  /** Sign out the current user */
   logout(): Promise<void> {
     return api.post('/api/auth/logout')
   },
 
-  /** Register a new user with persona and acquisition source */
   register(payload: RegisterPayload): Promise<void> {
     return api.post('/api/account/register', payload)
   },
 
-  /** Sign in with email + password via Identity API */
-  login(email: string, password: string): Promise<void> {
+  login(email: string, password: string): Promise<LoginResponse> {
     return api.post('/api/auth/login', { email, password })
+  },
+
+  loginTwoFactor(email: string, code: string): Promise<void> {
+    return api.post('/api/auth/login-2fa', { email, code })
   },
 
   providers(): Promise<ExternalProvider[]> {
     return api.get<ExternalProvider[]>('/api/auth/providers')
+  },
+
+  // 2FA management
+  twoFactorStatus(): Promise<TwoFactorStatusResponse> {
+    return api.get<TwoFactorStatusResponse>('/api/auth/2fa/status')
+  },
+
+  twoFactorSetup(): Promise<TwoFactorSetupResponse> {
+    return api.post('/api/auth/2fa/setup')
+  },
+
+  twoFactorVerify(code: string): Promise<void> {
+    return api.post('/api/auth/2fa/verify', { code })
+  },
+
+  twoFactorDisable(): Promise<void> {
+    return api.post('/api/auth/2fa/disable')
   },
 }

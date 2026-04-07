@@ -6,15 +6,20 @@ import { useLoginForm } from '@/features/public/login/useLoginForm'
 
 export function LoginPage() {
   const {
+    step,
     email,
     password,
+    twoFactorCode,
     error,
     loading,
     googleAvailable,
     googleSignInUrl,
     onEmailChange,
     onPasswordChange,
+    onTwoFactorCodeChange,
     onSubmit,
+    onTwoFactorSubmit,
+    backToCredentials,
   } = useLoginForm()
 
   return (
@@ -36,72 +41,119 @@ export function LoginPage() {
 
         <Card className="border-border/70 bg-card/95">
           <CardContent className="p-8">
-            <h2 className="font-heading text-3xl font-semibold text-accent">
-              Log in
-            </h2>
-            <p className="text-muted-foreground mt-2 text-sm leading-6">
-              Use your email and password, or continue with Google.
-            </p>
-
             {error && (
               <div
                 role="alert"
-                className="bg-destructive/10 text-destructive mt-6 rounded-2xl border border-destructive/20 p-3 text-sm"
+                className="bg-destructive/10 text-destructive mb-6 rounded-2xl border border-destructive/20 p-3 text-sm"
               >
                 {error}
               </div>
             )}
 
-            <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold">Email</span>
-                <Input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => onEmailChange(e.target.value)}
-                />
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold">Password</span>
-                <Input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => onPasswordChange(e.target.value)}
-                />
-              </label>
-
-              <Button type="submit" disabled={loading} className="mt-2">
-                {loading ? 'Signing in...' : 'Sign in'}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              {googleAvailable ? (
-                <a
-                  href={googleSignInUrl}
-                  className="text-accent text-sm font-semibold underline underline-offset-4 transition-colors hover:text-primary"
-                >
-                  Sign in with Google
-                </a>
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  Google sign-in is not available in this environment.
+            {step === 'credentials' ? (
+              <>
+                <h2 className="font-heading text-3xl font-semibold text-accent">
+                  Log in
+                </h2>
+                <p className="text-muted-foreground mt-2 text-sm leading-6">
+                  Use your email and password, or continue with Google.
                 </p>
-              )}
-            </div>
 
-            <p className="text-muted-foreground mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link
-                to="/register"
-                className="text-accent font-semibold underline underline-offset-4"
-              >
-                Sign up
-              </Link>
-            </p>
+                <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
+                  <label className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold">Email</span>
+                    <Input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => onEmailChange(e.target.value)}
+                    />
+                  </label>
+
+                  <label className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold">Password</span>
+                    <Input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => onPasswordChange(e.target.value)}
+                    />
+                  </label>
+
+                  <Button type="submit" disabled={loading} className="mt-2">
+                    {loading ? 'Signing in...' : 'Sign in'}
+                  </Button>
+                </form>
+
+                <div className="mt-6 text-center">
+                  {googleAvailable ? (
+                    <a
+                      href={googleSignInUrl}
+                      className="text-accent text-sm font-semibold underline underline-offset-4 transition-colors hover:text-primary"
+                    >
+                      Sign in with Google
+                    </a>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">
+                      Google sign-in is not available in this environment.
+                    </p>
+                  )}
+                </div>
+
+                <p className="text-muted-foreground mt-4 text-center text-sm">
+                  Don&apos;t have an account?{' '}
+                  <Link
+                    to="/register"
+                    className="text-accent font-semibold underline underline-offset-4"
+                  >
+                    Sign up
+                  </Link>
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="font-heading text-3xl font-semibold text-accent">
+                  Two-factor verification
+                </h2>
+                <p className="text-muted-foreground mt-2 text-sm leading-6">
+                  Enter the 6-digit code from your authenticator app.
+                </p>
+
+                <form
+                  onSubmit={onTwoFactorSubmit}
+                  className="mt-6 flex flex-col gap-4"
+                >
+                  <label className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold">
+                      Authenticator code
+                    </span>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      required
+                      autoFocus
+                      value={twoFactorCode}
+                      onChange={(e) => onTwoFactorCodeChange(e.target.value)}
+                    />
+                  </label>
+
+                  <Button type="submit" disabled={loading} className="mt-2">
+                    {loading ? 'Verifying...' : 'Verify'}
+                  </Button>
+                </form>
+
+                <button
+                  type="button"
+                  onClick={backToCredentials}
+                  className="text-muted-foreground mt-4 block w-full text-center text-sm underline underline-offset-4 hover:text-foreground"
+                >
+                  Back to sign in
+                </button>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

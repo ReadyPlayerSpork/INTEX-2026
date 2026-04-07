@@ -1,6 +1,7 @@
 import { Menu, UserRound } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -153,15 +154,12 @@ export function NavbarOverlays({
         <DropdownMenu>
           <DropdownMenuTrigger
             type="button"
-            render={
-              <Button
-                variant="outline"
-                size="sm"
-                className="hidden min-h-10 gap-2 md:inline-flex"
-                aria-label="Account menu"
-                aria-haspopup="menu"
-              />
-            }
+            className={cn(
+              buttonVariants({ variant: 'outline', size: 'sm' }),
+              'hidden min-h-10 gap-2 md:inline-flex',
+            )}
+            aria-label="Account menu"
+            aria-haspopup="menu"
           >
             <UserRound data-icon="inline-start" />
             <span>Account</span>
@@ -169,9 +167,11 @@ export function NavbarOverlays({
           <DropdownMenuContent align="end" className="min-w-56">
             {email ? (
               <>
-                <DropdownMenuLabel className="max-w-56 truncate font-normal">
-                  {email}
-                </DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="max-w-56 truncate font-normal">
+                    {email}
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
               </>
             ) : null}
@@ -188,9 +188,11 @@ export function NavbarOverlays({
               </DropdownMenuGroup>
             ) : null}
             {accountItems.length > 0 ? <DropdownMenuSeparator /> : null}
-            <DropdownMenuItem variant="destructive" onClick={() => void onLogout()}>
-              Log out
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuItem variant="destructive" onClick={() => void onLogout()}>
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (

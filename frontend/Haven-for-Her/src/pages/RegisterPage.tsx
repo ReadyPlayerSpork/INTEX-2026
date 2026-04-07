@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authApi } from '@/api/authApi'
 import { useAuth } from '@/hooks/useAuth'
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ApiError } from '@/api/client'
+import { getGoogleSignInUrl } from '@/lib/auth'
 
 const PERSONAS = [
   { value: 'Donor', label: 'Donor / Supporter' },
@@ -38,6 +39,24 @@ export function RegisterPage() {
   const [acquisitionDetail, setAcquisitionDetail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [googleAvailable, setGoogleAvailable] = useState(false)
+  const googleSignInUrl = useMemo(() => getGoogleSignInUrl('/'), [])
+
+  useEffect(() => {
+    let active = true
+    authApi
+      .providers()
+      .then((providers) => {
+        if (active)
+          setGoogleAvailable(
+            providers.some((p) => p.name.toLowerCase() === 'google'),
+          )
+      })
+      .catch(() => {
+        if (active) setGoogleAvailable(false)
+      })
+    return () => { active = false }
+  }, [])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -214,6 +233,21 @@ export function RegisterPage() {
                 {loading ? 'Creating account...' : 'Sign up'}
               </Button>
             </form>
+
+            <div className="mt-6 text-center">
+              {googleAvailable ? (
+                <a
+                  href={googleSignInUrl}
+                  className="text-accent text-sm font-semibold underline underline-offset-4 transition-colors hover:text-primary"
+                >
+                  Sign up with Google
+                </a>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Google sign-up is not available in this environment.
+                </p>
+              )}
+            </div>
 
             <p className="text-muted-foreground mt-4 text-center text-sm">
               Already have an account?{' '}
