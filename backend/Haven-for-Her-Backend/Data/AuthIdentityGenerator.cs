@@ -9,7 +9,7 @@ namespace Haven_for_Her_Backend.Data
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-            foreach (var roleName in new[] { AuthRoles.Admin, AuthRoles.Customer })
+            foreach (var roleName in AuthRoles.All)
             {
                 if (!await roleManager.RoleExistsAsync(roleName))
                 {
@@ -48,6 +48,15 @@ namespace Haven_for_Her_Backend.Data
                 if (!addToRoleResult.Succeeded)
                 {
                     throw new Exception($"Failed to assign admin role to user: {string.Join(", ", addToRoleResult.Errors.Select(e => e.Description))}");
+                }
+            }
+
+            if (!await userManager.IsInRoleAsync(adminUser, AuthRoles.Donor))
+            {
+                var addToRoleResult = await userManager.AddToRoleAsync(adminUser, AuthRoles.Donor);
+                if (!addToRoleResult.Succeeded)
+                {
+                    throw new Exception($"Failed to assign donor role to user: {string.Join(", ", addToRoleResult.Errors.Select(e => e.Description))}");
                 }
             }
         }
