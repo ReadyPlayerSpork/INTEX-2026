@@ -57,7 +57,6 @@ Roles currently defined: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Empl
 
 ### Frontend Structure
 Currently a lightly customized Vite scaffold with Bootstrap, React Router, and a simple auth connectivity check in `App.tsx`. The build plan (see `BUILDPROMPT.md`) calls for continuing with plain React patterns, Bootstrap styling, and a typed API client layer.
-
 ### Agent skills (layout and redundancy)
 
 | Location | Role |
