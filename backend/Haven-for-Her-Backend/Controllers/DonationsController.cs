@@ -17,6 +17,32 @@ public class DonationsController(
     private static readonly HashSet<string> ValidDonationTypes =
         ["Monetary", "InKind", "Time", "Skills", "SocialMedia"];
 
+    private static string? ResolveDonationType(string? requested)
+    {
+        var type = string.IsNullOrWhiteSpace(requested) ? "Monetary" : requested.Trim();
+        return ValidDonationTypes.Contains(type) ? type : null;
+    }
+
+    private static Donation BuildDonation(DonationRequest request, string donationType, int supporterId, string channelSource) => new()
+    {
+        SupporterId = supporterId,
+        DonationType = donationType,
+        DonationDate = DateOnly.FromDateTime(DateTime.UtcNow),
+        Amount = request.Amount,
+        CurrencyCode = request.CurrencyCode ?? "USD",
+        CampaignName = request.CampaignName,
+        Notes = request.Notes,
+        ChannelSource = channelSource,
+        IsRecurring = request.IsRecurring,
+    };
+
+    private async Task<IActionResult> SaveDonation(Donation donation, string thankYouMessage)
+    {
+        db.Donations.Add(donation);
+        await db.SaveChangesAsync();
+        return Ok(new { message = thankYouMessage, donationId = donation.DonationId });
+    }
+
     /// <summary>
     /// Submit a donation. Requires authentication unless using the anonymous endpoint.
     /// </summary>
@@ -24,7 +50,8 @@ public class DonationsController(
     [Authorize]
     public async Task<IActionResult> CreateDonation([FromBody] DonationRequest request)
     {
-        if (!ValidDonationTypes.Contains(request.DonationType))
+        var donationType = ResolveDonationType(request.DonationType);
+        if (donationType is null)
             return BadRequest(new ErrorResponse("Invalid donation type."));
 
         var user = await userManager.GetUserAsync(User);
@@ -32,23 +59,8 @@ public class DonationsController(
             return Unauthorized();
 
         var supporter = await FindOrCreateSupporterForUser(user);
-
-        var donation = new Donation
-        {
-            SupporterId = supporter.SupporterId,
-            DonationType = request.DonationType,
-            DonationDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            Amount = request.Amount,
-            CurrencyCode = request.CurrencyCode ?? "PHP",
-            CampaignName = request.CampaignName,
-            Notes = request.Notes,
-            ChannelSource = "Website",
-        };
-
-        db.Donations.Add(donation);
-        await db.SaveChangesAsync();
-
-        return Ok(new { message = "Thank you for your donation!", donationId = donation.DonationId });
+        var donation = BuildDonation(request, donationType, supporter.SupporterId, "Website");
+        return await SaveDonation(donation, "Thank you for your donation!");
     }
 
     /// <summary>
@@ -58,27 +70,13 @@ public class DonationsController(
     [AllowAnonymous]
     public async Task<IActionResult> CreateAnonymousDonation([FromBody] DonationRequest request)
     {
-        if (!ValidDonationTypes.Contains(request.DonationType))
+        var donationType = ResolveDonationType(request.DonationType);
+        if (donationType is null)
             return BadRequest(new ErrorResponse("Invalid donation type."));
 
         var supporter = await FindOrCreateAnonymousSupporter(request.DonorName, request.DonorEmail);
-
-        var donation = new Donation
-        {
-            SupporterId = supporter.SupporterId,
-            DonationType = request.DonationType,
-            DonationDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            Amount = request.Amount,
-            CurrencyCode = request.CurrencyCode ?? "PHP",
-            CampaignName = request.CampaignName,
-            Notes = request.Notes,
-            ChannelSource = "Website-Anonymous",
-        };
-
-        db.Donations.Add(donation);
-        await db.SaveChangesAsync();
-
-        return Ok(new { message = "Thank you for your generous donation!", donationId = donation.DonationId });
+        var donation = BuildDonation(request, donationType, supporter.SupporterId, "Website-Anonymous");
+        return await SaveDonation(donation, "Thank you for your generous donation!");
     }
 
     private async Task<Supporter> FindOrCreateSupporterForUser(ApplicationUser user)

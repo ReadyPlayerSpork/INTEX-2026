@@ -70,6 +70,8 @@ Roles currently defined: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Empl
 - `Data/AuthRoles.cs` / `AuthPolicies.cs` — role and policy name constants
 - `Infrastructure/SecurityHeaders.cs` — CSP middleware
 - `Controllers/AuthController.cs` — `/api/auth/me`, external login, logout
+- `Controllers/DonationsController.cs` — `POST /api/donations` (auth) and `POST /api/donations/anonymous`; `DonationRequest.CurrencyCode` defaults to **`USD`** when omitted; `DonationType` may be omitted (defaults to **Monetary**). Other types must be sent explicitly when used. `isRecurring` (default **false**) stores donor intent only—**no automated billing** in this API.
+- `Controllers/DonorController.cs` — `GET /api/donor/dashboard` returns `givingTotalsByCurrency` (`{ currencyCode, total }[]` for donations with an amount, sorted by currency, no FX conversion).
 
 ### Frontend Structure
 Vite + React app under `frontend/Haven-for-Her/`. Uses Tailwind CSS 4 + shadcn/ui for styling. Routing, API client, and forms stack are per the build plan (see `BUILDPROMPT.md`).
