@@ -44,7 +44,7 @@ The backend uses **two separate DB contexts**:
 
 Auth is cookie-based: HttpOnly, SameSite=Lax, Secure, 7-day sliding expiration. `GET /api/auth/me` returns `{ isAuthenticated, userName, email, roles[] }`.
 
-The default seeded admin is `admin@rootkit.local` / `Rootkit2026!Admin` (overridable via `GenerateDefaultIdentityAdmin` config).
+The default seeded admin is `admin@havenforher.local` / `admin!haven4her` (overridable via `GenerateDefaultIdentityAdmin` config).
 
 Roles currently defined: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Employee`, `Donor`, `Survivor`.
 

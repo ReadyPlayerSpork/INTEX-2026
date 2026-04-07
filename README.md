@@ -80,7 +80,7 @@ Auth is cookie-based: HttpOnly, SameSite=Lax, Secure, 7-day sliding expiration.
 
 `GET /api/auth/me` returns `{ isAuthenticated, userName, email, roles[] }`.
 
-Default seeded admin: `admin@rootkit.local` / `Rootkit2026!Admin`
+Default seeded admin: `admin@havenforher.local` / `admin!haven4her`
 
 Roles: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Employee`, `Donor`, `Survivor`
 

@@ -23,8 +23,8 @@ namespace Haven_for_Her_Backend.Data
             }
         
             var adminSection = configuration.GetSection("GenerateDefaultIdentityAdmin");
-            var adminEmail = adminSection["Email"] ?? "admin@rootkit.local";
-            var adminPassword = adminSection["Password"] ?? "Rootkit2026!Admin";
+            var adminEmail = adminSection["Email"] ?? "admin@havenforher.local";
+            var adminPassword = adminSection["Password"] ?? "admin!haven4her";
 
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
             if (adminUser == null)
