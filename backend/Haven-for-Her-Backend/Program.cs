@@ -96,6 +96,12 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var domainDb = scope.ServiceProvider.GetRequiredService<HavenForHerBackendDbContext>();
+    await domainDb.Database.MigrateAsync();
+
+    var identityDb = scope.ServiceProvider.GetRequiredService<AuthIdentityDbContext>();
+    await identityDb.Database.MigrateAsync();
+
     await AuthIdentityGenerator.GenerateDefaultIdentityAsync(scope.ServiceProvider, app.Configuration);
 }
 
