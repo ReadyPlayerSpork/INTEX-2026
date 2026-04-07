@@ -23,13 +23,7 @@ public class AuthController(
     {
         if (User.Identity?.IsAuthenticated != true)
         {
-            return Ok(new
-            {
-                isAuthenticated = false,
-                userName = (string?)null,
-                email = (string?)null,
-                roles = Array.Empty<string>()
-            });
+            return Ok(new SessionResponse(false, null, null, []));
         }
 
         var user = await userManager.GetUserAsync(User);
@@ -40,13 +34,11 @@ public class AuthController(
             .OrderBy(role => role)
             .ToArray();
 
-        return Ok(new
-        {
-            isAuthenticated = true,
-            userName = user?.UserName ?? User.Identity?.Name,
-            email = user?.Email,
-            roles
-        });
+        return Ok(new SessionResponse(
+            true,
+            user?.UserName ?? User.Identity?.Name,
+            user?.Email,
+            roles));
     }
 
     [HttpGet("providers")]

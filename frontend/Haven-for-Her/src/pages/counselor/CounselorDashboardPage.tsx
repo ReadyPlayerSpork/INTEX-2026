@@ -2,26 +2,34 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 
+/* ---------- Types matching CounselorController.GetDashboard ---------- */
+
 interface AssignedResident {
   residentId: number
+  caseControlNo: string
   internalCode: string
+  caseStatus: string
+  currentRiskLevel: string
+  dateOfAdmission: string
   safehouseName: string
-  riskLevel: string
-  status: string
 }
 
 interface RecentSession {
-  processRecordingId: number
+  recordingId: number
+  residentId: number
   sessionDate: string
-  residentInternalCode: string
   sessionType: string
   sessionDurationMinutes: number
+  emotionalStateObserved: string
+  emotionalStateEnd: string
+  progressNoted: boolean
+  concernsFlagged: boolean
 }
 
 interface CounselorDashboard {
   assignedResidents: AssignedResident[]
   recentSessions: RecentSession[]
-  openRequestsCount: number
+  openRequests: number
 }
 
 export function CounselorDashboardPage() {
@@ -66,7 +74,7 @@ export function CounselorDashboardPage() {
           <p className="text-muted-foreground mt-1 text-sm">Recent Sessions</p>
         </div>
         <div className="bg-card border-border rounded-lg border p-6 text-center">
-          <p className="text-primary text-3xl font-bold">{data.openRequestsCount}</p>
+          <p className="text-primary text-3xl font-bold">{data.openRequests}</p>
           <p className="text-muted-foreground mt-1 text-sm">Open Requests</p>
         </div>
       </div>
@@ -89,6 +97,7 @@ export function CounselorDashboardPage() {
                   <th className="px-3 py-2 font-medium">Safehouse</th>
                   <th className="px-3 py-2 font-medium">Risk Level</th>
                   <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 font-medium">Admitted</th>
                 </tr>
               </thead>
               <tbody>
@@ -96,8 +105,9 @@ export function CounselorDashboardPage() {
                   <tr key={r.residentId} className="border-border border-b">
                     <td className="px-3 py-2">{r.internalCode}</td>
                     <td className="px-3 py-2">{r.safehouseName}</td>
-                    <td className="px-3 py-2">{r.riskLevel}</td>
-                    <td className="px-3 py-2">{r.status}</td>
+                    <td className="px-3 py-2">{r.currentRiskLevel}</td>
+                    <td className="px-3 py-2">{r.caseStatus}</td>
+                    <td className="px-3 py-2">{r.dateOfAdmission}</td>
                   </tr>
                 ))}
               </tbody>
@@ -119,15 +129,19 @@ export function CounselorDashboardPage() {
                   <th className="px-3 py-2 font-medium">Resident</th>
                   <th className="px-3 py-2 font-medium">Type</th>
                   <th className="px-3 py-2 font-medium">Duration (min)</th>
+                  <th className="px-3 py-2 font-medium">Progress</th>
+                  <th className="px-3 py-2 font-medium">Concerns</th>
                 </tr>
               </thead>
               <tbody>
                 {data.recentSessions.map((s) => (
-                  <tr key={s.processRecordingId} className="border-border border-b">
+                  <tr key={s.recordingId} className="border-border border-b">
                     <td className="px-3 py-2">{s.sessionDate}</td>
-                    <td className="px-3 py-2">{s.residentInternalCode}</td>
+                    <td className="px-3 py-2">#{s.residentId}</td>
                     <td className="px-3 py-2">{s.sessionType}</td>
                     <td className="px-3 py-2">{s.sessionDurationMinutes}</td>
+                    <td className="px-3 py-2">{s.progressNoted ? 'Yes' : 'No'}</td>
+                    <td className="px-3 py-2">{s.concernsFlagged ? 'Yes' : 'No'}</td>
                   </tr>
                 ))}
               </tbody>

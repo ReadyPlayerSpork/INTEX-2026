@@ -4,7 +4,7 @@ import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
 
 interface SocialPost {
-  id: number
+  postId: number
   platform: string
   postType: string
   caption: string
@@ -153,11 +153,11 @@ export function PostsPage() {
               <tbody>
                 {data.items.map((post) => (
                   <PostRow
-                    key={post.id}
+                    key={post.postId}
                     post={post}
-                    expanded={expandedId === post.id}
+                    expanded={expandedId === post.postId}
                     onToggle={() =>
-                      setExpandedId(expandedId === post.id ? null : post.id)
+                      setExpandedId(expandedId === post.postId ? null : post.postId)
                     }
                   />
                 ))}

@@ -50,26 +50,36 @@ public class CounselingController(
     [Authorize(Roles = AuthRoles.Survivor)]
     public async Task<IActionResult> GetMyRequests()
     {
-        var userId = userManager.GetUserId(User)!;
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Unauthorized();
 
         var requests = await db.CounselingRequests
-            .Where(r => r.RequestedByUserId == userId)
+            .Where(r => r.RequestedByUserId == user.Id)
             .OrderByDescending(r => r.CreatedAtUtc)
-            .Select(r => new CounselingRequestDto
+            .ToListAsync();
+
+        var dtos = new List<CounselingRequestDto>();
+        foreach (var r in requests)
+        {
+            var counselor = r.AssignedCounselorUserId != null
+                ? await userManager.FindByIdAsync(r.AssignedCounselorUserId)
+                : null;
+
+            dtos.Add(new CounselingRequestDto
             {
                 Id = r.RequestId,
-                RequestedByEmail = "",
+                RequestedByEmail = user.Email ?? "",
                 Reason = r.Reason,
                 PreferredDay = r.PreferredDay,
                 PreferredTimeOfDay = r.PreferredTimeOfDay,
                 Notes = r.Notes,
                 Status = r.Status,
-                AssignedCounselorEmail = null,
+                AssignedCounselorEmail = counselor?.Email,
                 CreatedAtUtc = r.CreatedAtUtc,
-            })
-            .ToListAsync();
+            });
+        }
 
-        return Ok(requests);
+        return Ok(dtos);
     }
 
     /// <summary>

@@ -9,10 +9,14 @@ interface CaseloadItem {
   caseControlNo: string
   internalCode: string
   safehouseName: string
-  status: string
-  riskLevel: string
-  assignedWorker: string | null
-  admissionDate: string
+  caseStatus: string
+  currentRiskLevel: string
+  assignedSocialWorker: string | null
+  dateOfAdmission: string
+  sex: string | null
+  caseCategory: string | null
+  initialRiskLevel: string | null
+  reintegrationStatus: string | null
 }
 
 export function CaseloadPage() {
@@ -111,10 +115,10 @@ export function CaseloadPage() {
                     </td>
                     <td className="px-3 py-2">{item.internalCode}</td>
                     <td className="px-3 py-2">{item.safehouseName}</td>
-                    <td className="px-3 py-2">{item.status}</td>
-                    <td className="px-3 py-2">{item.riskLevel}</td>
-                    <td className="px-3 py-2">{item.assignedWorker ?? '-'}</td>
-                    <td className="px-3 py-2">{item.admissionDate}</td>
+                    <td className="px-3 py-2">{item.caseStatus}</td>
+                    <td className="px-3 py-2">{item.currentRiskLevel}</td>
+                    <td className="px-3 py-2">{item.assignedSocialWorker ?? '-'}</td>
+                    <td className="px-3 py-2">{item.dateOfAdmission}</td>
                   </tr>
                 ))}
               </tbody>

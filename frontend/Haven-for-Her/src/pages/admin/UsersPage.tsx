@@ -9,8 +9,10 @@ import { Input } from '@/components/ui/input'
 interface User {
   id: string
   email: string
+  persona: string | null
+  acquisitionSource: string | null
   roles: string[]
-  createdDate: string
+  createdAtUtc: string
 }
 
 interface PagedResult {
@@ -116,7 +118,7 @@ export function UsersPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2">{u.createdDate?.split('T')[0] ?? '-'}</td>
+                    <td className="px-3 py-2">{u.createdAtUtc?.split('T')[0] ?? '-'}</td>
                   </tr>
                 ))}
                 {items.length === 0 && (

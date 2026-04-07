@@ -121,6 +121,14 @@ public class FinancialController(HavenForHerBackendDbContext db) : ControllerBas
             query = query.Where(d => d.DonationDate >= from.Value);
         if (to.HasValue)
             query = query.Where(d => d.DonationDate <= to.Value);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLower();
+            query = query.Where(d =>
+                (d.CampaignName != null && d.CampaignName.ToLower().Contains(term)) ||
+                d.DonationType.ToLower().Contains(term) ||
+                d.ChannelSource.ToLower().Contains(term));
+        }
 
         var totalCount = await query.CountAsync();
         var items = await query

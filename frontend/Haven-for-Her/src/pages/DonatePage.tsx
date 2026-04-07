@@ -88,17 +88,11 @@ export function DonatePage() {
           </p>
           <Card className="border-border/70 bg-card/95">
             <CardContent className="p-6">
-              <p className="font-semibold text-accent">Prefer a faster path?</p>
+              <p className="font-semibold text-accent">Donating as you</p>
               <p className="text-muted-foreground mt-2 text-sm leading-6">
-                You can still use the low-friction public option if you do not
-                need donation history attached to your account.
+                This donation will be linked to your account so you can track
+                your giving history and receive tax receipts.
               </p>
-              <Link
-                to="/donate/anonymous"
-                className="text-accent mt-4 inline-flex text-sm font-semibold underline underline-offset-4"
-              >
-                Donate without an account
-              </Link>
             </CardContent>
           </Card>
         </div>

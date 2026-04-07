@@ -3,33 +3,66 @@ import { useParams } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
 
-/* ---- Types ---- */
+/* ---- Types matching CaseloadController.GetResident response ---- */
+
+interface Safehouse {
+  safehouseId: number
+  name: string
+}
 
 interface ResidentProfile {
   residentId: number
   caseControlNo: string
   internalCode: string
-  firstName: string
-  lastName: string
+  safehouseId: number
+  safehouse: Safehouse
+  caseStatus: string
+  sex: string | null
   dateOfBirth: string | null
-  safehouseName: string
-  status: string
-  riskLevel: string
-  admissionDate: string
-  dischargeDate: string | null
-  assignedWorker: string | null
+  caseCategory: string | null
+  currentRiskLevel: string
+  initialRiskLevel: string
+  assignedSocialWorker: string | null
+  dateOfAdmission: string | null
+  dateClosed: string | null
+  reintegrationStatus: string | null
+  lengthOfStay: string | null
+  referralSource: string | null
+  processRecordings: unknown[]
+  homeVisitations: unknown[]
+  educationRecords: unknown[]
+  healthWellbeingRecords: unknown[]
+  interventionPlans: unknown[]
+  incidentReports: unknown[]
 }
 
-type TabName = 'profile' | 'sessions' | 'visitations' | 'education' | 'health' | 'interventions' | 'incidents'
+type TabName = 'profile' | 'recordings' | 'visitations' | 'interventions' | 'incidents'
 const TABS: { key: TabName; label: string }[] = [
   { key: 'profile', label: 'Profile' },
-  { key: 'sessions', label: 'Sessions' },
+  { key: 'recordings', label: 'Sessions' },
   { key: 'visitations', label: 'Visitations' },
-  { key: 'education', label: 'Education' },
-  { key: 'health', label: 'Health' },
   { key: 'interventions', label: 'Interventions' },
   { key: 'incidents', label: 'Incidents' },
 ]
+
+const TAB_CONFIG: Record<string, { columns: string[]; idField: string }> = {
+  recordings: {
+    columns: ['sessionDate', 'sessionType', 'sessionDurationMinutes', 'emotionalStateObserved', 'concernsFlagged'],
+    idField: 'recordingId',
+  },
+  visitations: {
+    columns: ['visitDate', 'visitType', 'locationVisited', 'visitOutcome', 'safetyConcernsNoted'],
+    idField: 'visitationId',
+  },
+  interventions: {
+    columns: ['interventionCategory', 'description', 'servicesProvided', 'targetDate', 'status'],
+    idField: 'planId',
+  },
+  incidents: {
+    columns: ['incidentDate', 'incidentType', 'severity', 'resolved', 'reportedBy'],
+    idField: 'incidentId',
+  },
+}
 
 /* ---- Component ---- */
 
@@ -67,10 +100,10 @@ export function ResidentProfilePage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
       <h1 className="mb-2 text-2xl font-bold">
-        {resident.firstName} {resident.lastName}
+        {resident.internalCode}
       </h1>
       <p className="text-muted-foreground mb-6 text-sm">
-        {resident.internalCode} | {resident.caseControlNo} | {resident.safehouseName}
+        {resident.caseControlNo} | {resident.safehouse?.name ?? 'Unknown Safehouse'} | {resident.caseStatus}
       </p>
 
       {/* Tabs */}
@@ -91,12 +124,14 @@ export function ResidentProfilePage() {
       </div>
 
       {activeTab === 'profile' && <ProfileTab resident={resident} />}
-      {activeTab === 'sessions' && <RelatedRecordsTab residentId={resident.residentId} endpoint="sessions" columns={['sessionDate', 'sessionType', 'sessionDurationMinutes', 'emotionalStateObserved', 'concernsFlagged']} idField="processRecordingId" />}
-      {activeTab === 'visitations' && <RelatedRecordsTab residentId={resident.residentId} endpoint="visitations" columns={['visitDate', 'visitType', 'locationVisited', 'visitOutcome', 'safetyConcernsNoted']} idField="familyVisitationTrackingId" />}
-      {activeTab === 'education' && <RelatedRecordsTab residentId={resident.residentId} endpoint="education" columns={['programName', 'startDate', 'endDate', 'status', 'progressNotes']} idField="educationTrackingId" />}
-      {activeTab === 'health' && <RelatedRecordsTab residentId={resident.residentId} endpoint="health" columns={['recordDate', 'recordType', 'description', 'provider', 'followUpDate']} idField="healthWellnessId" />}
-      {activeTab === 'interventions' && <RelatedRecordsTab residentId={resident.residentId} endpoint="interventions" columns={['interventionCategory', 'description', 'servicesProvided', 'targetDate', 'status']} idField="interventionPlanId" />}
-      {activeTab === 'incidents' && <RelatedRecordsTab residentId={resident.residentId} endpoint="incidents" columns={['incidentDate', 'incidentType', 'severity', 'resolved', 'reportedBy']} idField="incidentReportId" />}
+      {activeTab !== 'profile' && TAB_CONFIG[activeTab] && (
+        <RelatedRecordsTab
+          residentId={resident.residentId}
+          endpoint={activeTab}
+          columns={TAB_CONFIG[activeTab].columns}
+          idField={TAB_CONFIG[activeTab].idField}
+        />
+      )}
     </div>
   )
 }
@@ -107,13 +142,19 @@ function ProfileTab({ resident }: { resident: ResidentProfile }) {
   const fields: { label: string; value: string | null }[] = [
     { label: 'Case Control No', value: resident.caseControlNo },
     { label: 'Internal Code', value: resident.internalCode },
+    { label: 'Sex', value: resident.sex },
     { label: 'Date of Birth', value: resident.dateOfBirth },
-    { label: 'Safehouse', value: resident.safehouseName },
-    { label: 'Status', value: resident.status },
-    { label: 'Risk Level', value: resident.riskLevel },
-    { label: 'Admission Date', value: resident.admissionDate },
-    { label: 'Discharge Date', value: resident.dischargeDate },
-    { label: 'Assigned Worker', value: resident.assignedWorker },
+    { label: 'Safehouse', value: resident.safehouse?.name ?? null },
+    { label: 'Case Category', value: resident.caseCategory },
+    { label: 'Status', value: resident.caseStatus },
+    { label: 'Initial Risk Level', value: resident.initialRiskLevel },
+    { label: 'Current Risk Level', value: resident.currentRiskLevel },
+    { label: 'Admission Date', value: resident.dateOfAdmission },
+    { label: 'Date Closed', value: resident.dateClosed },
+    { label: 'Reintegration Status', value: resident.reintegrationStatus },
+    { label: 'Length of Stay', value: resident.lengthOfStay },
+    { label: 'Assigned Worker', value: resident.assignedSocialWorker },
+    { label: 'Referral Source', value: resident.referralSource },
   ]
 
   return (

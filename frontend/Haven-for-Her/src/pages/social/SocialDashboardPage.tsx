@@ -3,27 +3,41 @@ import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Card, CardContent } from '@/components/ui/card'
 
+/* ---------- Types matching SocialMediaController.GetDashboard ---------- */
+
+interface MonthOverMonthMetric {
+  thisMonth: number
+  lastMonth: number
+  changePercent: number | null
+}
+
 interface TopicEngagement {
   topic: string
   totalEngagement: number
+  postCount: number
 }
 
 interface PlatformBreakdown {
   platform: string
-  impressions: number
-  reach: number
+  postCount: number
+  totalImpressions: number
+  totalReach: number
   avgEngagementRate: number
 }
 
 interface BestPostingTime {
-  day: string
-  hour: number
+  dayOfWeek: string
+  postHour: number
   avgEngagementRate: number
+  postCount: number
 }
 
 interface DonationContent {
   topic: string
   avgDonationReferrals: number
+  totalDonationReferrals: number
+  avgEstimatedValue: number
+  postCount: number
 }
 
 interface SocialDashboard {
@@ -31,9 +45,11 @@ interface SocialDashboard {
   totalImpressions: number
   totalReach: number
   avgEngagementRate: number
-  impressionsChange: number
-  reachChange: number
-  engagementRateChange: number
+  monthOverMonth: {
+    impressions: MonthOverMonthMetric
+    reach: MonthOverMonthMetric
+    engagementRate: MonthOverMonthMetric
+  }
   topContentTopics: TopicEngagement[]
   platformBreakdown: PlatformBreakdown[]
   bestPostingTimes: BestPostingTime[]
@@ -68,6 +84,8 @@ export function SocialDashboardPage() {
     )
   }
 
+  const mom = data.monthOverMonth
+
   return (
     <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
       <div className="mb-8">
@@ -95,17 +113,17 @@ export function SocialDashboardPage() {
         <StatWithChange
           label="Impressions"
           value={data.totalImpressions.toLocaleString()}
-          change={data.impressionsChange}
+          change={mom.impressions.changePercent}
         />
         <StatWithChange
           label="Reach"
           value={data.totalReach.toLocaleString()}
-          change={data.reachChange}
+          change={mom.reach.changePercent}
         />
         <StatWithChange
           label="Avg Engagement Rate"
           value={`${data.avgEngagementRate.toFixed(2)}%`}
-          change={data.engagementRateChange}
+          change={mom.engagementRate.changePercent}
         />
       </div>
 
@@ -151,8 +169,8 @@ export function SocialDashboardPage() {
                     </span>
                   </div>
                   <div className="text-muted-foreground mt-1 text-xs">
-                    {p.impressions.toLocaleString()} impressions &middot;{' '}
-                    {p.reach.toLocaleString()} reach
+                    {p.totalImpressions.toLocaleString()} impressions &middot;{' '}
+                    {p.totalReach.toLocaleString()} reach
                   </div>
                 </div>
               ))}
@@ -173,7 +191,7 @@ export function SocialDashboardPage() {
                   className="bg-card border-border/70 flex items-center justify-between rounded-2xl border p-4"
                 >
                   <span className="text-sm font-medium">
-                    {t.day} at {t.hour}:00
+                    {t.dayOfWeek} at {t.postHour}:00
                   </span>
                   <span className="text-muted-foreground text-sm">
                     {t.avgEngagementRate.toFixed(2)}% avg eng.
@@ -228,20 +246,22 @@ function StatWithChange({
 }: {
   label: string
   value: string | number
-  change: number
+  change: number | null
 }) {
-  const positive = change >= 0
+  const positive = change != null && change >= 0
   return (
     <Card className="border-border/70 bg-card/95">
       <CardContent className="p-5 text-center">
-      <p className="text-primary text-2xl font-extrabold">{value}</p>
-      <p className="text-muted-foreground mt-2 text-xs">{label}</p>
-      <p
-        className={`mt-2 text-xs font-semibold ${positive ? 'text-primary' : 'text-destructive'}`}
-      >
-        {positive ? '+' : ''}
-        {change.toFixed(1)}% MoM
-      </p>
+        <p className="text-primary text-2xl font-extrabold">{value}</p>
+        <p className="text-muted-foreground mt-2 text-xs">{label}</p>
+        {change != null && (
+          <p
+            className={`mt-2 text-xs font-semibold ${positive ? 'text-primary' : 'text-destructive'}`}
+          >
+            {positive ? '+' : ''}
+            {change.toFixed(1)}% MoM
+          </p>
+        )}
       </CardContent>
     </Card>
   )
