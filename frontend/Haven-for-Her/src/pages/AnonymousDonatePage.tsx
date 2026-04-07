@@ -5,13 +5,11 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   DONATION_CURRENCIES,
-  formatExampleTierAmount,
+  donateSelectClassName,
+  formatCurrencyAmount,
   getCurrencyExampleTiers,
 } from '@/features/public/donate/donationCurrencies'
 import { useAnonymousDonateForm } from '@/features/public/donate/useAnonymousDonateForm'
-
-const selectClassName =
-  'border-input bg-background focus-visible:border-ring focus-visible:ring-ring/18 w-full rounded-lg border px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus-visible:ring-4'
 
 export function AnonymousDonatePage() {
   const {
@@ -88,7 +86,7 @@ export function AnonymousDonatePage() {
                     className="rounded-2xl border border-border/60 bg-card/90 p-4"
                   >
                     <p className="text-primary text-2xl font-extrabold">
-                      {formatExampleTierAmount(currencyCode, tier.amount)}
+                      {formatCurrencyAmount(currencyCode, tier.amount)}
                     </p>
                     <p className="text-muted-foreground mt-1 text-xs">
                       {tier.blurb}
@@ -122,7 +120,7 @@ export function AnonymousDonatePage() {
                 <select
                   value={currencyCode}
                   onChange={(e) => onCurrencyChange(e.target.value)}
-                  className={selectClassName}
+                  className={donateSelectClassName}
                 >
                   {DONATION_CURRENCIES.map((c) => (
                     <option key={c.code} value={c.code}>

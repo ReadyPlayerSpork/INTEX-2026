@@ -9,11 +9,9 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   DONATION_CURRENCIES,
   type DonationCurrencyCode,
+  donateSelectClassName,
   isDonationCurrencyCode,
 } from '@/features/public/donate/donationCurrencies'
-
-const selectClassName =
-  'border-input bg-background focus-visible:border-ring focus-visible:ring-ring/18 w-full rounded-lg border px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus-visible:ring-4'
 
 const checkboxClassName =
   'border-input bg-background focus-visible:border-ring focus-visible:ring-ring/18 mt-0.5 size-4 shrink-0 rounded border text-primary outline-none transition-[border-color,box-shadow] focus-visible:ring-4'
@@ -132,7 +130,7 @@ export function DonatePage() {
                     const v = e.target.value
                     if (isDonationCurrencyCode(v)) setCurrencyCode(v)
                   }}
-                  className={selectClassName}
+                  className={donateSelectClassName}
                 >
                   {DONATION_CURRENCIES.map((c) => (
                     <option key={c.code} value={c.code}>
