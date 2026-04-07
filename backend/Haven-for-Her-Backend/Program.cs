@@ -1,13 +1,14 @@
-using Microsoft.EntityFrameworkCore;
-using Intex_Placeholder.Data;
-using Microsoft.AspNetCore.Identity;
-using Intex_Placeholder.Infrastructure;
+using Haven_for_Her_Backend.Data;
+using Haven_for_Her_Backend.Infrastructure;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 const string FrontendCorsPolicy = "FrontendClient";
-const string DefaultFrontendUrl = "http://localhost:3000";
-var frontendUrl = builder.Configuration["FrontendUrl"] ?? DefaultFrontendUrl;
+const string DefaultFrontendUrl = "http://localhost:5173";
+var frontendUrls = (builder.Configuration["FrontendUrls"] ?? builder.Configuration["FrontendUrl"] ?? DefaultFrontendUrl)
+    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
@@ -67,7 +68,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
     {
-        policy.WithOrigins(frontendUrl)
+        policy.WithOrigins(frontendUrls)
             .AllowCredentials()
             .AllowAnyMethod()
             .AllowAnyHeader();
