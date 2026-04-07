@@ -1,3 +1,6 @@
+export const donateSelectClassName =
+  'border-input bg-background focus-visible:border-ring focus-visible:ring-ring/18 w-full rounded-lg border px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus-visible:ring-4'
+
 export type DonationCurrencyCode = 'USD' | 'PHP' | 'EUR' | 'GBP' | 'CAD'
 
 export const DONATION_CURRENCIES: {
@@ -46,33 +49,24 @@ export function getCurrencyExampleTiers(code: DonationCurrencyCode) {
   return EXAMPLE_TIERS[code]
 }
 
-export function formatExampleTierAmount(
-  code: DonationCurrencyCode,
-  amount: number,
-): string {
-  switch (code) {
-    case 'USD':
-      return `$${amount.toLocaleString('en-US')}`
-    case 'PHP':
-      return `PHP ${amount.toLocaleString('en-PH')}`
-    case 'EUR':
-      return `€${amount.toLocaleString('de-DE')}`
-    case 'GBP':
-      return `£${amount.toLocaleString('en-GB')}`
-    case 'CAD':
-      return `CA$${amount.toLocaleString('en-CA')}`
-  }
-}
+const CURRENCY_CODES = new Set<string>(DONATION_CURRENCIES.map((c) => c.code))
 
 export function isDonationCurrencyCode(
   value: string,
 ): value is DonationCurrencyCode {
-  return DONATION_CURRENCIES.some((c) => c.code === value)
+  return CURRENCY_CODES.has(value)
 }
 
-/** Format a currency amount for dashboards and tables; unknown ISO codes fall back to `CODE n`. */
+/** Format a currency amount; known ISO codes use Intl, unknown fall back to `CODE n`. */
 export function formatCurrencyAmount(code: string, amount: number): string {
   const c = code.trim().toUpperCase()
-  if (isDonationCurrencyCode(c)) return formatExampleTierAmount(c, amount)
-  return `${c} ${amount.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: c,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  } catch {
+    return `${c} ${amount.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+  }
 }
