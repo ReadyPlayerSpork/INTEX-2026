@@ -34,7 +34,7 @@ public class DonorController(
             return Ok(new
             {
                 totalDonations = 0,
-                totalMonetaryPhp = 0m,
+                givingTotalsByCurrency = Array.Empty<object>(),
                 recurringDonations = 0,
                 recentDonations = Array.Empty<object>(),
             });
@@ -43,10 +43,21 @@ public class DonorController(
         var myDonations = db.Donations.Where(d => d.SupporterId == supporter.SupporterId);
 
         var totalDonations = await myDonations.CountAsync();
-        var totalMonetary = await myDonations
-            .Where(d => d.DonationType == "Monetary" && d.Amount.HasValue)
-            .SumAsync(d => d.Amount!.Value);
         var recurringCount = await myDonations.CountAsync(d => d.IsRecurring);
+
+        var amountRows = await myDonations
+            .Where(d => d.Amount.HasValue)
+            .Select(d => new { d.Amount, d.CurrencyCode })
+            .ToListAsync();
+
+        static string NormalizeCurrency(string? code) =>
+            string.IsNullOrWhiteSpace(code) ? "USD" : code.Trim().ToUpperInvariant();
+
+        var givingTotalsByCurrency = amountRows
+            .GroupBy(r => NormalizeCurrency(r.CurrencyCode))
+            .Select(g => new { currencyCode = g.Key, total = g.Sum(r => r.Amount!.Value) })
+            .OrderBy(x => x.currencyCode)
+            .ToList();
 
         var recentDonations = await myDonations
             .OrderByDescending(d => d.DonationDate)
@@ -54,7 +65,6 @@ public class DonorController(
             .Select(d => new
             {
                 d.DonationId,
-                d.DonationType,
                 d.DonationDate,
                 d.Amount,
                 d.CurrencyCode,
@@ -66,7 +76,7 @@ public class DonorController(
         return Ok(new
         {
             totalDonations,
-            totalMonetaryPhp = totalMonetary,
+            givingTotalsByCurrency,
             recurringDonations = recurringCount,
             recentDonations,
         });

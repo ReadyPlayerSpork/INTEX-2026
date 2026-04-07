@@ -3,10 +3,20 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  DONATION_CURRENCIES,
+  formatExampleTierAmount,
+  getCurrencyExampleTiers,
+} from '@/features/public/donate/donationCurrencies'
 import { useAnonymousDonateForm } from '@/features/public/donate/useAnonymousDonateForm'
+
+const selectClassName =
+  'border-input bg-background focus-visible:border-ring focus-visible:ring-ring/18 w-full rounded-lg border px-3 py-2 text-sm outline-none transition-[border-color,box-shadow] focus-visible:ring-4'
 
 export function AnonymousDonatePage() {
   const {
+    currencyCode,
+    onCurrencyChange,
     amount,
     campaign,
     donorName,
@@ -22,6 +32,8 @@ export function AnonymousDonatePage() {
     onNotesChange,
     onSubmit,
   } = useAnonymousDonateForm()
+
+  const exampleTiers = getCurrencyExampleTiers(currencyCode)
 
   if (success) {
     return (
@@ -70,18 +82,19 @@ export function AnonymousDonatePage() {
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-border/60 bg-card/90 p-4">
-                  <p className="text-primary text-2xl font-extrabold">PHP 500</p>
-                  <p className="text-muted-foreground mt-1 text-xs">daily essentials</p>
-                </div>
-                <div className="rounded-2xl border border-border/60 bg-card/90 p-4">
-                  <p className="text-primary text-2xl font-extrabold">PHP 1,500</p>
-                  <p className="text-muted-foreground mt-1 text-xs">counseling support</p>
-                </div>
-                <div className="rounded-2xl border border-border/60 bg-card/90 p-4">
-                  <p className="text-primary text-2xl font-extrabold">PHP 5,000</p>
-                  <p className="text-muted-foreground mt-1 text-xs">education & care</p>
-                </div>
+                {exampleTiers.map((tier) => (
+                  <div
+                    key={tier.blurb}
+                    className="rounded-2xl border border-border/60 bg-card/90 p-4"
+                  >
+                    <p className="text-primary text-2xl font-extrabold">
+                      {formatExampleTierAmount(currencyCode, tier.amount)}
+                    </p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {tier.blurb}
+                    </p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -105,7 +118,24 @@ export function AnonymousDonatePage() {
 
             <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold">Amount (PHP)</span>
+                <span className="text-sm font-semibold">Currency</span>
+                <select
+                  value={currencyCode}
+                  onChange={(e) => onCurrencyChange(e.target.value)}
+                  className={selectClassName}
+                >
+                  {DONATION_CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-semibold">
+                  Amount ({currencyCode})
+                </span>
                 <Input
                   type="number"
                   required

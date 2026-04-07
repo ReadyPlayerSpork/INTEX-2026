@@ -2,7 +2,14 @@ import { useState, type FormEvent } from "react"
 
 import { ApiError, api } from "@/api/client"
 
+import {
+  type DonationCurrencyCode,
+  isDonationCurrencyCode,
+} from "./donationCurrencies"
+
 export function useAnonymousDonateForm() {
+  const [currencyCode, setCurrencyCode] =
+    useState<DonationCurrencyCode>("USD")
   const [amount, setAmount] = useState("")
   const [campaign, setCampaign] = useState("")
   const [donorName, setDonorName] = useState("")
@@ -19,8 +26,8 @@ export function useAnonymousDonateForm() {
 
     try {
       await api.post("/api/donations/anonymous", {
-        donationType: "Monetary",
         amount: parseFloat(amount),
+        currencyCode,
         campaignName: campaign || null,
         donorName: donorName || null,
         donorEmail: donorEmail || null,
@@ -39,6 +46,10 @@ export function useAnonymousDonateForm() {
   }
 
   return {
+    currencyCode,
+    onCurrencyChange: (value: string) => {
+      if (isDonationCurrencyCode(value)) setCurrencyCode(value)
+    },
     amount,
     campaign,
     donorName,
