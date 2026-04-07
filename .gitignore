@@ -9,8 +9,21 @@ ehthumbs.db
 *.swo
 *~
 
-# Claude Code / Cursor (machine-local overrides)
+# Claude Code (machine-local — keep .claude/skills, rules, commands, etc. tracked)
 .claude/settings.local.json
+CLAUDE.local.md
+.claude/agent-memory-local/
+.claude/sessions/
+.claude/todos/
+.claude/scheduled_tasks.*
+
+# Cursor — ignore stray IDE files under .cursor/; keep shared project config tracked
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
+!.cursor/rules/
+!.cursor/rules/**
+!.cursor/mcp.json
 
 # Environment & local secrets (never commit real credentials)
 .env
