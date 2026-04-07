@@ -17,6 +17,53 @@ namespace Haven_for_Her_Backend.Migrations.Domain
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
 
+            modelBuilder.Entity("Haven_for_Her_Backend.Models.CounselingRequest", b =>
+                {
+                    b.Property<int>("RequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("request_id");
+
+                    b.Property<string>("AssignedCounselorUserId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("assigned_counselor_user_id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PreferredDay")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("preferred_day");
+
+                    b.Property<string>("PreferredTimeOfDay")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("preferred_time_of_day");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("RequestedByUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("status");
+
+                    b.HasKey("RequestId");
+
+                    b.ToTable("counseling_requests");
+                });
+
             modelBuilder.Entity("Haven_for_Her_Backend.Models.Donation", b =>
                 {
                     b.Property<int>("DonationId")

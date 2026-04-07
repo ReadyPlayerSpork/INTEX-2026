@@ -25,8 +25,17 @@ namespace Haven_for_Her_Backend.Migrations.Identity
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AcquisitionDetail")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AcquisitionSource")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
@@ -51,6 +60,9 @@ namespace Haven_for_Her_Backend.Migrations.Identity
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Persona")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PhoneNumber")

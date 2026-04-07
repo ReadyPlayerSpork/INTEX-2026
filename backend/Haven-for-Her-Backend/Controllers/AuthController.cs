@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Haven_for_Her_Backend.Data;
+using Haven_for_Her_Backend.Dtos;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,13 +23,7 @@ public class AuthController(
     {
         if (User.Identity?.IsAuthenticated != true)
         {
-            return Ok(new
-            {
-                isAuthenticated = false,
-                userName = (string?)null,
-                email = (string?)null,
-                roles = Array.Empty<string>()
-            });
+            return Ok(new SessionResponse(false, null, null, []));
         }
 
         var user = await userManager.GetUserAsync(User);
@@ -39,13 +34,11 @@ public class AuthController(
             .OrderBy(role => role)
             .ToArray();
 
-        return Ok(new
-        {
-            isAuthenticated = true,
-            userName = user?.UserName ?? User.Identity?.Name,
-            email = user?.Email,
-            roles
-        });
+        return Ok(new SessionResponse(
+            true,
+            user?.UserName ?? User.Identity?.Name,
+            user?.Email,
+            roles));
     }
 
     [HttpGet("providers")]
@@ -158,6 +151,26 @@ public class AuthController(
 
         await signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
         return Redirect(BuildFrontendSuccessUrl(returnPath));
+    }
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        var user = await userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+        {
+            return Unauthorized(new { message = "Invalid email or password." });
+        }
+
+        var result = await signInManager.PasswordSignInAsync(
+            user, request.Password, isPersistent: false, lockoutOnFailure: false);
+
+        if (!result.Succeeded)
+        {
+            return Unauthorized(new { message = "Invalid email or password." });
+        }
+
+        return Ok(new { message = "Login successful." });
     }
 
     [HttpPost("logout")]

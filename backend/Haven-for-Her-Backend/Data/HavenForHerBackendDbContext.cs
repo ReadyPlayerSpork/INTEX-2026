@@ -27,6 +27,9 @@ public class HavenForHerBackendDbContext : DbContext
     public DbSet<InterventionPlan> InterventionPlans { get; set; }
     public DbSet<IncidentReport> IncidentReports { get; set; }
 
+    // Counseling & Appointments
+    public DbSet<CounselingRequest> CounselingRequests { get; set; }
+
     // Outreach & Communication Domain
     public DbSet<SocialMediaPost> SocialMediaPosts { get; set; }
     public DbSet<SafehouseMonthlyMetric> SafehouseMonthlyMetrics { get; set; }

@@ -24,9 +24,9 @@ builder.Services.AddDbContext<HavenForHerBackendDbContext>(options =>
 builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("HavenForHerBackendIdentityConnection")));
 
-builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<AuthIdentityDbContext>();
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<AuthIdentityDbContext>()
+    .AddDefaultTokenProviders();
 
 if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
 {
@@ -42,7 +42,13 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy(AuthPolicies.ManageCatalog, policy => policy.RequireRole(AuthRoles.Admin));
+    options.AddPolicy(AuthPolicies.RequireAdmin, p => p.RequireRole(AuthRoles.Admin));
+    options.AddPolicy(AuthPolicies.RequireFinancial, p => p.RequireRole(AuthRoles.Financial));
+    options.AddPolicy(AuthPolicies.RequireCounselor, p => p.RequireRole(AuthRoles.Counselor));
+    options.AddPolicy(AuthPolicies.RequireSocialMedia, p => p.RequireRole(AuthRoles.SocialMedia));
+    options.AddPolicy(AuthPolicies.RequireDonor, p => p.RequireRole(AuthRoles.Donor));
+    options.AddPolicy(AuthPolicies.RequireSurvivor, p => p.RequireRole(AuthRoles.Survivor));
+    options.AddPolicy(AuthPolicies.RequireEmployee, p => p.RequireRole(AuthRoles.Employee));
 });
 
 builder.Services.Configure<IdentityOptions>(options =>
@@ -59,9 +65,20 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.SlidingExpiration = true;
+    // Return 401/403 JSON for API calls instead of redirecting to a login page
+    options.Events.OnRedirectToLogin = ctx =>
+    {
+        ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = ctx =>
+    {
+        ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddCors(options =>
@@ -79,6 +96,12 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var domainDb = scope.ServiceProvider.GetRequiredService<HavenForHerBackendDbContext>();
+    await domainDb.Database.MigrateAsync();
+
+    var identityDb = scope.ServiceProvider.GetRequiredService<AuthIdentityDbContext>();
+    await identityDb.Database.MigrateAsync();
+
     await AuthIdentityGenerator.GenerateDefaultIdentityAsync(scope.ServiceProvider, app.Configuration);
 }
 
@@ -100,6 +123,5 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGroup("/api/auth").MapIdentityApi<ApplicationUser>();
 
 app.Run();
