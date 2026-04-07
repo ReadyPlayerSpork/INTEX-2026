@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace Intex_Placeholder.Data;
+namespace Haven_for_Her_Backend.Data;
 
 public class AuthIdentityDbContext : IdentityDbContext<ApplicationUser>
 {

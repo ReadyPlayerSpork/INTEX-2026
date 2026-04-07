@@ -17,11 +17,11 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<IntexPlaceholderDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("IntexPlaceholderAuthConnection")));
+builder.Services.AddDbContext<HavenForHerBackendDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("HavenForHerBackendAuthConnection")));
 
 builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("IntexPlaceholderIdentityConnection")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("HavenForHerBackendIdentityConnection")));
 
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddRoles<IdentityRole>()

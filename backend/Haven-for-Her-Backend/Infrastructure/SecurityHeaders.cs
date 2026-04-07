@@ -1,4 +1,4 @@
-namespace Intex_Placeholder.Infrastructure
+namespace Haven_for_Her_Backend.Infrastructure
 {
     public static class SecurityHeaders
     {

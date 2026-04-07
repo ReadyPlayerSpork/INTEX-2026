@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace Intex_Placeholder.Data
+namespace Haven_for_Her_Backend.Data
 {
     public class AuthIdentityGenerator
     {

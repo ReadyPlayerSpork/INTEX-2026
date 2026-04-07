@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Intex_Placeholder.Models;
+namespace Haven_for_Her_Backend.Models;
 
 [Table("donation_allocations")]
 public class DonationAllocation

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Intex_Placeholder.Controllers;
+namespace Haven_for_Her_Backend.Controllers;
 
 [ApiController]
 [Route("[controller]")]

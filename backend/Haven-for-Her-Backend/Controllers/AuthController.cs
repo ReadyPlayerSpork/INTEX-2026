@@ -1,11 +1,11 @@
 using System.Security.Claims;
-using Intex_Placeholder.Data;
+using Haven_for_Her_Backend.Data;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 
-namespace Intex_Placeholder.Controllers;
+namespace Haven_for_Her_Backend.Controllers;
 
 [ApiController]
 [Route("api/auth")]

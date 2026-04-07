@@ -1,4 +1,4 @@
-namespace Intex_Placeholder.Data
+namespace Haven_for_Her_Backend.Data
 {
     public class AuthRoles
     {

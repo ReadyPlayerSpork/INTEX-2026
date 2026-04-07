@@ -1,11 +1,11 @@
-using Intex_Placeholder.Models;
+using Haven_for_Her_Backend.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Intex_Placeholder.Data;
+namespace Haven_for_Her_Backend.Data;
 
-public class IntexPlaceholderDbContext : DbContext
+public class HavenForHerBackendDbContext : DbContext
 {
-    public IntexPlaceholderDbContext(DbContextOptions<IntexPlaceholderDbContext> options) : base(options)
+    public HavenForHerBackendDbContext(DbContextOptions<HavenForHerBackendDbContext> options) : base(options)
     {
     }
 
