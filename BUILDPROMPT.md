@@ -66,12 +66,15 @@ A phase is not complete until all of the following are true:
 6. New environment variables, jobs, routes, and setup steps are documented.
 7. No placeholder TODO logic, fake success responses, or hardcoded secrets remain unless the phase explicitly calls for a temporary placeholder.
 8. OpenAPI stays in sync with implemented endpoints and the frontend contract layer is updated accordingly.
+9. Any new or significantly changed user-facing page should remain on track for a Lighthouse accessibility score of **90 or higher**, not just at the end of the project.
 
 ---
 
 ## Phase 0: Foundation & Project Scaffolding
 
-1. **Scaffold the React + Vite + TypeScript frontend** in a `frontend/` directory at the project root. Install React Router, Axios (or fetch wrapper), and a component library if desired. Configure Vite to proxy API requests to `https://localhost:7229` during development.
+1. **Scaffold the React + Vite + TypeScript frontend** in a `frontend/` directory at the project root. Install React Router, Axios (or fetch wrapper), and **Bootstrap CSS** as the baseline frontend styling framework. Configure Vite to proxy API requests to `https://localhost:7229` during development.
+   - Use Bootstrap intentionally for layout, spacing, forms, tables, navigation, modals, alerts, and responsive behavior rather than mixing multiple competing UI systems.
+   - Custom styles are allowed, but Bootstrap should be the primary shared design foundation so the UI stays consistent and maintainable.
 2. **Set up a shared layout** with a persistent navbar/sidebar and a main content area. The navbar should be role-aware — it only shows links the current user is authorized to see. Include a footer with the organization name and a link to the privacy policy.
 3. **Create an auth context/provider** on the frontend that calls `GET /api/auth/me` on app load to hydrate the current user session (isAuthenticated, email, roles). Expose login, logout, and register functions. Persist auth state across page refreshes via the existing cookie-based session.
 4. **Create a `<ProtectedRoute>` component** that accepts a list of allowed roles. If the user is not authenticated, redirect to login. If authenticated but missing the required role, show a 403 Forbidden page.
