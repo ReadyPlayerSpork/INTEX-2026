@@ -1,6 +1,6 @@
 # INTEX-2026 Build Prompt
 
-You are building a full-stack web application for a nonprofit that operates safe homes for girls who are survivors of sexual abuse and trafficking in the Philippines. The tech stack is **React + TypeScript + Vite** on the frontend, **ASP.NET Core (.NET 10)** on the backend, and Entity Framework Core with **SQLite for development** and **PostgreSQL for production**. The backend authentication skeleton already exists (ASP.NET Identity + Google OAuth, CORS, CSP headers, secure cookies). All 17 EF Core domain models are already built and registered in `IntexPlaceholderDbContext`. The frontend has not been started.
+You are building a full-stack web application for a nonprofit that operates safe homes for girls who are survivors of sexual abuse and trafficking in the Philippines. The tech stack is **React + TypeScript + Vite** on the frontend, **Tailwind CSS + shadcn/ui** for styling, **ASP.NET Core (.NET 10)** on the backend, and Entity Framework Core with **SQLite for development** and **PostgreSQL for production**. The backend authentication skeleton already exists (ASP.NET Identity + Google OAuth, CORS, CSP headers, secure cookies). All 17 EF Core domain models are already built and registered in `HavenForHerBackendDbContext`. A frontend scaffold already exists and should be extended rather than recreated from scratch.
 
 Follow this process **in order**. Complete each phase before moving to the next. Within each phase, build the pieces in the numbered order listed. Always verify the build compiles and the app runs before moving on. Complete only one phase at a time, then ask if we're ready to implement the next phase. 
 
@@ -27,7 +27,7 @@ These rules exist to prevent technical debt. Follow them across every phase.
 5. **The frontend must be strongly typed and API-driven.**
    - Use TypeScript throughout.
    - Centralize API access in a typed client layer instead of scattered ad hoc calls.
-   - Prefer plain React patterns the team already knows: React Router, `fetch()` or `axios`, `useEffect`, and `useState`.
+   - Prefer plain React patterns the team already knows: React Router, `fetch()`, `useEffect`, and `useState`.
    - Do not assume TanStack Query, React Hook Form, or Zod are available or required.
    - Generate or maintain frontend API contracts from backend OpenAPI so DTO drift does not accumulate over time.
 6. **All forms need shared validation rules on both client and server.**
@@ -69,8 +69,7 @@ A phase is not complete until all of the following are true:
 
 ## Phase 0: Foundation & Project Scaffolding
 
-1. **Scaffold the React + Vite + TypeScript frontend** in a `frontend/` directory at the project root. Install React Router and an HTTP client (Axios or a typed `fetch()` wrapper). Configure Vite to proxy API requests to `https://localhost:7229` during development.
-   - Do **not** install or use Bootstrap (the project is switching CSS/UI libraries).
+1. **Use the existing React + Vite + TypeScript frontend scaffold** in `frontend/Haven-for-Her`. Install React Router and a typed `fetch()` wrapper for API calls. Configure Vite to proxy API requests to `https://localhost:7229` during development.
    - Use **Tailwind CSS + shadcn/ui** for the UI system (tokens/components), and keep styling decisions composable and role-safe.
    - Keep styling decisions isolated so the team can swap the chosen UI system cleanly (avoid global assumptions in layout/components).
 2. **Set up a shared layout** with a persistent navbar/sidebar and a main content area. The navbar should be role-aware — it only shows links the current user is authorized to see. Include a footer with the organization name and a link to the privacy policy.

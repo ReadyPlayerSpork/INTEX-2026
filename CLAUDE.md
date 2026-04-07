@@ -8,9 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-### Frontend (`frontend/Haven for Her/`)
+### Frontend (`frontend/haven-for-her/`)
 ```bash
-npm run dev        # Vite dev server (defaults to port 5173)
+npm run dev        # Vite dev server (port 5173)
 npm run build      # tsc -b && vite build
 npm run lint       # ESLint
 npm run preview    # Preview production build
@@ -46,7 +46,7 @@ Auth is cookie-based: HttpOnly, SameSite=Lax, Secure, 7-day sliding expiration. 
 
 The default seeded admin is `admin@rootkit.local` / `Rootkit2026!Admin` (overridable via `GenerateDefaultIdentityAdmin` config).
 
-Roles currently defined: `Admin`, `Customer`. The build plan expands these to: Admin, Financial, Counselor, SocialMedia, Employee, Donor, Survivor.
+Roles currently defined: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Employee`, `Donor`, `Survivor`.
 
 **Key backend files:**
 - `Data/HavenForHerBackendDbContext.cs` — domain EF context with all 17 models
@@ -56,7 +56,7 @@ Roles currently defined: `Admin`, `Customer`. The build plan expands these to: A
 - `Controllers/AuthController.cs` — `/api/auth/me`, external login, logout
 
 ### Frontend Structure
-Vite + React app under `frontend/Haven for Her/`. Routing, API client, and forms stack are still per the build plan (see `BUILDPROMPT.md`).
+Vite + React app under `frontend/Haven-for-Her/`. Uses Tailwind CSS + shadcn/ui for styling. Routing, API client, and forms stack are per the build plan (see `BUILDPROMPT.md`).
 
 ### Agent skills (layout and redundancy)
 
@@ -72,7 +72,7 @@ If a symlink breaks on clone (e.g. Windows), recreate: from `.claude/skills/`, p
 
 
 ### CORS / Port Configuration
-The backend CORS policy allows credentials from `FrontendUrl` config (defaults to `http://localhost:3000`). Vite defaults to port **5173** — keep these in sync via environment config or the Vite proxy setting.
+The backend CORS policy allows credentials from `FrontendUrls` / `FrontendUrl` config and defaults to `http://localhost:5173`. Vite is configured to use port **5173** and proxy `/api` to the backend at `https://localhost:7229`.
 
 ## Build Plan
-The project has a detailed 7-phase roadmap in `BUILDPROMPT.md`. The backend auth skeleton is complete; the frontend has not yet been built. Phase 0 covers foundational scaffolding (routing, auth context, API client, environment config) before any feature work begins.
+The project has a detailed roadmap in `BUILDPROMPT.md`. The backend auth skeleton is complete, and the frontend now has a basic scaffold plus dev proxy wiring. Phase 0 still covers the foundational work needed before feature-heavy pages are built.

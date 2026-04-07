@@ -14,8 +14,8 @@ public class AuthController(
     SignInManager<ApplicationUser> signInManager,
     IConfiguration configuration) : ControllerBase
 {
-    private const string DefaultFrontendUrl = "http://localhost:3000";
-    private const string DefaultExternalReturnPath = "/catalog";
+    private const string DefaultFrontendUrl = "http://localhost:5173";
+    private const string DefaultExternalReturnPath = "/";
 
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentSession()
@@ -189,13 +189,17 @@ public class AuthController(
 
     private string BuildFrontendSuccessUrl(string? returnPath)
     {
-        var frontendUrl = configuration["FrontendUrl"] ?? DefaultFrontendUrl;
+        var frontendUrl = configuration["FrontendUrl"] ??
+            configuration["FrontendUrls"]?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ??
+            DefaultFrontendUrl;
         return $"{frontendUrl.TrimEnd('/')}{NormalizeReturnPath(returnPath)}";
     }
 
     private string BuildFrontendErrorUrl(string errorMessage)
     {
-        var frontendUrl = configuration["FrontendUrl"] ?? DefaultFrontendUrl;
+        var frontendUrl = configuration["FrontendUrl"] ??
+            configuration["FrontendUrls"]?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ??
+            DefaultFrontendUrl;
         var loginUrl = $"{frontendUrl.TrimEnd('/')}/login";
         return QueryHelpers.AddQueryString(loginUrl, "externalError", errorMessage);
     }
