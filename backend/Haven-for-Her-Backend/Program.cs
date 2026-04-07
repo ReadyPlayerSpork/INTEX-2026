@@ -103,6 +103,14 @@ using (var scope = app.Services.CreateScope())
     await identityDb.Database.MigrateAsync();
 
     await AuthIdentityGenerator.GenerateDefaultIdentityAsync(scope.ServiceProvider, app.Configuration);
+
+    if (app.Environment.IsDevelopment())
+    {
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CsvDataSeeder");
+        var csvDir = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "..", "docs", "lighthouse_csv_v7"));
+        await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, logger);
+    }
 }
 
 // Configure the HTTP request pipeline.
