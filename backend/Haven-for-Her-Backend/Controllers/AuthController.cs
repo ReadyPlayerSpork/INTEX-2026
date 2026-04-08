@@ -4,12 +4,14 @@ using Haven_for_Her_Backend.Dtos;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Haven_for_Her_Backend.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public class AuthController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
@@ -164,7 +166,11 @@ public class AuthController(
             return Unauthorized(new { message = "Invalid email or password." });
 
         var result = await signInManager.PasswordSignInAsync(
-            user, request.Password, isPersistent: false, lockoutOnFailure: false);
+            user, request.Password, isPersistent: false, lockoutOnFailure: true);
+
+        if (result.IsLockedOut)
+            return StatusCode(StatusCodes.Status429TooManyRequests,
+                new { message = "Account locked due to too many failed attempts. Please try again later." });
 
         if (result.RequiresTwoFactor)
             return Ok(new { requiresTwoFactor = true, message = "Two-factor authentication required." });
