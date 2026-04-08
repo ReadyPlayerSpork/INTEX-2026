@@ -5,61 +5,68 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace Haven_for_Her_Backend.Migrations.Domain
 {
     [DbContext(typeof(HavenForHerBackendDbContext))]
-    [Migration("20260407135305_AddCounselingRequests")]
-    partial class AddCounselingRequests
+    [Migration("20260408220453_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "10.0.5")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Haven_for_Her_Backend.Models.CounselingRequest", b =>
                 {
                     b.Property<int>("RequestId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("request_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RequestId"));
+
                     b.Property<string>("AssignedCounselorUserId")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("assigned_counselor_user_id");
 
                     b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("notes");
 
                     b.Property<string>("PreferredDay")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("preferred_day");
 
                     b.Property<string>("PreferredTimeOfDay")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("preferred_time_of_day");
 
                     b.Property<string>("Reason")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("reason");
 
                     b.Property<string>("RequestedByUserId")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("requested_by_user_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("status");
 
                     b.HasKey("RequestId");
@@ -71,61 +78,63 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("DonationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("donation_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DonationId"));
+
                     b.Property<decimal?>("Amount")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("amount");
 
                     b.Property<string>("CampaignName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("campaign_name");
 
                     b.Property<string>("ChannelSource")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("channel_source");
 
                     b.Property<int?>("CreatedByPartnerId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("created_by_partner_id");
 
                     b.Property<string>("CurrencyCode")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("currency_code");
 
                     b.Property<DateOnly>("DonationDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("donation_date");
 
                     b.Property<string>("DonationType")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("donation_type");
 
                     b.Property<decimal?>("EstimatedValue")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("estimated_value");
 
                     b.Property<string>("ImpactUnit")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("impact_unit");
 
                     b.Property<bool>("IsRecurring")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("is_recurring");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("notes");
 
                     b.Property<int?>("ReferralPostId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("referral_post_id");
 
                     b.Property<int>("SupporterId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("supporter_id");
 
                     b.HasKey("DonationId");
@@ -143,32 +152,34 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("AllocationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("allocation_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AllocationId"));
+
                     b.Property<DateOnly>("AllocationDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("allocation_date");
 
                     b.Property<string>("AllocationNotes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("allocation_notes");
 
                     b.Property<decimal>("AmountAllocated")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("amount_allocated");
 
                     b.Property<int>("DonationId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("donation_id");
 
                     b.Property<string>("ProgramArea")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("program_area");
 
                     b.Property<int>("SafehouseId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("safehouse_id");
 
                     b.HasKey("AllocationId");
@@ -184,47 +195,49 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("EducationRecordId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("education_record_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EducationRecordId"));
+
                     b.Property<decimal>("AttendanceRate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("attendance_rate");
 
                     b.Property<string>("CompletionStatus")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("completion_status");
 
                     b.Property<string>("EducationLevel")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("education_level");
 
                     b.Property<string>("EnrollmentStatus")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("enrollment_status");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("notes");
 
                     b.Property<decimal>("ProgressPercent")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("progress_percent");
 
                     b.Property<DateOnly>("RecordDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("record_date");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("resident_id");
 
                     b.Property<string>("SchoolName")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("school_name");
 
                     b.HasKey("EducationRecordId");
@@ -238,59 +251,61 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("HealthRecordId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("health_record_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("HealthRecordId"));
+
                     b.Property<decimal>("Bmi")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("bmi");
 
                     b.Property<bool>("DentalCheckupDone")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("dental_checkup_done");
 
                     b.Property<decimal>("EnergyLevelScore")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("energy_level_score");
 
                     b.Property<decimal>("GeneralHealthScore")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("general_health_score");
 
                     b.Property<decimal>("HeightCm")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("height_cm");
 
                     b.Property<bool>("MedicalCheckupDone")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("medical_checkup_done");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("notes");
 
                     b.Property<decimal>("NutritionScore")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("nutrition_score");
 
                     b.Property<bool>("PsychologicalCheckupDone")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("psychological_checkup_done");
 
                     b.Property<DateOnly>("RecordDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("record_date");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("resident_id");
 
                     b.Property<decimal>("SleepQualityScore")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("sleep_quality_score");
 
                     b.Property<decimal>("WeightKg")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("weight_kg");
 
                     b.HasKey("HealthRecordId");
@@ -304,67 +319,69 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("VisitationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("visitation_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VisitationId"));
 
                     b.Property<string>("FamilyCooperationLevel")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("family_cooperation_level");
 
                     b.Property<string>("FamilyMembersPresent")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("family_members_present");
 
                     b.Property<bool>("FollowUpNeeded")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("follow_up_needed");
 
                     b.Property<string>("FollowUpNotes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("follow_up_notes");
 
                     b.Property<string>("LocationVisited")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("location_visited");
 
                     b.Property<string>("Observations")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("observations");
 
                     b.Property<string>("Purpose")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("purpose");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("resident_id");
 
                     b.Property<bool>("SafetyConcernsNoted")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("safety_concerns_noted");
 
                     b.Property<string>("SocialWorker")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("social_worker");
 
                     b.Property<DateOnly>("VisitDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("visit_date");
 
                     b.Property<string>("VisitOutcome")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("visit_outcome");
 
                     b.Property<string>("VisitType")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("visit_type");
 
                     b.HasKey("VisitationId");
@@ -378,44 +395,46 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("ItemId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("item_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ItemId"));
+
                     b.Property<int>("DonationId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("donation_id");
 
                     b.Property<decimal>("EstimatedUnitValue")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("estimated_unit_value");
 
                     b.Property<string>("IntendedUse")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("intended_use");
 
                     b.Property<string>("ItemCategory")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("item_category");
 
                     b.Property<string>("ItemName")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("item_name");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity");
 
                     b.Property<string>("ReceivedCondition")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("received_condition");
 
                     b.Property<string>("UnitOfMeasure")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("unit_of_measure");
 
                     b.HasKey("ItemId");
@@ -429,56 +448,58 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("IncidentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("incident_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IncidentId"));
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("description");
 
                     b.Property<bool>("FollowUpRequired")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("follow_up_required");
 
                     b.Property<DateOnly>("IncidentDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("incident_date");
 
                     b.Property<string>("IncidentType")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("incident_type");
 
                     b.Property<string>("ReportedBy")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("reported_by");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("resident_id");
 
                     b.Property<DateOnly?>("ResolutionDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("resolution_date");
 
                     b.Property<bool>("Resolved")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("resolved");
 
                     b.Property<string>("ResponseTaken")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("response_taken");
 
                     b.Property<int>("SafehouseId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("safehouse_id");
 
                     b.Property<string>("Severity")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("severity");
 
                     b.HasKey("IncidentId");
@@ -494,51 +515,53 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("PlanId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("plan_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PlanId"));
+
                     b.Property<DateOnly?>("CaseConferenceDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("case_conference_date");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("PlanCategory")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("plan_category");
 
                     b.Property<string>("PlanDescription")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("plan_description");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("resident_id");
 
                     b.Property<string>("ServicesProvided")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("services_provided");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("status");
 
                     b.Property<DateOnly>("TargetDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("target_date");
 
                     b.Property<decimal?>("TargetValue")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("target_value");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("PlanId");
@@ -552,59 +575,61 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("PartnerId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("partner_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PartnerId"));
 
                     b.Property<string>("ContactName")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("contact_name");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("email");
 
                     b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("end_date");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("notes");
 
                     b.Property<string>("PartnerName")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("partner_name");
 
                     b.Property<string>("PartnerType")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("partner_type");
 
                     b.Property<string>("Phone")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("phone");
 
                     b.Property<string>("Region")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("region");
 
                     b.Property<string>("RoleType")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("role_type");
 
                     b.Property<DateOnly>("StartDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("start_date");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("status");
 
                     b.HasKey("PartnerId");
@@ -616,41 +641,43 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("AssignmentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("assignment_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AssignmentId"));
+
                     b.Property<DateOnly?>("AssignmentEnd")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("assignment_end");
 
                     b.Property<DateOnly>("AssignmentStart")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("assignment_start");
 
                     b.Property<bool>("IsPrimary")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("is_primary");
 
                     b.Property<int>("PartnerId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("partner_id");
 
                     b.Property<string>("ProgramArea")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("program_area");
 
                     b.Property<string>("ResponsibilityNotes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("responsibility_notes");
 
                     b.Property<int?>("SafehouseId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("safehouse_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("status");
 
                     b.HasKey("AssignmentId");
@@ -666,70 +693,72 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("RecordingId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("recording_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RecordingId"));
+
                     b.Property<bool>("ConcernsFlagged")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("concerns_flagged");
 
                     b.Property<string>("EmotionalStateEnd")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("emotional_state_end");
 
                     b.Property<string>("EmotionalStateObserved")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("emotional_state_observed");
 
                     b.Property<string>("FollowUpActions")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("follow_up_actions");
 
                     b.Property<string>("InterventionsApplied")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("interventions_applied");
 
                     b.Property<string>("NotesRestricted")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("notes_restricted");
 
                     b.Property<bool>("ProgressNoted")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("progress_noted");
 
                     b.Property<bool>("ReferralMade")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("referral_made");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("resident_id");
 
                     b.Property<DateOnly>("SessionDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("session_date");
 
                     b.Property<int>("SessionDurationMinutes")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("session_duration_minutes");
 
                     b.Property<string>("SessionNarrative")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("session_narrative");
 
                     b.Property<string>("SessionType")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("session_type");
 
                     b.Property<string>("SocialWorker")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("social_worker");
 
                     b.HasKey("RecordingId");
@@ -743,34 +772,36 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("SnapshotId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("snapshot_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SnapshotId"));
 
                     b.Property<string>("Headline")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("headline");
 
                     b.Property<bool>("IsPublished")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("is_published");
 
                     b.Property<string>("MetricPayloadJson")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("metric_payload_json");
 
                     b.Property<DateOnly?>("PublishedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("published_at");
 
                     b.Property<DateOnly>("SnapshotDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("snapshot_date");
 
                     b.Property<string>("SummaryText")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("summary_text");
 
                     b.HasKey("SnapshotId");
@@ -782,211 +813,213 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("ResidentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("resident_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ResidentId"));
+
                     b.Property<string>("AgeUponAdmission")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("age_upon_admission");
 
                     b.Property<string>("AssignedSocialWorker")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("assigned_social_worker");
 
                     b.Property<string>("BirthStatus")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("birth_status");
 
                     b.Property<string>("CaseCategory")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("case_category");
 
                     b.Property<string>("CaseControlNo")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("case_control_no");
 
                     b.Property<string>("CaseStatus")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("case_status");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("CurrentRiskLevel")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("current_risk_level");
 
                     b.Property<DateOnly?>("DateCaseStudyPrepared")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("date_case_study_prepared");
 
                     b.Property<DateOnly?>("DateClosed")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("date_closed");
 
                     b.Property<DateOnly?>("DateColbObtained")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("date_colb_obtained");
 
                     b.Property<DateOnly?>("DateColbRegistered")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("date_colb_registered");
 
                     b.Property<DateOnly>("DateEnrolled")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("date_enrolled");
 
                     b.Property<DateOnly>("DateOfAdmission")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("date_of_admission");
 
                     b.Property<DateOnly>("DateOfBirth")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("date_of_birth");
 
                     b.Property<bool>("FamilyIndigenous")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("family_indigenous");
 
                     b.Property<bool>("FamilyInformalSettler")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("family_informal_settler");
 
                     b.Property<bool>("FamilyIs4ps")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("family_is_4ps");
 
                     b.Property<bool>("FamilyParentPwd")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("family_parent_pwd");
 
                     b.Property<bool>("FamilySoloParent")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("family_solo_parent");
 
                     b.Property<bool>("HasSpecialNeeds")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("has_special_needs");
 
                     b.Property<string>("InitialCaseAssessment")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("initial_case_assessment");
 
                     b.Property<string>("InitialRiskLevel")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("initial_risk_level");
 
                     b.Property<string>("InternalCode")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("internal_code");
 
                     b.Property<bool>("IsPwd")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("is_pwd");
 
                     b.Property<string>("LengthOfStay")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("length_of_stay");
 
                     b.Property<string>("NotesRestricted")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("notes_restricted");
 
                     b.Property<string>("PlaceOfBirth")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("place_of_birth");
 
                     b.Property<string>("PresentAge")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("present_age");
 
                     b.Property<string>("PwdType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("pwd_type");
 
                     b.Property<string>("ReferralSource")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("referral_source");
 
                     b.Property<string>("ReferringAgencyPerson")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("referring_agency_person");
 
                     b.Property<string>("ReintegrationStatus")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("reintegration_status");
 
                     b.Property<string>("ReintegrationType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("reintegration_type");
 
                     b.Property<string>("Religion")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("religion");
 
                     b.Property<int>("SafehouseId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("safehouse_id");
 
                     b.Property<string>("Sex")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("sex");
 
                     b.Property<string>("SpecialNeedsDiagnosis")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("special_needs_diagnosis");
 
                     b.Property<bool>("SubCatAtRisk")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("sub_cat_at_risk");
 
                     b.Property<bool>("SubCatChildLabor")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("sub_cat_child_labor");
 
                     b.Property<bool>("SubCatChildWithHiv")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("sub_cat_child_with_hiv");
 
                     b.Property<bool>("SubCatCicl")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("sub_cat_cicl");
 
                     b.Property<bool>("SubCatOrphaned")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("sub_cat_orphaned");
 
                     b.Property<bool>("SubCatOsaec")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("sub_cat_osaec");
 
                     b.Property<bool>("SubCatPhysicalAbuse")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("sub_cat_physical_abuse");
 
                     b.Property<bool>("SubCatSexualAbuse")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("sub_cat_sexual_abuse");
 
                     b.Property<bool>("SubCatStreetChild")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("sub_cat_street_child");
 
                     b.Property<bool>("SubCatTrafficked")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("sub_cat_trafficked");
 
                     b.HasKey("ResidentId");
@@ -1000,62 +1033,64 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("SafehouseId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("safehouse_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SafehouseId"));
+
                     b.Property<int>("CapacityGirls")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("capacity_girls");
 
                     b.Property<int>("CapacityStaff")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("capacity_staff");
 
                     b.Property<string>("City")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("city");
 
                     b.Property<string>("Country")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("country");
 
                     b.Property<int>("CurrentOccupancy")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("current_occupancy");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("name");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("notes");
 
                     b.Property<DateOnly>("OpenDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("open_date");
 
                     b.Property<string>("Province")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("province");
 
                     b.Property<string>("Region")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("region");
 
                     b.Property<string>("SafehouseCode")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("safehouse_code");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("status");
 
                     b.HasKey("SafehouseId");
@@ -1067,47 +1102,49 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("MetricId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("metric_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MetricId"));
+
                     b.Property<int>("ActiveResidents")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("active_residents");
 
                     b.Property<decimal>("AvgEducationProgress")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("avg_education_progress");
 
                     b.Property<decimal>("AvgHealthScore")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("avg_health_score");
 
                     b.Property<int>("HomeVisitationCount")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("home_visitation_count");
 
                     b.Property<int>("IncidentCount")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("incident_count");
 
                     b.Property<DateOnly>("MonthEnd")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("month_end");
 
                     b.Property<DateOnly>("MonthStart")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("month_start");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("notes");
 
                     b.Property<int>("ProcessRecordingCount")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("process_recording_count");
 
                     b.Property<int>("SafehouseId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("safehouse_id");
 
                     b.HasKey("MetricId");
@@ -1121,168 +1158,170 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("PostId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("post_id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PostId"));
+
                     b.Property<int?>("AvgViewDurationSeconds")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("avg_view_duration_seconds");
 
                     b.Property<decimal?>("BoostBudgetPhp")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("boost_budget_php");
 
                     b.Property<string>("CallToActionType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("call_to_action_type");
 
                     b.Property<string>("CampaignName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("campaign_name");
 
                     b.Property<string>("Caption")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("caption");
 
                     b.Property<int>("CaptionLength")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("caption_length");
 
                     b.Property<int>("ClickThroughs")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("click_throughs");
 
                     b.Property<int>("Comments")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("comments");
 
                     b.Property<string>("ContentTopic")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("content_topic");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("DayOfWeek")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("day_of_week");
 
                     b.Property<int>("DonationReferrals")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("donation_referrals");
 
                     b.Property<decimal>("EngagementRate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("engagement_rate");
 
                     b.Property<decimal>("EstimatedDonationValuePhp")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("numeric")
                         .HasColumnName("estimated_donation_value_php");
 
                     b.Property<bool>("FeaturesResidentStory")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("features_resident_story");
 
                     b.Property<int>("FollowerCountAtPost")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("follower_count_at_post");
 
                     b.Property<int?>("Forwards")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("forwards");
 
                     b.Property<bool>("HasCallToAction")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("has_call_to_action");
 
                     b.Property<string>("Hashtags")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("hashtags");
 
                     b.Property<int>("Impressions")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("impressions");
 
                     b.Property<bool>("IsBoosted")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasColumnName("is_boosted");
 
                     b.Property<int>("Likes")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("likes");
 
                     b.Property<string>("MediaType")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("media_type");
 
                     b.Property<int>("MentionsCount")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("mentions_count");
 
                     b.Property<int>("NumHashtags")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("num_hashtags");
 
                     b.Property<string>("Platform")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("platform");
 
                     b.Property<string>("PlatformPostId")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("platform_post_id");
 
                     b.Property<int>("PostHour")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("post_hour");
 
                     b.Property<string>("PostType")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("post_type");
 
                     b.Property<string>("PostUrl")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("post_url");
 
                     b.Property<int>("ProfileVisits")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("profile_visits");
 
                     b.Property<int>("Reach")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("reach");
 
                     b.Property<int>("Saves")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("saves");
 
                     b.Property<string>("SentimentTone")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("sentiment_tone");
 
                     b.Property<int>("Shares")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("shares");
 
                     b.Property<int?>("SubscriberCountAtPost")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("subscriber_count_at_post");
 
                     b.Property<int?>("VideoViews")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("video_views");
 
                     b.Property<int?>("WatchTimeSeconds")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("watch_time_seconds");
 
                     b.HasKey("PostId");
@@ -1294,72 +1333,74 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.Property<int>("SupporterId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasColumnName("supporter_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SupporterId"));
 
                     b.Property<string>("AcquisitionChannel")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("acquisition_channel");
 
                     b.Property<string>("Country")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("country");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("display_name");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("email");
 
                     b.Property<DateOnly?>("FirstDonationDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("date")
                         .HasColumnName("first_donation_date");
 
                     b.Property<string>("FirstName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("first_name");
 
                     b.Property<string>("LastName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("last_name");
 
                     b.Property<string>("OrganizationName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("organization_name");
 
                     b.Property<string>("Phone")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("phone");
 
                     b.Property<string>("Region")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("region");
 
                     b.Property<string>("RelationshipType")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("relationship_type");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("status");
 
                     b.Property<string>("SupporterType")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("text")
                         .HasColumnName("supporter_type");
 
                     b.HasKey("SupporterId");
@@ -1371,11 +1412,13 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.HasOne("Haven_for_Her_Backend.Models.Partner", "CreatedByPartner")
                         .WithMany("CreatedDonations")
-                        .HasForeignKey("CreatedByPartnerId");
+                        .HasForeignKey("CreatedByPartnerId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Haven_for_Her_Backend.Models.SocialMediaPost", "ReferralPost")
                         .WithMany("ReferredDonations")
-                        .HasForeignKey("ReferralPostId");
+                        .HasForeignKey("ReferralPostId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Haven_for_Her_Backend.Models.Supporter", "Supporter")
                         .WithMany("Donations")
@@ -1493,7 +1536,8 @@ namespace Haven_for_Her_Backend.Migrations.Domain
 
                     b.HasOne("Haven_for_Her_Backend.Models.Safehouse", "Safehouse")
                         .WithMany("PartnerAssignments")
-                        .HasForeignKey("SafehouseId");
+                        .HasForeignKey("SafehouseId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Partner");
 

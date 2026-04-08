@@ -26,10 +26,10 @@ builder.Services.AddControllers()
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<HavenForHerBackendDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("HavenForHerBackendAuthConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("HavenForHerBackendAuthConnection")));
 
 builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("HavenForHerBackendIdentityConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("HavenForHerBackendIdentityConnection")));
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<AuthIdentityDbContext>()
