@@ -23,8 +23,32 @@ from flask import Flask, jsonify, request
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "models")
-# In Dokploy, we might mount the volume somewhere else, so allow an environment override
-CSV_DIR = os.environ.get("ML_CSV_DIR", os.path.join(BASE_DIR, "..", "backend", "Haven-for-Her-Backend", "docs", "lighthouse_csv_v7"))
+
+# Robust discovery of CSV directory
+def discover_csv_dir():
+    # 1. Environment variable override
+    env_path = os.environ.get("ML_CSV_DIR")
+    if env_path and os.path.exists(env_path):
+        return env_path
+    
+    # 2. Try common relative paths
+    search_paths = [
+        os.path.join(BASE_DIR, "..", "backend", "Haven-for-Her-Backend", "docs", "lighthouse_csv_v7"),
+        os.path.join(BASE_DIR, "..", "lighthouse_csv_v7"),
+        os.path.join(BASE_DIR, "lighthouse_csv_v7"),
+        "C:\\Users\\jrdis\\source\\repos\\INTEX-2026\\backend\\Haven-for-Her-Backend\\docs\\lighthouse_csv_v7"
+    ]
+    for p in search_paths:
+        if os.path.exists(p) and os.path.exists(os.path.join(p, "supporters.csv")):
+            return os.path.abspath(p)
+    
+    # Fallback to the most likely one even if it doesn't exist yet (for volume mounting)
+    return os.path.join(BASE_DIR, "..", "backend", "Haven-for-Her-Backend", "docs", "lighthouse_csv_v7")
+
+CSV_DIR = discover_csv_dir()
+print(f"Final CSV directory used: {CSV_DIR}")
+if not os.path.exists(CSV_DIR):
+    print(f"CRITICAL WARNING: {CSV_DIR} does not exist!")
 
 app = Flask(__name__)
 

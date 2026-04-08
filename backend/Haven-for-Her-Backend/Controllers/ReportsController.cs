@@ -7,7 +7,7 @@ namespace Haven_for_Her_Backend.Controllers;
 
 [ApiController]
 [Route("api/reports")]
-[Authorize(Roles = $"{AuthRoles.Admin},{AuthRoles.Financial}")]
+[Authorize(Roles = "Admin,Financial")]
 public class ReportsController(HavenForHerBackendDbContext db) : ControllerBase
 {
     /// <summary>

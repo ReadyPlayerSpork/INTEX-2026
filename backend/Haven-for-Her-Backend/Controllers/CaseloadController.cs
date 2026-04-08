@@ -8,7 +8,7 @@ namespace Haven_for_Her_Backend.Controllers;
 
 [ApiController]
 [Route("api/caseload")]
-[Authorize(Roles = $"{AuthRoles.Admin},{AuthRoles.Counselor}")]
+[Authorize(Roles = "Admin,Counselor")]
 public class CaseloadController(
     HavenForHerBackendDbContext db) : ControllerBase
 {
