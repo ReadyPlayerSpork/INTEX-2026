@@ -4,25 +4,28 @@ import { Button } from '@/components/ui/button'
 import type { PaginatedResponse } from '@/api/types'
 
 interface Incident {
-  incidentReportId: number
+  incidentId: number
   residentId: number
   residentCode: string | null
+  safehouseId: number
   safehouseName: string | null
   incidentDate: string
   incidentType: string
   severity: string
   resolved: boolean
-  reportedBy: string | null
-  description: string | null
+  reportedBy: string
+  description: string
+  responseTaken: string
 }
 
 const EMPTY_FORM = {
   residentId: '',
+  safehouseId: '',
   incidentDate: '',
   incidentType: '',
   severity: '',
   description: '',
-  actionsTaken: '',
+  responseTaken: '',
   reportedBy: '',
   resolved: false,
 }
@@ -45,7 +48,7 @@ export function IncidentsPage() {
     setLoading(true)
     try {
       const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
-      if (safehouseFilter) qs.set('safehouse', safehouseFilter)
+      if (safehouseFilter) qs.set('safehouseId', safehouseFilter)
       if (severityFilter) qs.set('severity', severityFilter)
       if (resolvedFilter) qs.set('resolved', resolvedFilter)
       const res = await api.get<PaginatedResponse<Incident>>(`/api/incidents?${qs}`)
@@ -71,14 +74,15 @@ export function IncidentsPage() {
   }
 
   function startEdit(incident: Incident) {
-    setEditId(incident.incidentReportId)
+    setEditId(incident.incidentId)
     setForm({
       residentId: String(incident.residentId),
-      incidentDate: incident.incidentDate,
+      safehouseId: String(incident.safehouseId),
+      incidentDate: incident.incidentDate.split('T')[0],
       incidentType: incident.incidentType,
       severity: incident.severity,
       description: incident.description ?? '',
-      actionsTaken: '',
+      responseTaken: incident.responseTaken ?? '',
       reportedBy: incident.reportedBy ?? '',
       resolved: incident.resolved,
     })
@@ -91,13 +95,15 @@ export function IncidentsPage() {
     try {
       const body = {
         residentId: Number(form.residentId),
+        safehouseId: Number(form.safehouseId),
         incidentDate: form.incidentDate,
         incidentType: form.incidentType,
         severity: form.severity,
-        description: form.description || null,
-        actionsTaken: form.actionsTaken || null,
-        reportedBy: form.reportedBy || null,
+        description: form.description || '',
+        responseTaken: form.responseTaken || '',
+        reportedBy: form.reportedBy || '',
         resolved: form.resolved,
+        followUpRequired: false
       }
       if (editId) {
         await api.put(`/api/incidents/${editId}`, body)
@@ -139,6 +145,10 @@ export function IncidentsPage() {
               <input name="residentId" type="number" required value={form.residentId} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
             <label className="block">
+              <span className="text-sm font-medium">Safehouse ID</span>
+              <input name="safehouseId" type="number" required value={form.safehouseId} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+            </label>
+            <label className="block">
               <span className="text-sm font-medium">Incident Date</span>
               <input name="incidentDate" type="date" required value={form.incidentDate} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
@@ -158,19 +168,19 @@ export function IncidentsPage() {
             </label>
             <label className="block">
               <span className="text-sm font-medium">Reported By</span>
-              <input name="reportedBy" type="text" value={form.reportedBy} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <input name="reportedBy" type="text" required value={form.reportedBy} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
-            <label className="flex items-center gap-2 self-end">
+            <label className="col-span-2 block flex items-center gap-2">
               <input name="resolved" type="checkbox" checked={form.resolved} onChange={handleChange} />
               <span className="text-sm">Resolved</span>
             </label>
             <label className="col-span-2 block">
               <span className="text-sm font-medium">Description</span>
-              <textarea name="description" rows={3} value={form.description} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <textarea name="description" required rows={3} value={form.description} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
             <label className="col-span-2 block">
-              <span className="text-sm font-medium">Actions Taken</span>
-              <textarea name="actionsTaken" rows={2} value={form.actionsTaken} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <span className="text-sm font-medium">Response Taken</span>
+              <textarea name="responseTaken" required rows={2} value={form.responseTaken} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
           </div>
           <div className="mt-4">
@@ -184,7 +194,7 @@ export function IncidentsPage() {
       <div className="mb-4 flex flex-wrap gap-3">
         <input
           type="text"
-          placeholder="Filter by safehouse..."
+          placeholder="Filter by safehouse ID..."
           value={safehouseFilter}
           onChange={(e) => { setSafehouseFilter(e.target.value); setPage(1) }}
           className="border-input bg-background rounded-md border px-3 py-2 text-sm"
@@ -231,7 +241,7 @@ export function IncidentsPage() {
               </thead>
               <tbody>
                 {incidents.map((inc) => (
-                  <tr key={inc.incidentReportId} className="border-border border-b">
+                  <tr key={inc.incidentId} className="border-border border-b">
                     <td className="px-3 py-2">{inc.incidentDate}</td>
                     <td className="px-3 py-2">{inc.residentCode ?? inc.residentId}</td>
                     <td className="px-3 py-2">{inc.safehouseName ?? '-'}</td>

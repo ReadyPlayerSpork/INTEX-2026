@@ -8,14 +8,18 @@ import { Input } from '@/components/ui/input'
 
 interface Partner {
   partnerId: number
-  name: string
-  type: string
-  role: string
-  contact: string
+  partnerName: string
+  partnerType: string
+  roleType: string
+  contactName: string
   email: string
+  phone: string
   region: string
   status: string
-  assignmentsCount: number
+  startDate: string
+  endDate?: string
+  notes?: string
+  assignmentCount: number
 }
 
 interface PagedResult {
@@ -24,30 +28,43 @@ interface PagedResult {
 }
 
 interface PartnerForm {
-  name: string
-  type: string
-  role: string
-  contact: string
+  partnerName: string
+  partnerType: string
+  roleType: string
+  contactName: string
   email: string
+  phone: string
   region: string
   status: string
+  startDate: string
+  endDate: string
+  notes: string
 }
 
 interface Assignment {
   assignmentId: number
-  description: string
+  safehouseId: number
+  safehouseName: string | null
+  programArea: string
+  assignmentStart: string
+  assignmentEnd: string | null
+  responsibilityNotes: string | null
+  isPrimary: boolean
   status: string
-  assignedDate: string
 }
 
 const EMPTY_FORM: PartnerForm = {
-  name: '',
-  type: '',
-  role: '',
-  contact: '',
+  partnerName: '',
+  partnerType: '',
+  roleType: '',
+  contactName: '',
   email: '',
+  phone: '',
   region: '',
   status: 'Active',
+  startDate: '',
+  endDate: '',
+  notes: '',
 }
 
 /* ---------- Page ---------- */
@@ -111,13 +128,17 @@ export function PartnersPage() {
   const openEdit = (p: Partner) => {
     setEditingId(p.partnerId)
     setForm({
-      name: p.name,
-      type: p.type,
-      role: p.role,
-      contact: p.contact,
+      partnerName: p.partnerName,
+      partnerType: p.partnerType,
+      roleType: p.roleType,
+      contactName: p.contactName,
       email: p.email,
+      phone: p.phone ?? '',
       region: p.region,
       status: p.status,
+      startDate: p.startDate?.split('T')[0] ?? '',
+      endDate: p.endDate?.split('T')[0] ?? '',
+      notes: p.notes ?? '',
     })
     setShowForm(true)
     setSelectedPartner(null)
@@ -193,13 +214,16 @@ export function PartnersPage() {
           onChange={(e) => { setFilterRegion(e.target.value); setPage(1) }}
           className="max-w-xs"
         />
-        <Input
-          type="text"
-          placeholder="Filter status..."
+        <select
           value={filterStatus}
           onChange={(e) => { setFilterStatus(e.target.value); setPage(1) }}
-          className="max-w-xs"
-        />
+          className="border-input bg-background flex h-10 w-full max-w-xs rounded-md border px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+          <option value="Suspended">Suspended</option>
+        </select>
       </div>
 
       {/* Create / Edit form */}
@@ -208,15 +232,27 @@ export function PartnersPage() {
           <CardContent className="space-y-3 p-4">
           <h2 className="font-semibold">{editingId ? 'Edit Partner' : 'Create Partner'}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Input placeholder="Name" value={form.name} onChange={(e) => updateField('name', e.target.value)} />
-            <Input placeholder="Type" value={form.type} onChange={(e) => updateField('type', e.target.value)} />
-            <Input placeholder="Role" value={form.role} onChange={(e) => updateField('role', e.target.value)} />
-            <Input placeholder="Contact" value={form.contact} onChange={(e) => updateField('contact', e.target.value)} />
-            <Input placeholder="Email" value={form.email} onChange={(e) => updateField('email', e.target.value)} />
+            <Input placeholder="Partner Name" value={form.partnerName} onChange={(e) => updateField('partnerName', e.target.value)} />
+            <Input placeholder="Partner Type" value={form.partnerType} onChange={(e) => updateField('partnerType', e.target.value)} />
+            <Input placeholder="Role Type" value={form.roleType} onChange={(e) => updateField('roleType', e.target.value)} />
+            <Input placeholder="Contact Name" value={form.contactName} onChange={(e) => updateField('contactName', e.target.value)} />
+            <Input placeholder="Email" type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} />
+            <Input placeholder="Phone" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} />
             <Input placeholder="Region" value={form.region} onChange={(e) => updateField('region', e.target.value)} />
-            <Input placeholder="Status" value={form.status} onChange={(e) => updateField('status', e.target.value)} />
+            <select
+              value={form.status}
+              onChange={(e) => updateField('status', e.target.value)}
+              className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Suspended">Suspended</option>
+            </select>
+            <Input type="date" placeholder="Start Date" value={form.startDate} onChange={(e) => updateField('startDate', e.target.value)} />
+            <Input type="date" placeholder="End Date" value={form.endDate || ''} onChange={(e) => updateField('endDate', e.target.value)} />
+            <Input className="col-span-2" placeholder="Notes" value={form.notes || ''} onChange={(e) => updateField('notes', e.target.value)} />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-4">
             <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
             <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
           </div>
@@ -229,7 +265,7 @@ export function PartnersPage() {
         <Card className="mb-6 border-border/70 bg-card/95">
           <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Assignments for {selectedPartner.name}</h2>
+            <h2 className="font-semibold">Assignments for {selectedPartner.partnerName}</h2>
             <Button variant="outline" size="sm" onClick={() => setSelectedPartner(null)}>Close</Button>
           </div>
           {loadingAssignments ? (
@@ -241,7 +277,8 @@ export function PartnersPage() {
               <thead>
                 <tr className="border-border border-b text-left">
                   <th className="px-3 py-2">ID</th>
-                  <th className="px-3 py-2">Description</th>
+                  <th className="px-3 py-2">Safehouse</th>
+                  <th className="px-3 py-2">Program Area</th>
                   <th className="px-3 py-2">Status</th>
                   <th className="px-3 py-2">Assigned Date</th>
                 </tr>
@@ -250,9 +287,10 @@ export function PartnersPage() {
                 {assignments.map((a) => (
                   <tr key={a.assignmentId} className="border-border/70 border-b">
                     <td className="px-3 py-2">{a.assignmentId}</td>
-                    <td className="px-3 py-2">{a.description}</td>
+                    <td className="px-3 py-2">{a.safehouseName || a.safehouseId}</td>
+                    <td className="px-3 py-2">{a.programArea}</td>
                     <td className="px-3 py-2">{a.status}</td>
-                    <td className="px-3 py-2">{a.assignedDate?.split('T')[0]}</td>
+                    <td className="px-3 py-2">{a.assignmentStart?.split('T')[0]}</td>
                   </tr>
                 ))}
               </tbody>
@@ -288,15 +326,15 @@ export function PartnersPage() {
                 {items.map((p) => (
                   <tr key={p.partnerId} className="border-border/70 hover:bg-secondary/40 border-b transition-colors">
                     <td className="px-3 py-2">
-                      <button className="underline text-left" onClick={() => viewAssignments(p)}>{p.name}</button>
+                      <button className="underline text-left" onClick={() => viewAssignments(p)}>{p.partnerName}</button>
                     </td>
-                    <td className="px-3 py-2">{p.type}</td>
-                    <td className="px-3 py-2">{p.role}</td>
-                    <td className="px-3 py-2">{p.contact}</td>
+                    <td className="px-3 py-2">{p.partnerType}</td>
+                    <td className="px-3 py-2">{p.roleType}</td>
+                    <td className="px-3 py-2">{p.contactName}</td>
                     <td className="px-3 py-2">{p.email}</td>
                     <td className="px-3 py-2">{p.region}</td>
                     <td className="px-3 py-2">{p.status}</td>
-                    <td className="px-3 py-2">{p.assignmentsCount}</td>
+                    <td className="px-3 py-2">{p.assignmentCount}</td>
                     <td className="px-3 py-2 flex gap-1">
                       <Button size="sm" variant="outline" onClick={() => openEdit(p)}>Edit</Button>
                       {deletingId === p.partnerId ? (

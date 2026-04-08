@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button'
 import type { PaginatedResponse } from '@/api/types'
 
 interface Intervention {
-  interventionPlanId: number
+  planId: number
   residentId: number
   residentCode: string | null
-  interventionCategory: string
-  description: string | null
+  planCategory: string
+  planDescription: string | null
   servicesProvided: string | null
   targetDate: string | null
   status: string
@@ -16,13 +16,11 @@ interface Intervention {
 
 const EMPTY_FORM = {
   residentId: '',
-  interventionCategory: '',
-  description: '',
+  planCategory: '',
+  planDescription: '',
   servicesProvided: '',
   targetDate: '',
   status: '',
-  goalsSet: '',
-  progressNotes: '',
 }
 
 export function InterventionsPage() {
@@ -66,16 +64,14 @@ export function InterventionsPage() {
   }
 
   function startEdit(item: Intervention) {
-    setEditId(item.interventionPlanId)
+    setEditId(item.planId)
     setForm({
       residentId: String(item.residentId),
-      interventionCategory: item.interventionCategory,
-      description: item.description ?? '',
+      planCategory: item.planCategory,
+      planDescription: item.planDescription ?? '',
       servicesProvided: item.servicesProvided ?? '',
-      targetDate: item.targetDate ?? '',
+      targetDate: item.targetDate?.split('T')[0] ?? '',
       status: item.status,
-      goalsSet: '',
-      progressNotes: '',
     })
     setShowForm(true)
   }
@@ -86,13 +82,11 @@ export function InterventionsPage() {
     try {
       const body = {
         residentId: Number(form.residentId),
-        interventionCategory: form.interventionCategory,
-        description: form.description || null,
-        servicesProvided: form.servicesProvided || null,
-        targetDate: form.targetDate || null,
+        planCategory: form.planCategory,
+        planDescription: form.planDescription || '',
+        servicesProvided: form.servicesProvided || '',
+        targetDate: form.targetDate || new Date().toISOString().split('T')[0],
         status: form.status,
-        goalsSet: form.goalsSet || null,
-        progressNotes: form.progressNotes || null,
       }
       if (editId) {
         await api.put(`/api/interventions/${editId}`, body)
@@ -135,11 +129,11 @@ export function InterventionsPage() {
             </label>
             <label className="block">
               <span className="text-sm font-medium">Category</span>
-              <input name="interventionCategory" type="text" required value={form.interventionCategory} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <input name="planCategory" type="text" required value={form.planCategory} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
             <label className="block">
               <span className="text-sm font-medium">Target Date</span>
-              <input name="targetDate" type="date" value={form.targetDate} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <input name="targetDate" type="date" required value={form.targetDate} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
             <label className="block">
               <span className="text-sm font-medium">Status</span>
@@ -154,19 +148,11 @@ export function InterventionsPage() {
             </label>
             <label className="col-span-2 block">
               <span className="text-sm font-medium">Description</span>
-              <textarea name="description" rows={2} value={form.description} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <textarea name="planDescription" required rows={2} value={form.planDescription} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
             <label className="col-span-2 block">
               <span className="text-sm font-medium">Services Provided</span>
-              <textarea name="servicesProvided" rows={2} value={form.servicesProvided} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
-            </label>
-            <label className="col-span-2 block">
-              <span className="text-sm font-medium">Goals Set</span>
-              <textarea name="goalsSet" rows={2} value={form.goalsSet} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
-            </label>
-            <label className="col-span-2 block">
-              <span className="text-sm font-medium">Progress Notes</span>
-              <textarea name="progressNotes" rows={2} value={form.progressNotes} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <textarea name="servicesProvided" required rows={2} value={form.servicesProvided} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
           </div>
           <div className="mt-4">
@@ -218,10 +204,10 @@ export function InterventionsPage() {
               </thead>
               <tbody>
                 {interventions.map((item) => (
-                  <tr key={item.interventionPlanId} className="border-border border-b">
+                  <tr key={item.planId} className="border-border border-b">
                     <td className="px-3 py-2">{item.residentCode ?? item.residentId}</td>
-                    <td className="px-3 py-2">{item.interventionCategory}</td>
-                    <td className="max-w-xs truncate px-3 py-2">{item.description ?? '-'}</td>
+                    <td className="px-3 py-2">{item.planCategory}</td>
+                    <td className="max-w-xs truncate px-3 py-2">{item.planDescription ?? '-'}</td>
                     <td className="max-w-xs truncate px-3 py-2">{item.servicesProvided ?? '-'}</td>
                     <td className="px-3 py-2">{item.targetDate ?? '-'}</td>
                     <td className="px-3 py-2">{item.status}</td>

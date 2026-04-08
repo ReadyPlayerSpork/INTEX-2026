@@ -9,13 +9,17 @@ import { Input } from '@/components/ui/input'
 interface Safehouse {
   safehouseId: number
   name: string
-  code: string
+  safehouseCode: string
   region: string
   city: string
+  province: string
+  country: string
   status: string
-  capacity: number
+  capacityGirls: number
+  capacityStaff: number
   currentOccupancy: number
   openDate: string
+  notes?: string
 }
 
 interface PagedResult {
@@ -25,22 +29,30 @@ interface PagedResult {
 
 interface SafehouseForm {
   name: string
-  code: string
+  safehouseCode: string
   region: string
   city: string
+  province: string
+  country: string
   status: string
-  capacity: number
+  capacityGirls: number
+  capacityStaff: number
   openDate: string
+  notes: string
 }
 
 const EMPTY_FORM: SafehouseForm = {
   name: '',
-  code: '',
+  safehouseCode: '',
   region: '',
   city: '',
+  province: '',
+  country: '',
   status: 'Active',
-  capacity: 0,
+  capacityGirls: 0,
+  capacityStaff: 0,
   openDate: '',
+  notes: '',
 }
 
 /* ---------- Page ---------- */
@@ -99,12 +111,16 @@ export function SafehousesPage() {
     setEditingId(s.safehouseId)
     setForm({
       name: s.name,
-      code: s.code,
+      safehouseCode: s.safehouseCode,
       region: s.region,
       city: s.city,
+      province: s.province,
+      country: s.country,
       status: s.status,
-      capacity: s.capacity,
+      capacityGirls: s.capacityGirls,
+      capacityStaff: s.capacityStaff,
       openDate: s.openDate?.split('T')[0] ?? '',
+      notes: s.notes ?? '',
     })
     setShowForm(true)
   }
@@ -165,13 +181,17 @@ export function SafehousesPage() {
           onChange={(e) => { setFilterRegion(e.target.value); setPage(1) }}
           className="max-w-xs"
         />
-        <Input
-          type="text"
-          placeholder="Filter status..."
+        <select
           value={filterStatus}
           onChange={(e) => { setFilterStatus(e.target.value); setPage(1) }}
-          className="max-w-xs"
-        />
+          className="border-input bg-background flex h-10 w-full max-w-xs rounded-md border px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+          <option value="Maintenance">Maintenance</option>
+          <option value="Full">Full</option>
+        </select>
       </div>
 
       {/* Create / Edit form */}
@@ -181,14 +201,27 @@ export function SafehousesPage() {
           <h2 className="font-semibold">{editingId ? 'Edit Safehouse' : 'Create Safehouse'}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Input placeholder="Name" value={form.name} onChange={(e) => updateField('name', e.target.value)} />
-            <Input placeholder="Code" value={form.code} onChange={(e) => updateField('code', e.target.value)} />
+            <Input placeholder="Code" value={form.safehouseCode} onChange={(e) => updateField('safehouseCode', e.target.value)} />
             <Input placeholder="Region" value={form.region} onChange={(e) => updateField('region', e.target.value)} />
             <Input placeholder="City" value={form.city} onChange={(e) => updateField('city', e.target.value)} />
-            <Input placeholder="Status" value={form.status} onChange={(e) => updateField('status', e.target.value)} />
-            <Input type="number" placeholder="Capacity" value={form.capacity || ''} onChange={(e) => updateField('capacity', Number(e.target.value))} />
+            <Input placeholder="Province" value={form.province} onChange={(e) => updateField('province', e.target.value)} />
+            <Input placeholder="Country" value={form.country} onChange={(e) => updateField('country', e.target.value)} />
+            <select
+              value={form.status}
+              onChange={(e) => updateField('status', e.target.value)}
+              className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Full">Full</option>
+            </select>
+            <Input type="number" placeholder="Capacity (Girls)" value={form.capacityGirls || ''} onChange={(e) => updateField('capacityGirls', Number(e.target.value))} />
+            <Input type="number" placeholder="Capacity (Staff)" value={form.capacityStaff || ''} onChange={(e) => updateField('capacityStaff', Number(e.target.value))} />
             <Input type="date" placeholder="Open Date" value={form.openDate} onChange={(e) => updateField('openDate', e.target.value)} />
+            <Input className="col-span-2" placeholder="Notes" value={form.notes} onChange={(e) => updateField('notes', e.target.value)} />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-4">
             <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
             <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
           </div>
@@ -209,8 +242,7 @@ export function SafehousesPage() {
                 <tr className="border-border bg-secondary/50 border-b text-left">
                   <th className="px-3 py-2">Name</th>
                   <th className="px-3 py-2">Code</th>
-                  <th className="px-3 py-2">Region</th>
-                  <th className="px-3 py-2">City</th>
+                  <th className="px-3 py-2">Location</th>
                   <th className="px-3 py-2">Status</th>
                   <th className="px-3 py-2">Capacity</th>
                   <th className="px-3 py-2">Occupancy</th>
@@ -222,11 +254,10 @@ export function SafehousesPage() {
                 {items.map((s) => (
                   <tr key={s.safehouseId} className="border-border/70 hover:bg-secondary/40 border-b transition-colors">
                     <td className="px-3 py-2">{s.name}</td>
-                    <td className="px-3 py-2">{s.code}</td>
-                    <td className="px-3 py-2">{s.region}</td>
-                    <td className="px-3 py-2">{s.city}</td>
+                    <td className="px-3 py-2">{s.safehouseCode}</td>
+                    <td className="px-3 py-2">{s.city}, {s.province}</td>
                     <td className="px-3 py-2">{s.status}</td>
-                    <td className="px-3 py-2">{s.capacity}</td>
+                    <td className="px-3 py-2">{s.capacityGirls} Girls / {s.capacityStaff} Staff</td>
                     <td className="px-3 py-2">{s.currentOccupancy}</td>
                     <td className="px-3 py-2">{s.openDate?.split('T')[0]}</td>
                     <td className="px-3 py-2 flex gap-1">

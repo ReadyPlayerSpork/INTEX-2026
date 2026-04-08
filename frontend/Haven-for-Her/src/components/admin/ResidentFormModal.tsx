@@ -13,12 +13,12 @@ const EMPTY: CreateResidentRequest = {
   internalCode: '',
   safehouseId: 0,
   caseStatus: 'Active',
-  sex: '',
+  sex: 'Female',
   dateOfBirth: '',
-  birthStatus: '',
+  birthStatus: 'Registered',
   placeOfBirth: '',
   religion: '',
-  caseCategory: '',
+  caseCategory: 'Abuse',
   subCatOrphaned: false,
   subCatTrafficked: false,
   subCatChildLabor: false,
@@ -99,7 +99,12 @@ export function ResidentFormModal({ initial, onSubmit, onClose }: ResidentFormMo
     e.preventDefault()
     setSubmitting(true)
     try {
-      await onSubmit({ ...form, safehouseId: Number(form.safehouseId) })
+      const submissionData = { ...form, safehouseId: Number(form.safehouseId) };
+      // Backend expects string? fields to be null or empty, but dateOfBirth must be a valid date.
+      if (!submissionData.dateOfBirth) submissionData.dateOfBirth = new Date().toISOString().split('T')[0];
+      if (!submissionData.dateOfAdmission) submissionData.dateOfAdmission = new Date().toISOString().split('T')[0];
+      if (!submissionData.dateEnrolled) submissionData.dateEnrolled = new Date().toISOString().split('T')[0];
+      await onSubmit(submissionData)
     } finally {
       setSubmitting(false)
     }
@@ -127,9 +132,23 @@ export function ResidentFormModal({ initial, onSubmit, onClose }: ResidentFormMo
                   {safehouses.map((s) => <option key={s.safehouseId} value={s.safehouseId}>{s.name}</option>)}
                 </select>
               </label>
-              <label className="block"><span className="text-sm font-medium">Sex</span><input name="sex" required value={form.sex} onChange={handleChange} className={inputCls} /></label>
-              <label className="block"><span className="text-sm font-medium">Date of Birth</span><input name="dateOfBirth" type="date" required value={form.dateOfBirth} onChange={handleChange} className={inputCls} /></label>
-              <label className="block"><span className="text-sm font-medium">Birth Status</span><input name="birthStatus" required value={form.birthStatus} onChange={handleChange} className={inputCls} /></label>
+              <label className="block">
+                <span className="text-sm font-medium">Sex</span>
+                <select name="sex" required value={form.sex} onChange={handleChange} className={inputCls}>
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+              <label className="block"><span className="text-sm font-medium">Date of Birth</span><input name="dateOfBirth" type="date" required value={form.dateOfBirth?.split('T')[0]} onChange={handleChange} className={inputCls} /></label>
+              <label className="block">
+                <span className="text-sm font-medium">Birth Status</span>
+                <select name="birthStatus" required value={form.birthStatus} onChange={handleChange} className={inputCls}>
+                  <option value="Registered">Registered</option>
+                  <option value="Late Registration">Late Registration</option>
+                  <option value="Unregistered">Unregistered</option>
+                </select>
+              </label>
               <label className="block"><span className="text-sm font-medium">Place of Birth</span><input name="placeOfBirth" required value={form.placeOfBirth} onChange={handleChange} className={inputCls} /></label>
               <label className="block"><span className="text-sm font-medium">Religion</span><input name="religion" required value={form.religion} onChange={handleChange} className={inputCls} /></label>
               <label className="block">
@@ -144,7 +163,16 @@ export function ResidentFormModal({ initial, onSubmit, onClose }: ResidentFormMo
           {/* Case Classification */}
           <fieldset>
             <legend className="mb-2 text-sm font-semibold uppercase text-soft-purple/70">Case Classification</legend>
-            <label className="mb-3 block"><span className="text-sm font-medium">Case Category</span><input name="caseCategory" required value={form.caseCategory} onChange={handleChange} className={inputCls} /></label>
+            <label className="mb-3 block">
+              <span className="text-sm font-medium">Case Category</span>
+              <select name="caseCategory" required value={form.caseCategory} onChange={handleChange} className={inputCls}>
+                <option value="Abuse">Abuse</option>
+                <option value="Exploitation">Exploitation</option>
+                <option value="Neglect">Neglect</option>
+                <option value="At Risk">At Risk</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
               {SUB_CATEGORIES.map(({ key, label }) => (
                 <label key={key} className="flex items-center gap-2">
@@ -183,12 +211,12 @@ export function ResidentFormModal({ initial, onSubmit, onClose }: ResidentFormMo
           <fieldset>
             <legend className="mb-2 text-sm font-semibold uppercase text-soft-purple/70">Admission & Referral</legend>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              <label className="block"><span className="text-sm font-medium">Date of Admission</span><input name="dateOfAdmission" type="date" required value={form.dateOfAdmission} onChange={handleChange} className={inputCls} /></label>
+              <label className="block"><span className="text-sm font-medium">Date of Admission</span><input name="dateOfAdmission" type="date" required value={form.dateOfAdmission?.split('T')[0]} onChange={handleChange} className={inputCls} /></label>
               <label className="block"><span className="text-sm font-medium">Age Upon Admission</span><input name="ageUponAdmission" value={form.ageUponAdmission ?? ''} onChange={handleChange} className={inputCls} /></label>
               <label className="block"><span className="text-sm font-medium">Referral Source</span><input name="referralSource" required value={form.referralSource} onChange={handleChange} className={inputCls} /></label>
               <label className="block"><span className="text-sm font-medium">Referring Agency/Person</span><input name="referringAgencyPerson" value={form.referringAgencyPerson ?? ''} onChange={handleChange} className={inputCls} /></label>
               <label className="block"><span className="text-sm font-medium">Assigned Social Worker</span><input name="assignedSocialWorker" required value={form.assignedSocialWorker} onChange={handleChange} className={inputCls} /></label>
-              <label className="block"><span className="text-sm font-medium">Date Enrolled</span><input name="dateEnrolled" type="date" required value={form.dateEnrolled} onChange={handleChange} className={inputCls} /></label>
+              <label className="block"><span className="text-sm font-medium">Date Enrolled</span><input name="dateEnrolled" type="date" required value={form.dateEnrolled?.split('T')[0]} onChange={handleChange} className={inputCls} /></label>
             </div>
           </fieldset>
 
@@ -208,8 +236,26 @@ export function ResidentFormModal({ initial, onSubmit, onClose }: ResidentFormMo
                   <option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option><option value="Critical">Critical</option>
                 </select>
               </label>
-              <label className="block"><span className="text-sm font-medium">Reintegration Type</span><input name="reintegrationType" value={form.reintegrationType ?? ''} onChange={handleChange} className={inputCls} /></label>
-              <label className="block"><span className="text-sm font-medium">Reintegration Status</span><input name="reintegrationStatus" value={form.reintegrationStatus ?? ''} onChange={handleChange} className={inputCls} /></label>
+              <label className="block">
+                <span className="text-sm font-medium">Reintegration Type</span>
+                <select name="reintegrationType" value={form.reintegrationType ?? ''} onChange={handleChange} className={inputCls}>
+                  <option value="">Select...</option>
+                  <option value="Family Reintegration">Family Reintegration</option>
+                  <option value="Independent Living">Independent Living</option>
+                  <option value="Foster Care">Foster Care</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium">Reintegration Status</span>
+                <select name="reintegrationStatus" value={form.reintegrationStatus ?? ''} onChange={handleChange} className={inputCls}>
+                  <option value="">Select...</option>
+                  <option value="Planned">Planned</option>
+                  <option value="InProgress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Failed">Failed</option>
+                </select>
+              </label>
             </div>
           </fieldset>
 
@@ -229,3 +275,4 @@ export function ResidentFormModal({ initial, onSubmit, onClose }: ResidentFormMo
     </div>
   )
 }
+

@@ -9,7 +9,7 @@ namespace Haven_for_Her_Backend.Controllers;
 
 [ApiController]
 [Route("api/financial/management")]
-[Authorize(Roles = AuthRoles.Financial)]
+[Authorize(Roles = $"{AuthRoles.Financial},{AuthRoles.Admin}")]
 public class FinancialManagementController(HavenForHerBackendDbContext db) : ControllerBase
 {
     /// <summary>
