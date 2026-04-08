@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Haven_for_Her_Backend.Models;
 
@@ -42,5 +43,6 @@ public class InterventionPlan
 
     // Navigation properties
     [ForeignKey(nameof(ResidentId))]
+    [JsonIgnore]
     public Resident Resident { get; set; } = null!;
 }

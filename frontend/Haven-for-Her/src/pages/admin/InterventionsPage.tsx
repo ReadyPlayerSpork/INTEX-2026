@@ -141,11 +141,11 @@ export function InterventionsPage() {
               <span className="text-sm font-medium">Status</span>
               <select name="status" required value={form.status} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm">
                 <option value="">Select...</option>
-                <option value="Planned">Planned</option>
-                <option value="InProgress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="OnHold">On Hold</option>
-                <option value="Cancelled">Cancelled</option>
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Achieved">Achieved</option>
+                <option value="Closed">Closed</option>
               </select>
             </label>
             <label className="col-span-2 block">
@@ -180,11 +180,11 @@ export function InterventionsPage() {
           className="border-input bg-background rounded-md border px-3 py-2 text-sm"
         >
           <option value="">All statuses</option>
-          <option value="Planned">Planned</option>
-          <option value="InProgress">In Progress</option>
-          <option value="Completed">Completed</option>
-          <option value="OnHold">On Hold</option>
-          <option value="Cancelled">Cancelled</option>
+          <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Achieved">Achieved</option>
+          <option value="Closed">Closed</option>
         </select>
       </div>
 

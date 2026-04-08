@@ -116,7 +116,10 @@ public class FinancialController(HavenForHerBackendDbContext db) : ControllerBas
         if (!string.IsNullOrWhiteSpace(type))
             query = query.Where(d => d.DonationType == type);
         if (!string.IsNullOrWhiteSpace(campaign))
-            query = query.Where(d => d.CampaignName != null && d.CampaignName.Contains(campaign));
+        {
+            var c = campaign.Trim().ToLower();
+            query = query.Where(d => d.CampaignName != null && d.CampaignName.ToLower().Contains(c));
+        }
         if (from.HasValue)
             query = query.Where(d => d.DonationDate >= from.Value);
         if (to.HasValue)
@@ -127,7 +130,7 @@ public class FinancialController(HavenForHerBackendDbContext db) : ControllerBas
             query = query.Where(d =>
                 (d.CampaignName != null && d.CampaignName.ToLower().Contains(term)) ||
                 d.DonationType.ToLower().Contains(term) ||
-                d.ChannelSource.ToLower().Contains(term));
+                (d.ChannelSource != null && d.ChannelSource.ToLower().Contains(term)));
         }
 
         var totalCount = await query.CountAsync();

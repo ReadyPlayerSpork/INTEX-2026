@@ -95,11 +95,12 @@ export function PartnersPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [loadingAssignments, setLoadingAssignments] = useState(false)
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (overridePage?: number) => {
     setLoading(true)
     setError('')
+    const pageToFetch = overridePage ?? page
     try {
-      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+      const params = new URLSearchParams({ page: String(pageToFetch), pageSize: String(pageSize) })
       if (filterRegion) params.set('region', filterRegion)
       if (filterStatus) params.set('status', filterStatus)
       const res = await api.get<PagedResult>(`/api/admin/partners?${params}`)
@@ -151,9 +152,10 @@ export function PartnersPage() {
         await api.put(`/api/admin/partners/${editingId}`, form)
       } else {
         await api.post('/api/admin/partners', form)
+        setPage(1)
       }
       setShowForm(false)
-      await fetchData()
+      await fetchData(editingId ? undefined : 1)
     } catch (err) {
       setError(String(err))
     } finally {

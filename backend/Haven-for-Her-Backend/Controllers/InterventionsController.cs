@@ -27,7 +27,10 @@ public class InterventionsController(
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(category))
-            query = query.Where(ip => ip.PlanCategory == category);
+        {
+            var cat = category.Trim().ToLower();
+            query = query.Where(ip => ip.PlanCategory.ToLower().Contains(cat));
+        }
 
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(ip => ip.Status == status);
