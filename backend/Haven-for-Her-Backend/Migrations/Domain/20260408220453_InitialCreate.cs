@@ -201,7 +201,8 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                         name: "FK_partner_assignments_safehouses_safehouse_id",
                         column: x => x.safehouse_id,
                         principalTable: "safehouses",
-                        principalColumn: "safehouse_id");
+                        principalColumn: "safehouse_id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -325,12 +326,14 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                         name: "FK_donations_partners_created_by_partner_id",
                         column: x => x.created_by_partner_id,
                         principalTable: "partners",
-                        principalColumn: "partner_id");
+                        principalColumn: "partner_id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_donations_social_media_posts_referral_post_id",
                         column: x => x.referral_post_id,
                         principalTable: "social_media_posts",
-                        principalColumn: "post_id");
+                        principalColumn: "post_id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_donations_supporters_supporter_id",
                         column: x => x.supporter_id,

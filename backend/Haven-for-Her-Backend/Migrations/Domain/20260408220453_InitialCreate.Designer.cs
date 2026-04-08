@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Haven_for_Her_Backend.Migrations.Domain
 {
     [DbContext(typeof(HavenForHerBackendDbContext))]
-    [Migration("20260408215320_InitialCreate")]
+    [Migration("20260408220453_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -1412,11 +1412,13 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                 {
                     b.HasOne("Haven_for_Her_Backend.Models.Partner", "CreatedByPartner")
                         .WithMany("CreatedDonations")
-                        .HasForeignKey("CreatedByPartnerId");
+                        .HasForeignKey("CreatedByPartnerId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Haven_for_Her_Backend.Models.SocialMediaPost", "ReferralPost")
                         .WithMany("ReferredDonations")
-                        .HasForeignKey("ReferralPostId");
+                        .HasForeignKey("ReferralPostId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Haven_for_Her_Backend.Models.Supporter", "Supporter")
                         .WithMany("Donations")
@@ -1534,7 +1536,8 @@ namespace Haven_for_Her_Backend.Migrations.Domain
 
                     b.HasOne("Haven_for_Her_Backend.Models.Safehouse", "Safehouse")
                         .WithMany("PartnerAssignments")
-                        .HasForeignKey("SafehouseId");
+                        .HasForeignKey("SafehouseId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Partner");
 
