@@ -107,7 +107,7 @@ using (var scope = app.Services.CreateScope())
     {
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CsvDataSeeder");
-        var csvDir = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "..", "docs", "lighthouse_csv_v7"));
+        var csvDir = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "docs", "lighthouse_csv_v7"));
         await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, logger);
     }
 }
