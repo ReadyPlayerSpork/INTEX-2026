@@ -59,6 +59,36 @@ namespace Haven_for_Her_Backend.Data
                     throw new Exception($"Failed to assign donor role to user: {string.Join(", ", addToRoleResult.Errors.Select(e => e.Description))}");
                 }
             }
+
+            // ── Seeded counselor (matches CSV data for SW-15 residents) ──────────
+            const string counselorEmail = "counselor@havenforher.local";
+            const string counselorPassword = "Counselor!haven4her";
+
+            var counselorUser = await userManager.FindByEmailAsync(counselorEmail);
+            if (counselorUser == null)
+            {
+                counselorUser = new ApplicationUser
+                {
+                    UserName = counselorEmail,
+                    Email = counselorEmail,
+                    EmailConfirmed = true,
+                };
+
+                var createResult = await userManager.CreateAsync(counselorUser, counselorPassword);
+                if (!createResult.Succeeded)
+                {
+                    throw new Exception($"Failed to create counselor user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+                }
+            }
+
+            if (!await userManager.IsInRoleAsync(counselorUser, AuthRoles.Counselor))
+            {
+                var addResult = await userManager.AddToRoleAsync(counselorUser, AuthRoles.Counselor);
+                if (!addResult.Succeeded)
+                {
+                    throw new Exception($"Failed to assign Counselor role: {string.Join(", ", addResult.Errors.Select(e => e.Description))}");
+                }
+            }
         }
     }
 }
