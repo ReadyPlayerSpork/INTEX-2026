@@ -9,7 +9,7 @@ namespace Haven_for_Her_Backend.Controllers;
 
 [ApiController]
 [Route("api/counselor")]
-[Authorize(Roles = AuthRoles.Counselor)]
+[Authorize(Roles = $"{AuthRoles.Counselor},{AuthRoles.Admin}")]
 public class CounselorController(
     HavenForHerBackendDbContext db,
     UserManager<ApplicationUser> userManager) : ControllerBase
