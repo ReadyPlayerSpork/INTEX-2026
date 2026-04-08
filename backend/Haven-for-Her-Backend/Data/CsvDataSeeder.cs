@@ -19,10 +19,40 @@ public static class CsvDataSeeder
         string csvDirectory,
         ILogger logger)
     {
+        // Wipe all domain data so every deploy gets a fresh seed from CSVs.
+        // Delete in reverse dependency order (Level 2 → 1 → 0).
         if (await db.Safehouses.AnyAsync())
         {
-            logger.LogInformation("Database already seeded — skipping CSV import.");
-            return;
+            logger.LogInformation("Clearing existing domain data for re-seed…");
+
+            // Level 2
+            db.IncidentReports.RemoveRange(db.IncidentReports);
+            db.InterventionPlans.RemoveRange(db.InterventionPlans);
+            db.HealthWellbeingRecords.RemoveRange(db.HealthWellbeingRecords);
+            db.EducationRecords.RemoveRange(db.EducationRecords);
+            db.HomeVisitations.RemoveRange(db.HomeVisitations);
+            db.ProcessRecordings.RemoveRange(db.ProcessRecordings);
+            db.InKindDonationItems.RemoveRange(db.InKindDonationItems);
+            db.DonationAllocations.RemoveRange(db.DonationAllocations);
+
+            // Level 1
+            db.SafehouseMonthlyMetrics.RemoveRange(db.SafehouseMonthlyMetrics);
+            db.PartnerAssignments.RemoveRange(db.PartnerAssignments);
+            db.Donations.RemoveRange(db.Donations);
+            db.Residents.RemoveRange(db.Residents);
+
+            // Level 0
+            db.SocialMediaPosts.RemoveRange(db.SocialMediaPosts);
+            db.PublicImpactSnapshots.RemoveRange(db.PublicImpactSnapshots);
+            db.Partners.RemoveRange(db.Partners);
+            db.Supporters.RemoveRange(db.Supporters);
+            db.Safehouses.RemoveRange(db.Safehouses);
+
+            // CounselingRequests (no CSV source, but clear for consistency)
+            db.CounselingRequests.RemoveRange(db.CounselingRequests);
+
+            await db.SaveChangesAsync();
+            logger.LogInformation("Existing domain data cleared.");
         }
 
         logger.LogInformation("Seeding database from CSVs in {Dir}…", csvDirectory);

@@ -139,13 +139,12 @@ using (var scope = app.Services.CreateScope())
 
     await AuthIdentityGenerator.GenerateDefaultIdentityAsync(scope.ServiceProvider, app.Configuration);
 
-    if (app.Environment.IsDevelopment())
-    {
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CsvDataSeeder");
-        var csvDir = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "docs", "lighthouse_csv_v7"));
-        await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, logger);
-    }
+    // Seed CSV data on every startup (wipes and re-seeds domain tables).
+    // This ensures production always reflects the latest CSV data after deploy.
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CsvDataSeeder");
+    var csvDir = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "docs", "lighthouse_csv_v7"));
+    await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, logger);
 }
 
 // Configure the HTTP request pipeline.
