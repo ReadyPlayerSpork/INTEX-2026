@@ -192,6 +192,21 @@ const AdminPortalLayout = lazy(() =>
     default: m.AdminPortalLayout,
   })),
 )
+const FinancialPortalLayout = lazy(() =>
+  import('@/layouts/FinancialPortalLayout').then((m) => ({
+    default: m.FinancialPortalLayout,
+  })),
+)
+const CounselorPortalLayout = lazy(() =>
+  import('@/layouts/CounselorPortalLayout').then((m) => ({
+    default: m.CounselorPortalLayout,
+  })),
+)
+const SocialMediaPortalLayout = lazy(() =>
+  import('@/layouts/SocialMediaPortalLayout').then((m) => ({
+    default: m.SocialMediaPortalLayout,
+  })),
+)
 
 function DonateRouter() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -241,54 +256,45 @@ function App() {
               <Route path="/survivor/resources" element={<MyResourcesPage />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['Counselor']} />}>
-              <Route
-                path="/counselor/dashboard"
-                element={<CounselorDashboardPage />}
-              />
-              <Route path="/counselor/sessions" element={<SessionsPage />} />
-              <Route
-                path="/counselor/visitations"
-                element={<VisitationsPage />}
-              />
-              <Route
-                path="/counselor/sessions/:id"
-                element={<SessionDetailPage />}
-              />
-              <Route
-                path="/counselor/case-conferences"
-                element={<CaseConferencesPage />}
-              />
+            <Route
+              path="/counselor"
+              element={<ProtectedRoute allowedRoles={['Counselor', 'Admin']} />}
+            >
+              <Route element={<CounselorPortalLayout />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<CounselorDashboardPage />} />
+                <Route path="sessions" element={<SessionsPage />} />
+                <Route path="sessions/:id" element={<SessionDetailPage />} />
+                <Route path="visitations" element={<VisitationsPage />} />
+                <Route path="case-conferences" element={<CaseConferencesPage />} />
+              </Route>
             </Route>
 
             <Route
+              path="/financial"
               element={<ProtectedRoute allowedRoles={['Financial', 'Admin']} />}
             >
-              <Route
-                path="/financial/dashboard"
-                element={<FinancialDashboardPage />}
-              />
-              <Route path="/financial/donors" element={<DonorManagementPage />} />
-              <Route
-                path="/financial/donors/:id"
-                element={<SupporterDetailPage />}
-              />
-              <Route
-                path="/financial/donations"
-                element={<DonationRecordsPage />}
-              />
-              <Route path="/financial/insights" element={<InsightsPage />} />
-              <Route path="/financial/reports" element={<ReportsPage />} />
+              <Route element={<FinancialPortalLayout />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<FinancialDashboardPage />} />
+                <Route path="donors" element={<DonorManagementPage />} />
+                <Route path="donors/:id" element={<SupporterDetailPage />} />
+                <Route path="donations" element={<DonationRecordsPage />} />
+                <Route path="insights" element={<InsightsPage />} />
+                <Route path="reports" element={<ReportsPage />} />
+              </Route>
             </Route>
 
             <Route
-              element={
-                <ProtectedRoute allowedRoles={['SocialMedia', 'Admin']} />
-              }
+              path="/social"
+              element={<ProtectedRoute allowedRoles={['SocialMedia', 'Admin']} />}
             >
-              <Route path="/social/dashboard" element={<SocialDashboardPage />} />
-              <Route path="/social/posts" element={<PostsPage />} />
-              <Route path="/social/post" element={<CreatePostPage />} />
+              <Route element={<SocialMediaPortalLayout />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<SocialDashboardPage />} />
+                <Route path="posts" element={<PostsPage />} />
+                <Route path="post" element={<CreatePostPage />} />
+              </Route>
             </Route>
 
             <Route

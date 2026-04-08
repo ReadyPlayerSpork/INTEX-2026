@@ -17,9 +17,9 @@ export const PRIMARY_NAV: NavItem[] = [
 export const ACCOUNT_NAV: NavItem[] = [
   { label: 'Donor Dashboard', to: '/donor/dashboard', roles: ['Donor'] },
   { label: 'My Resources', to: '/survivor/resources', roles: ['Survivor'] },
-  { label: 'Financial', to: '/financial/dashboard', roles: ['Financial'] },
-  { label: 'Counselor', to: '/counselor/dashboard', roles: ['Counselor'] },
-  { label: 'Social Media', to: '/social/dashboard', roles: ['SocialMedia'] },
+  { label: 'Financial', to: '/financial/dashboard', roles: ['Financial', 'Admin'] },
+  { label: 'Counselor', to: '/counselor/dashboard', roles: ['Counselor', 'Admin'] },
+  { label: 'Social Media', to: '/social/dashboard', roles: ['SocialMedia', 'Admin'] },
   { label: 'Admin', to: '/admin/dashboard', roles: ['Admin'] },
   { label: 'Security', to: '/account/security', roles: [] },
 ]
