@@ -37,12 +37,18 @@ export function VisitationsPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
+  const [filterType, setFilterType] = useState('')
+  const [filterDateFrom, setFilterDateFrom] = useState('')
+  const [filterDateTo, setFilterDateTo] = useState('')
   const pageSize = 20
 
   const fetchVisits = useCallback(async () => {
     setLoading(true)
     try {
       const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+      if (filterType) qs.set('visitType', filterType)
+      if (filterDateFrom) qs.set('dateFrom', filterDateFrom)
+      if (filterDateTo) qs.set('dateTo', filterDateTo)
       const res = await api.get<PaginatedResponse<Visitation>>(`/api/counselor/visitations?${qs}`)
       setVisits(res.items)
       setTotalCount(res.totalCount)
@@ -51,7 +57,7 @@ export function VisitationsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page])
+  }, [page, filterType, filterDateFrom, filterDateTo])
 
   useEffect(() => {
     void fetchVisits()
@@ -59,7 +65,7 @@ export function VisitationsPage() {
 
   const totalPages = Math.ceil(totalCount / pageSize)
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const target = e.target
     const value = target instanceof HTMLInputElement && target.type === 'checkbox' ? target.checked : target.value
     setForm((prev) => ({ ...prev, [target.name]: value }))
@@ -102,6 +108,20 @@ export function VisitationsPage() {
         </Button>
       </div>
 
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap gap-3">
+        <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm">
+          <option value="">All visit types</option>
+          <option value="Initial Assessment">Initial Assessment</option>
+          <option value="Routine Follow-Up">Routine Follow-Up</option>
+          <option value="Reintegration Assessment">Reintegration Assessment</option>
+          <option value="Post-Placement Monitoring">Post-Placement Monitoring</option>
+          <option value="Emergency">Emergency</option>
+        </select>
+        <input type="date" placeholder="From" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm" />
+        <input type="date" placeholder="To" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm" />
+      </div>
+
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-card border-border mb-6 rounded-lg border p-6">
           <h2 className="mb-4 text-lg font-semibold">New Visitation</h2>
@@ -116,7 +136,14 @@ export function VisitationsPage() {
             </label>
             <label className="block">
               <span className="text-sm font-medium">Visit Type</span>
-              <input name="visitType" type="text" required value={form.visitType} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <select name="visitType" required value={form.visitType} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm">
+                <option value="">Select type...</option>
+                <option value="Initial Assessment">Initial Assessment</option>
+                <option value="Routine Follow-Up">Routine Follow-Up</option>
+                <option value="Reintegration Assessment">Reintegration Assessment</option>
+                <option value="Post-Placement Monitoring">Post-Placement Monitoring</option>
+                <option value="Emergency">Emergency</option>
+              </select>
             </label>
             <label className="block">
               <span className="text-sm font-medium">Location</span>
@@ -184,13 +211,13 @@ export function VisitationsPage() {
               </thead>
               <tbody>
                 {visits.map((v) => (
-                  <tr key={v.familyVisitationTrackingId} className="border-border border-b">
+                  <tr key={v.familyVisitationTrackingId} className={`border-border border-b ${v.safetyConcernsNoted ? 'bg-destructive/5' : ''}`}>
                     <td className="px-3 py-2">{v.visitDate}</td>
                     <td className="px-3 py-2">{v.residentId}</td>
                     <td className="px-3 py-2">{v.visitType}</td>
                     <td className="px-3 py-2">{v.locationVisited ?? '-'}</td>
                     <td className="px-3 py-2">{v.visitOutcome ?? '-'}</td>
-                    <td className="px-3 py-2">{v.safetyConcernsNoted ? 'Yes' : 'No'}</td>
+                    <td className="px-3 py-2">{v.safetyConcernsNoted ? <span className="font-medium text-destructive">Yes</span> : 'No'}</td>
                     <td className="px-3 py-2">{v.followUpNeeded ? 'Yes' : 'No'}</td>
                   </tr>
                 ))}

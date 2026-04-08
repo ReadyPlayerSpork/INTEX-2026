@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import type { PaginatedResponse } from '@/api/types'
 
 interface Session {
+  recordingId: number
   processRecordingId: number
   residentId: number
   sessionDate: string
@@ -37,12 +39,20 @@ export function SessionsPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
+  const [filterType, setFilterType] = useState('')
+  const [filterDateFrom, setFilterDateFrom] = useState('')
+  const [filterDateTo, setFilterDateTo] = useState('')
+  const [filterConcernsOnly, setFilterConcernsOnly] = useState(false)
   const pageSize = 20
 
   const fetchSessions = useCallback(async () => {
     setLoading(true)
     try {
       const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+      if (filterType) qs.set('sessionType', filterType)
+      if (filterDateFrom) qs.set('dateFrom', filterDateFrom)
+      if (filterDateTo) qs.set('dateTo', filterDateTo)
+      if (filterConcernsOnly) qs.set('concernsOnly', 'true')
       const res = await api.get<PaginatedResponse<Session>>(`/api/counselor/sessions?${qs}`)
       setSessions(res.items)
       setTotalCount(res.totalCount)
@@ -51,7 +61,7 @@ export function SessionsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page])
+  }, [page, filterType, filterDateFrom, filterDateTo, filterConcernsOnly])
 
   useEffect(() => {
     void fetchSessions()
@@ -100,6 +110,21 @@ export function SessionsPage() {
         <Button onClick={() => setShowForm((v) => !v)}>
           {showForm ? 'Cancel' : 'New Session'}
         </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap gap-3">
+        <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm">
+          <option value="">All types</option>
+          <option value="Individual">Individual</option>
+          <option value="Group">Group</option>
+        </select>
+        <input type="date" placeholder="From" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm" />
+        <input type="date" placeholder="To" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm" />
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={filterConcernsOnly} onChange={(e) => { setFilterConcernsOnly(e.target.checked); setPage(1) }} />
+          <span className="text-sm">Concerns only</span>
+        </label>
       </div>
 
       {showForm && (
@@ -182,8 +207,12 @@ export function SessionsPage() {
               </thead>
               <tbody>
                 {sessions.map((s) => (
-                  <tr key={s.processRecordingId} className="border-border border-b">
-                    <td className="px-3 py-2">{s.sessionDate}</td>
+                  <tr key={s.recordingId ?? s.processRecordingId} className="border-border hover:bg-muted/50 border-b">
+                    <td className="px-3 py-2">
+                      <Link to={`/counselor/sessions/${s.recordingId ?? s.processRecordingId}`} className="text-primary underline">
+                        {s.sessionDate}
+                      </Link>
+                    </td>
                     <td className="px-3 py-2">{s.residentId}</td>
                     <td className="px-3 py-2">{s.sessionType}</td>
                     <td className="px-3 py-2">{s.sessionDurationMinutes} min</td>

@@ -2,6 +2,16 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
+import { caseloadApi, type CreateResidentRequest } from '@/api/caseloadApi'
+import { ResidentFormModal } from '@/components/admin/ResidentFormModal'
+import {
+  SubCategorySection,
+  DisabilitySection,
+  FamilyProfileSection,
+  ReferralSection,
+  ReintegrationSection,
+  DemographicsSection,
+} from '@/components/admin/ResidentProfileSections'
 
 /* ---- Types matching CaseloadController.GetResident response ---- */
 
@@ -26,8 +36,40 @@ interface ResidentProfile {
   dateOfAdmission: string | null
   dateClosed: string | null
   reintegrationStatus: string | null
+  reintegrationType: string | null
   lengthOfStay: string | null
   referralSource: string | null
+  referringAgencyPerson: string | null
+  dateEnrolled: string | null
+  dateColbRegistered: string | null
+  dateColbObtained: string | null
+  initialCaseAssessment: string | null
+  dateCaseStudyPrepared: string | null
+  birthStatus: string | null
+  placeOfBirth: string | null
+  religion: string | null
+  ageUponAdmission: string | null
+  presentAge: string | null
+  subCatOrphaned: boolean
+  subCatTrafficked: boolean
+  subCatChildLabor: boolean
+  subCatPhysicalAbuse: boolean
+  subCatSexualAbuse: boolean
+  subCatOsaec: boolean
+  subCatCicl: boolean
+  subCatAtRisk: boolean
+  subCatStreetChild: boolean
+  subCatChildWithHiv: boolean
+  isPwd: boolean
+  pwdType: string | null
+  hasSpecialNeeds: boolean
+  specialNeedsDiagnosis: string | null
+  familyIs4ps: boolean
+  familySoloParent: boolean
+  familyIndigenous: boolean
+  familyParentPwd: boolean
+  familyInformalSettler: boolean
+  notesRestricted: string | null
   processRecordings: unknown[]
   homeVisitations: unknown[]
   educationRecords: unknown[]
@@ -71,15 +113,21 @@ export function ResidentProfilePage() {
   const [resident, setResident] = useState<ResidentProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabName>('profile')
+  const [showEdit, setShowEdit] = useState(false)
 
-  useEffect(() => {
+  const fetchResident = useCallback(() => {
     if (!id) return
+    setLoading(true)
     api
       .get<ResidentProfile>(`/api/caseload/${id}`)
       .then(setResident)
       .catch((err) => console.error('Failed to load resident profile', err))
       .finally(() => setLoading(false))
   }, [id])
+
+  useEffect(() => {
+    fetchResident()
+  }, [fetchResident])
 
   if (loading) {
     return (
@@ -102,9 +150,12 @@ export function ResidentProfilePage() {
       <h1 className="mb-2 text-2xl font-bold">
         {resident.internalCode}
       </h1>
-      <p className="text-muted-foreground mb-6 text-sm">
-        {resident.caseControlNo} | {resident.safehouse?.name ?? 'Unknown Safehouse'} | {resident.caseStatus}
-      </p>
+      <div className="mb-6 flex items-center justify-between">
+        <p className="text-muted-foreground text-sm">
+          {resident.caseControlNo} | {resident.safehouse?.name ?? 'Unknown Safehouse'} | {resident.caseStatus}
+        </p>
+        <Button size="sm" onClick={() => setShowEdit(true)}>Edit Resident</Button>
+      </div>
 
       {/* Tabs */}
       <div className="border-border mb-6 flex gap-1 border-b">
@@ -132,6 +183,62 @@ export function ResidentProfilePage() {
           idField={TAB_CONFIG[activeTab].idField}
         />
       )}
+
+      {showEdit && (
+        <ResidentFormModal
+          initial={{
+            caseControlNo: resident.caseControlNo,
+            internalCode: resident.internalCode,
+            safehouseId: resident.safehouseId,
+            caseStatus: resident.caseStatus,
+            sex: resident.sex ?? '',
+            dateOfBirth: resident.dateOfBirth ?? '',
+            birthStatus: resident.birthStatus ?? '',
+            placeOfBirth: resident.placeOfBirth ?? '',
+            religion: resident.religion ?? '',
+            caseCategory: resident.caseCategory ?? '',
+            subCatOrphaned: resident.subCatOrphaned,
+            subCatTrafficked: resident.subCatTrafficked,
+            subCatChildLabor: resident.subCatChildLabor,
+            subCatPhysicalAbuse: resident.subCatPhysicalAbuse,
+            subCatSexualAbuse: resident.subCatSexualAbuse,
+            subCatOsaec: resident.subCatOsaec,
+            subCatCicl: resident.subCatCicl,
+            subCatAtRisk: resident.subCatAtRisk,
+            subCatStreetChild: resident.subCatStreetChild,
+            subCatChildWithHiv: resident.subCatChildWithHiv,
+            isPwd: resident.isPwd,
+            pwdType: resident.pwdType,
+            hasSpecialNeeds: resident.hasSpecialNeeds,
+            specialNeedsDiagnosis: resident.specialNeedsDiagnosis,
+            familyIs4ps: resident.familyIs4ps,
+            familySoloParent: resident.familySoloParent,
+            familyIndigenous: resident.familyIndigenous,
+            familyParentPwd: resident.familyParentPwd,
+            familyInformalSettler: resident.familyInformalSettler,
+            dateOfAdmission: resident.dateOfAdmission ?? '',
+            ageUponAdmission: resident.ageUponAdmission,
+            presentAge: resident.presentAge,
+            lengthOfStay: resident.lengthOfStay,
+            referralSource: resident.referralSource ?? '',
+            referringAgencyPerson: resident.referringAgencyPerson,
+            assignedSocialWorker: resident.assignedSocialWorker ?? '',
+            initialCaseAssessment: resident.initialCaseAssessment,
+            reintegrationType: resident.reintegrationType,
+            reintegrationStatus: resident.reintegrationStatus,
+            initialRiskLevel: resident.initialRiskLevel,
+            currentRiskLevel: resident.currentRiskLevel,
+            dateEnrolled: resident.dateEnrolled ?? '',
+            notesRestricted: resident.notesRestricted,
+          } as CreateResidentRequest}
+          onSubmit={async (data: CreateResidentRequest) => {
+            await caseloadApi.updateResident(resident.residentId, data)
+            setShowEdit(false)
+            fetchResident()
+          }}
+          onClose={() => setShowEdit(false)}
+        />
+      )}
     </div>
   )
 }
@@ -139,7 +246,7 @@ export function ResidentProfilePage() {
 /* ---- Profile sub-tab ---- */
 
 function ProfileTab({ resident }: { resident: ResidentProfile }) {
-  const fields: { label: string; value: string | null }[] = [
+  const coreFields: { label: string; value: string | null }[] = [
     { label: 'Case Control No', value: resident.caseControlNo },
     { label: 'Internal Code', value: resident.internalCode },
     { label: 'Sex', value: resident.sex },
@@ -150,21 +257,27 @@ function ProfileTab({ resident }: { resident: ResidentProfile }) {
     { label: 'Initial Risk Level', value: resident.initialRiskLevel },
     { label: 'Current Risk Level', value: resident.currentRiskLevel },
     { label: 'Admission Date', value: resident.dateOfAdmission },
-    { label: 'Date Closed', value: resident.dateClosed },
-    { label: 'Reintegration Status', value: resident.reintegrationStatus },
     { label: 'Length of Stay', value: resident.lengthOfStay },
     { label: 'Assigned Worker', value: resident.assignedSocialWorker },
-    { label: 'Referral Source', value: resident.referralSource },
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      {fields.map((f) => (
-        <div key={f.label}>
-          <p className="text-muted-foreground text-xs font-medium uppercase">{f.label}</p>
-          <p className="text-sm">{f.value ?? '-'}</p>
-        </div>
-      ))}
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        {coreFields.map((f) => (
+          <div key={f.label}>
+            <p className="text-xs font-medium uppercase text-soft-purple/70">{f.label}</p>
+            <p className="text-sm text-plum">{f.value ?? '-'}</p>
+          </div>
+        ))}
+      </div>
+
+      <SubCategorySection data={resident} />
+      <DisabilitySection data={resident} />
+      <FamilyProfileSection data={resident} />
+      <DemographicsSection data={resident} />
+      <ReferralSection data={resident} />
+      <ReintegrationSection data={resident} />
     </div>
   )
 }

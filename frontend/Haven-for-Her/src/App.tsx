@@ -164,6 +164,28 @@ const PartnersPage = lazy(() =>
     default: m.PartnersPage,
   })),
 )
+const AnalyticsPage = lazy(() =>
+  import('@/pages/admin/AnalyticsPage').then((m) => ({
+    default: m.AnalyticsPage,
+  })),
+)
+
+const SupporterDetailPage = lazy(() =>
+  import('@/pages/financial/SupporterDetailPage').then((m) => ({
+    default: m.SupporterDetailPage,
+  })),
+)
+
+const SessionDetailPage = lazy(() =>
+  import('@/pages/counselor/SessionDetailPage').then((m) => ({
+    default: m.SessionDetailPage,
+  })),
+)
+const CaseConferencesPage = lazy(() =>
+  import('@/pages/counselor/CaseConferencesPage').then((m) => ({
+    default: m.CaseConferencesPage,
+  })),
+)
 
 const AdminPortalLayout = lazy(() =>
   import('@/layouts/AdminPortalLayout').then((m) => ({
@@ -229,6 +251,14 @@ function App() {
                 path="/counselor/visitations"
                 element={<VisitationsPage />}
               />
+              <Route
+                path="/counselor/sessions/:id"
+                element={<SessionDetailPage />}
+              />
+              <Route
+                path="/counselor/case-conferences"
+                element={<CaseConferencesPage />}
+              />
             </Route>
 
             <Route
@@ -239,6 +269,10 @@ function App() {
                 element={<FinancialDashboardPage />}
               />
               <Route path="/financial/donors" element={<DonorManagementPage />} />
+              <Route
+                path="/financial/donors/:id"
+                element={<SupporterDetailPage />}
+              />
               <Route
                 path="/financial/donations"
                 element={<DonationRecordsPage />}
@@ -275,6 +309,7 @@ function App() {
                 <Route path="interventions" element={<InterventionsPage />} />
                 <Route path="safehouses" element={<SafehousesPage />} />
                 <Route path="partners" element={<PartnersPage />} />
+                <Route path="analytics" element={<AnalyticsPage />} />
               </Route>
             </Route>
 

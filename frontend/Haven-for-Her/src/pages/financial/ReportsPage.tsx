@@ -1,9 +1,36 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { reportsApi, type DonationTrend } from '@/api/reportsApi'
+import { TrendChart } from '@/components/shared/TrendChart'
+import { financialApi, type AllocationsResponse } from '@/api/financialApi'
+import { AllocationBreakdown } from '@/components/financial/AllocationBreakdown'
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export function ReportsPage() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
+  const [trends, setTrends] = useState<DonationTrend[]>([])
+  const [allocations, setAllocations] = useState<AllocationsResponse | null>(null)
+  const [loadingTrends, setLoadingTrends] = useState(true)
+
+  const fetchTrends = useCallback(async () => {
+    setLoadingTrends(true)
+    try {
+      const [t, a] = await Promise.all([
+        reportsApi.getDonationTrends(12),
+        financialApi.getAllocations(),
+      ])
+      setTrends(t)
+      setAllocations(a)
+    } catch {
+      // ignore
+    } finally {
+      setLoadingTrends(false)
+    }
+  }, [])
+
+  useEffect(() => { void fetchTrends() }, [fetchTrends])
 
   const downloadCsv = () => {
     const qs = new URLSearchParams()
@@ -12,19 +39,49 @@ export function ReportsPage() {
     window.open(`/api/financial/export/csv?${qs}`, '_blank')
   }
 
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="mb-6 text-2xl font-bold">Export Reports</h1>
+  const chartData = trends.map((t) => ({
+    label: `${MONTH_NAMES[t.month - 1]} ${t.year}`,
+    value: t.monetaryTotal,
+    secondaryValue: t.inKindTotal,
+  }))
 
-      <div className="bg-card border-border rounded-lg border p-6">
-        <h2 className="mb-4 text-lg font-semibold">Donation Export (CSV)</h2>
-        <p className="text-muted-foreground mb-4 text-sm">
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-12">
+      <h1 className="mb-6 font-heading text-2xl font-bold text-plum">Financial Reports</h1>
+
+      {/* Donation Trends */}
+      {loadingTrends ? (
+        <p className="text-muted-foreground mb-6 animate-pulse">Loading trends...</p>
+      ) : (
+        <div className="mb-8">
+          <TrendChart
+            data={chartData}
+            title="Donation Trends (Last 12 Months)"
+            valueLabel="Monetary"
+            secondaryLabel="In-Kind"
+            height={220}
+          />
+        </div>
+      )}
+
+      {/* Allocation Breakdown */}
+      {allocations && (
+        <div className="mb-8">
+          <h2 className="mb-4 font-heading text-xl font-semibold text-plum">Donation Allocations</h2>
+          <AllocationBreakdown bySafehouse={allocations.bySafehouse} byProgramArea={allocations.byProgramArea} />
+        </div>
+      )}
+
+      {/* CSV Export */}
+      <div className="rounded-2xl bg-cream p-6">
+        <h2 className="mb-4 font-heading text-lg font-semibold text-plum">Donation Export (CSV)</h2>
+        <p className="mb-4 text-sm text-soft-purple/70">
           Download all donations for a date range as a CSV file.
         </p>
 
         <div className="mb-4 grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">From date</span>
+            <span className="text-sm font-medium text-soft-purple">From date</span>
             <input
               type="date"
               value={from}
@@ -33,7 +90,7 @@ export function ReportsPage() {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">To date</span>
+            <span className="text-sm font-medium text-soft-purple">To date</span>
             <input
               type="date"
               value={to}
