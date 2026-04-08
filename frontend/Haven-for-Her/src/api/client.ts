@@ -5,6 +5,12 @@
  * normalisation, and base-URL logic live in one place.
  */
 
+/** Returns the API base URL (empty string in dev so Vite proxy handles it). */
+function getBaseUrl(): string {
+  const env = import.meta.env.VITE_API_BASE_URL?.trim();
+  return env ? env.replace(/\/$/, '') : '';
+}
+
 class ApiError extends Error {
   readonly status: number;
   readonly body?: unknown;
@@ -18,7 +24,7 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(`${getBaseUrl()}${path}`, {
     credentials: 'include',
     ...init,
     headers: {

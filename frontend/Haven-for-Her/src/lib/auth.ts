@@ -1,20 +1,13 @@
 export function getAuthBaseUrl(): string {
-  const explicitBaseUrl = import.meta.env.VITE_AUTH_BASE_URL?.trim()
+  const explicit =
+    import.meta.env.VITE_AUTH_BASE_URL?.trim() ||
+    import.meta.env.VITE_API_BASE_URL?.trim()
 
-  if (explicitBaseUrl) {
-    return explicitBaseUrl.replace(/\/$/, '')
+  if (explicit) {
+    return explicit.replace(/\/$/, '')
   }
 
-  if (typeof window !== 'undefined') {
-    const { hostname, origin } = window.location
-
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'https://localhost:7229'
-    }
-
-    return origin.replace(/\/$/, '')
-  }
-
+  // Dev: auth redirects must hit the backend directly (not proxied).
   return 'https://localhost:7229'
 }
 
