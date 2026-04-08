@@ -110,24 +110,24 @@ The project is deployed to a self-hosted **Dokploy** instance. External HTTPS is
 
 ### Services
 
-| Dokploy Service | Type | Build | Internal Port | Domain |
-|---|---|---|---|---|
-| `frontend` | GitHub → Railpack | `frontend/Haven-for-Her` | 80 | `havenforher.lukemiller.dev` |
-| `backend` | GitHub → Railpack | `backend/Haven-for-Her-Backend` | 8080 | `havenforher-api.lukemiller.dev` |
-| `h4hdb` | PostgreSQL 18 | Docker image | 5432 (internal) | — |
-| `cloudflared` | Docker image | `cloudflare/cloudflared` | — | — |
-| `ml-pipeline` | GitHub → Railpack | `ml-pipelines/` | TBD | — |
+| Dokploy Service | Type | Build Path |
+|---|---|---|
+| `frontend` | GitHub → Railpack | `frontend/Haven-for-Her` |
+| `backend` | GitHub → Railpack | `backend/Haven-for-Her-Backend` |
+| PostgreSQL 18 | Docker image | — |
+| `cloudflared` | Docker image | — |
+| `ml-pipeline` | GitHub → Railpack | `ml-pipelines/` |
 
 ### TLS / HTTPS Handling
 - **Cloudflare** terminates TLS at the edge and forwards plain HTTP to the Dokploy containers via the tunnel.
 - **`UseHttpsRedirection()` and `UseHsts()` are intentionally omitted** from the ASP.NET middleware pipeline — adding them behind Cloudflare causes redirect loops.
 - **`UseForwardedHeaders()`** is configured to trust `X-Forwarded-For` and `X-Forwarded-Proto` from Cloudflare.
-- Both frontend and backend domains use `https: false` / `certificateType: none` in Dokploy since Cloudflare handles certs.
+- Dokploy domain entries use `https: false` / `certificateType: none` since Cloudflare handles certs.
 
 ### Environment Variables
 - Backend and frontend env vars are set in each Dokploy app's **Environment** tab.
 - See `backend/.env.production.example` and `frontend/.env.production.example` for templates.
-- DB connection strings use `postgresql://` URI format pointing to the internal Dokploy hostname (`intex-h4hdb-5zypic`).
+- DB connection strings use `postgresql://` URI format pointing to the internal Dokploy service hostname.
 
 ### Auto-Deploy
 Both frontend and backend have `autoDeploy: true` on the `main` branch — pushing to `main` triggers a rebuild.
