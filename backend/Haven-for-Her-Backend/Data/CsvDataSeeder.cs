@@ -154,6 +154,8 @@ public static class CsvDataSeeder
         csv.Context.TypeConverterCache.AddConverter<int>(new RobustIntConverter());
         csv.Context.TypeConverterCache.AddConverter<int?>(new RobustNullableIntConverter());
         csv.Context.TypeConverterCache.AddConverter<decimal>(new RobustDecimalConverter());
+        csv.Context.TypeConverterCache.AddConverter<DateTime>(new UtcDateTimeConverter());
+        csv.Context.TypeConverterCache.AddConverter<DateTime?>(new UtcNullableDateTimeConverter());
 
         var map = csv.Context.AutoMap<T>();
         PruneNavigationProperties(map);
@@ -254,6 +256,30 @@ public static class CsvDataSeeder
             if (decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
                 return d;
             return 0m;
+        }
+    }
+
+    /// <summary>Parses DateTime and forces Kind=Utc so Npgsql accepts it for timestamptz columns.</summary>
+    private sealed class UtcDateTimeConverter : DefaultTypeConverter
+    {
+        public override object ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return DateTime.UtcNow;
+            if (DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                return DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+            return DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>Parses nullable DateTime and forces Kind=Utc so Npgsql accepts it for timestamptz columns.</summary>
+    private sealed class UtcNullableDateTimeConverter : DefaultTypeConverter
+    {
+        public override object? ConvertFromString(string? text, IReaderRow row, MemberMapData memberMapData)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            if (DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                return DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+            return null;
         }
     }
 }
