@@ -142,9 +142,29 @@ using (var scope = app.Services.CreateScope())
     // Seed CSV data on every startup (wipes and re-seeds domain tables).
     // This ensures production always reflects the latest CSV data after deploy.
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CsvDataSeeder");
-    var csvDir = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "docs", "lighthouse_csv_v7"));
-    await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, logger);
+    var seedLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CsvDataSeeder");
+
+    // Try ContentRootPath first, then fall back to the app base directory (where the DLL lives).
+    var candidatePaths = new[]
+    {
+        Path.Combine(app.Environment.ContentRootPath, "docs", "lighthouse_csv_v7"),
+        Path.Combine(AppContext.BaseDirectory, "docs", "lighthouse_csv_v7"),
+    };
+
+    var csvDir = candidatePaths.FirstOrDefault(Directory.Exists);
+    if (csvDir is not null)
+    {
+        seedLogger.LogInformation("CSV directory resolved to {CsvDir}", csvDir);
+        await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, seedLogger);
+    }
+    else
+    {
+        seedLogger.LogError(
+            "CSV directory not found. Tried: {Paths}. ContentRootPath={ContentRoot}, BaseDirectory={BaseDir}",
+            string.Join(", ", candidatePaths),
+            app.Environment.ContentRootPath,
+            AppContext.BaseDirectory);
+    }
 }
 
 // Configure the HTTP request pipeline.
