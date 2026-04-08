@@ -34,10 +34,12 @@ npm run preview    # Preview production build
 
 ### Backend (`backend/Haven-for-Her-Backend/`)
 ```bash
-dotnet run         # Run on http://localhost:5064 / https://localhost:7229
-dotnet build       # Build only
-dotnet watch       # Hot-reload dev server
+dotnet run --launch-profile https   # REQUIRED: starts on https://localhost:7229 + http://localhost:5064
+dotnet build                        # Build only
+dotnet watch                        # Hot-reload dev server
 ```
+
+> **Important:** You must use `--launch-profile https` so the backend listens on `https://localhost:7229`. The Vite dev server proxies `/api` requests to that address. Running plain `dotnet run` only starts `http://localhost:5064`, which causes 502 Bad Gateway errors in the frontend.
 
 In development, the backend exposes an OpenAPI document via `Microsoft.AspNetCore.OpenApi` at `/openapi/v1.json` (not Swagger UI). See [OpenAPI support in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/aspnetcore-openapi).
 
