@@ -5,6 +5,7 @@ using Haven_for_Her_Backend.Infrastructure;
 using Microsoft.AspNetCore.Authentication.Google;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 const string FrontendCorsPolicy = "FrontendClient";
@@ -148,20 +149,25 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
+
+// Trust Cloudflare Tunnel's forwarded headers (X-Forwarded-For, X-Forwarded-Proto, etc.)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-else
-{
-    app.UseHsts();
-}
+
+// Note: HSTS and HTTPS redirection are intentionally omitted.
+// Cloudflare Tunnel handles TLS termination externally; adding them here
+// would cause redirect loops since the container only receives plain HTTP.
 
 app.UseSecurityHeaders();
 
 app.UseCors(FrontendCorsPolicy);
-
-app.UseHttpsRedirection();
 
 app.UseRateLimiter();
 

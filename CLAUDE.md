@@ -104,6 +104,34 @@ If a symlink breaks on clone (e.g. Windows), recreate: from `.claude/skills/`, p
 ### CORS / Port Configuration
 The backend CORS policy allows credentials from `FrontendUrls` / `FrontendUrl` config and defaults to `http://localhost:5173`. Vite is configured to use port **5173** and proxy `/api` to the backend at `https://localhost:7229`.
 
+## Production Deployment (Dokploy + Cloudflare Tunnel)
+
+The project is deployed to a self-hosted **Dokploy** instance. External HTTPS is handled entirely by a **Cloudflare Tunnel** (`cloudflared` container) — the backend and frontend containers only receive plain HTTP.
+
+### Services
+
+| Dokploy Service | Type | Build | Internal Port | Domain |
+|---|---|---|---|---|
+| `frontend` | GitHub → Railpack | `frontend/Haven-for-Her` | 80 | `havenforher.lukemiller.dev` |
+| `backend` | GitHub → Railpack | `backend/Haven-for-Her-Backend` | 8080 | `havenforher-api.lukemiller.dev` |
+| `h4hdb` | PostgreSQL 18 | Docker image | 5432 (internal) | — |
+| `cloudflared` | Docker image | `cloudflare/cloudflared` | — | — |
+| `ml-pipeline` | GitHub → Railpack | `ml-pipelines/` | TBD | — |
+
+### TLS / HTTPS Handling
+- **Cloudflare** terminates TLS at the edge and forwards plain HTTP to the Dokploy containers via the tunnel.
+- **`UseHttpsRedirection()` and `UseHsts()` are intentionally omitted** from the ASP.NET middleware pipeline — adding them behind Cloudflare causes redirect loops.
+- **`UseForwardedHeaders()`** is configured to trust `X-Forwarded-For` and `X-Forwarded-Proto` from Cloudflare.
+- Both frontend and backend domains use `https: false` / `certificateType: none` in Dokploy since Cloudflare handles certs.
+
+### Environment Variables
+- Backend and frontend env vars are set in each Dokploy app's **Environment** tab.
+- See `backend/.env.production.example` and `frontend/.env.production.example` for templates.
+- DB connection strings use `postgresql://` URI format pointing to the internal Dokploy hostname (`intex-h4hdb-5zypic`).
+
+### Auto-Deploy
+Both frontend and backend have `autoDeploy: true` on the `main` branch — pushing to `main` triggers a rebuild.
+
 ## Agent Guidance Files
 
 All agent guidance files live at the **project root** for auto-discovery:
