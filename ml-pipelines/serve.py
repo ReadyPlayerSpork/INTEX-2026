@@ -23,7 +23,8 @@ from flask import Flask, jsonify, request
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "models")
-CSV_DIR = os.path.join(BASE_DIR, "..", "lighthouse_csv_v7")
+# In Dokploy, we might mount the volume somewhere else, so allow an environment override
+CSV_DIR = os.environ.get("ML_CSV_DIR", os.path.join(BASE_DIR, "..", "backend", "Haven-for-Her-Backend", "docs", "lighthouse_csv_v7"))
 
 app = Flask(__name__)
 
@@ -99,12 +100,14 @@ def _donor_features() -> pd.DataFrame:
     df["recency"] = df["recency"].fillna((snapshot_date - df["created_at"]).dt.days)
     df["tenure_days"] = (snapshot_date - df["created_at"]).dt.days
     df["loyalty_ratio"] = df["frequency"] / (df["tenure_days"] / 30.44)
+    df["seasonality_std"] = df["seasonality_std"].fillna(0)
 
     model_features = [
         "supporter_type", "relationship_type", "region", "acquisition_channel",
         "tenure_days", "frequency", "ltv", "avg_donation_val", "seasonality_std",
     ]
     X = pd.get_dummies(df[model_features], drop_first=True)
+    X = X.fillna(0)
     return df, X
 
 
