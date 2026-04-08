@@ -5,8 +5,9 @@
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, TrendingUp } from 'lucide-react'
+import { AlertTriangle, TrendingUp, Brain } from 'lucide-react'
 import { api } from '@/api/client'
+import { getResidentAlerts, type IncidentRiskAlert } from '@/api/mlApi'
 import { QuickActions } from '@/components/admin/QuickActions'
 import { SafehouseOccupancy } from '@/components/admin/SafehouseOccupancy'
 import { DonorHealth } from '@/components/admin/DonorHealth'
@@ -219,6 +220,7 @@ export function AdminDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [mlAlerts, setMlAlerts] = useState<IncidentRiskAlert[] | null>(null)
 
   useEffect(() => {
     api
@@ -226,6 +228,8 @@ export function AdminDashboardPage() {
       .then(setData)
       .catch((err) => setError(String(err)))
       .finally(() => setLoading(false))
+
+    getResidentAlerts().then(setMlAlerts)
   }, [])
 
   if (loading) return <DashboardSkeleton />
@@ -342,6 +346,61 @@ export function AdminDashboardPage() {
         topCampaigns={fin.topCampaigns}
         recurringVsOneTime={fin.recurringVsOneTime}
       />
+
+      {mlAlerts && mlAlerts.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+          <div className="mb-4 flex items-center gap-2">
+            <Brain className="text-primary size-5" />
+            <h3 className="font-heading text-base font-semibold text-card-foreground">
+              ML Risk Alerts
+            </h3>
+            <span className="ml-auto rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
+              {mlAlerts.length} flagged
+            </span>
+          </div>
+          <p className="text-muted-foreground mb-3 text-xs">
+            Residents predicted to have elevated incident escalation risk by the ML model.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-border border-b text-left">
+                  <th className="px-3 py-2 font-medium">Resident</th>
+                  <th className="px-3 py-2 font-medium">Current Risk</th>
+                  <th className="px-3 py-2 font-medium">ML Escalation Prob.</th>
+                  <th className="px-3 py-2 font-medium">ML Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mlAlerts.slice(0, 8).map((a) => (
+                  <tr key={a.resident_id} className="border-border border-b">
+                    <td className="px-3 py-2">
+                      {a.first_name} {a.last_name}
+                    </td>
+                    <td className="px-3 py-2">{a.current_risk_level}</td>
+                    <td className="px-3 py-2 tabular-nums">
+                      {(a.escalation_probability * 100).toFixed(1)}%
+                    </td>
+                    <td className="px-3 py-2">
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          a.risk_level === 'High'
+                            ? 'bg-red-100 text-red-800'
+                            : a.risk_level === 'Medium'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-green-100 text-green-800'
+                        }`}
+                      >
+                        {a.risk_level}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <CaseloadPreviewTable rows={res.caseloadPreview ?? []} />
 

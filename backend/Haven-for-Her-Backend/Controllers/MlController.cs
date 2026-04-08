@@ -75,7 +75,9 @@ public class MlController(IHttpClientFactory httpClientFactory, ILogger<MlContro
             var client = CreateClient();
             var response = await client.GetAsync(path);
             var content = await response.Content.ReadAsStringAsync();
-            return Content(content, "application/json");
+            return StatusCode((int)response.StatusCode, content is { Length: > 0 }
+                ? System.Text.Json.JsonSerializer.Deserialize<object>(content)
+                : new { });
         }
         catch (TaskCanceledException)
         {
@@ -101,7 +103,9 @@ public class MlController(IHttpClientFactory httpClientFactory, ILogger<MlContro
             var httpContent = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
             var response = await client.PostAsync(path, httpContent);
             var content = await response.Content.ReadAsStringAsync();
-            return Content(content, "application/json");
+            return StatusCode((int)response.StatusCode, content is { Length: > 0 }
+                ? System.Text.Json.JsonSerializer.Deserialize<object>(content)
+                : new { });
         }
         catch (TaskCanceledException)
         {

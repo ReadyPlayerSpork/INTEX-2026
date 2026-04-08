@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/api/client'
 import { Card, CardContent } from '@/components/ui/card'
+import { getDonorChurnBatch, type ChurnPrediction } from '@/api/mlApi'
 
 interface Insights {
   activeDonors: number
@@ -8,9 +9,23 @@ interface Insights {
   topDonors: { supporterId: number; total: number; count: number }[]
 }
 
+function churnBadge(level: string) {
+  const colors: Record<string, string> = {
+    Low: 'bg-green-100 text-green-800',
+    Medium: 'bg-yellow-100 text-yellow-800',
+    High: 'bg-red-100 text-red-800',
+  }
+  return (
+    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${colors[level] ?? 'bg-gray-100 text-gray-700'}`}>
+      {level}
+    </span>
+  )
+}
+
 export function InsightsPage() {
   const [data, setData] = useState<Insights | null>(null)
   const [loading, setLoading] = useState(true)
+  const [churnData, setChurnData] = useState<ChurnPrediction[] | null>(null)
 
   useEffect(() => {
     api
@@ -18,6 +33,8 @@ export function InsightsPage() {
       .then(setData)
       .catch((err) => console.error('Failed to load insights', err))
       .finally(() => setLoading(false))
+
+    getDonorChurnBatch().then(setChurnData)
   }, [])
 
   if (loading) {
@@ -59,12 +76,56 @@ export function InsightsPage() {
         </Card>
         <Card className="border-border/70 bg-card/95">
           <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground text-sm">
-            ML churn predictions will appear here once Pipeline 1 is deployed.
-          </p>
+          {churnData ? (
+            <>
+              <p className="text-destructive text-3xl font-extrabold">
+                {churnData.filter((d) => d.risk_level === 'High').length}
+              </p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                High churn risk (ML)
+              </p>
+            </>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              ML churn predictions unavailable
+            </p>
+          )}
           </CardContent>
         </Card>
       </div>
+
+      {churnData && churnData.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-4 text-lg font-semibold">Donor Churn Risk (ML Predictions)</h2>
+          <p className="text-muted-foreground mb-3 text-sm">
+            Ranked by churn probability. Higher means more likely to stop donating.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-border border-b text-left">
+                  <th className="px-3 py-2 font-medium">Supporter</th>
+                  <th className="px-3 py-2 font-medium">Churn Prob.</th>
+                  <th className="px-3 py-2 font-medium">Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {churnData.slice(0, 15).map((d) => (
+                  <tr key={d.supporter_id} className="border-border border-b">
+                    <td className="px-3 py-2">
+                      {d.display_name || `#${d.supporter_id}`}
+                    </td>
+                    <td className="px-3 py-2 tabular-nums">
+                      {(d.churn_probability * 100).toFixed(1)}%
+                    </td>
+                    <td className="px-3 py-2">{churnBadge(d.risk_level)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <h2 className="mb-4 text-lg font-semibold">Top Donors by Total Giving</h2>
       {data.topDonors.length === 0 ? (
