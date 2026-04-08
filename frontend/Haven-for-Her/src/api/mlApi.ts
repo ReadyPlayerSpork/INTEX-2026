@@ -109,3 +109,9 @@ export async function getSocialMediaRecommendations(): Promise<SocialMediaRecomm
 export async function predictSocialMediaPost(data: SocialMediaPostData): Promise<SocialMediaPrediction> {
   return api.post('/api/ml/social-media/predict', data)
 }
+
+// -- Admin --
+
+export async function retrainModels(): Promise<{ status: string; message: string; timestamp: string }> {
+  return api.post('/api/ml/retrain')
+}

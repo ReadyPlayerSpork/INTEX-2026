@@ -5,9 +5,9 @@
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, TrendingUp, Brain } from 'lucide-react'
+import { AlertTriangle, TrendingUp, Brain, RefreshCw } from 'lucide-react'
 import { api } from '@/api/client'
-import { getResidentAlerts, type IncidentRiskAlert } from '@/api/mlApi'
+import { getResidentAlerts, retrainModels, type IncidentRiskAlert } from '@/api/mlApi'
 import { QuickActions } from '@/components/admin/QuickActions'
 import { SafehouseOccupancy } from '@/components/admin/SafehouseOccupancy'
 import { DonorHealth } from '@/components/admin/DonorHealth'
@@ -221,6 +221,26 @@ export function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [mlAlerts, setMlAlerts] = useState<IncidentRiskAlert[] | null>(null)
+  const [isRetraining, setIsRetraining] = useState(false)
+
+  const handleRetrain = async () => {
+    setIsRetraining(true)
+    try {
+      const res = await retrainModels()
+      if (res && res.status === 'success') {
+        alert('Models retrained successfully!')
+        // Optionally refresh alerts
+        const updatedAlerts = await getResidentAlerts()
+        setMlAlerts(updatedAlerts)
+      } else {
+        alert('Failed to retrain models.')
+      }
+    } catch (err) {
+      alert('Error during model retraining.')
+    } finally {
+      setIsRetraining(false)
+    }
+  }
 
   useEffect(() => {
     api
@@ -354,9 +374,17 @@ export function AdminDashboardPage() {
             <h3 className="font-heading text-base font-semibold text-card-foreground">
               ML Risk Alerts
             </h3>
-            <span className="ml-auto rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
+            <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
               {mlAlerts.length} flagged
             </span>
+            <button
+              onClick={handleRetrain}
+              disabled={isRetraining}
+              className="ml-auto flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`size-3 ${isRetraining ? 'animate-spin' : ''}`} />
+              {isRetraining ? 'Retraining...' : 'Retrain Models'}
+            </button>
           </div>
           <p className="text-muted-foreground mb-3 text-xs">
             Residents predicted to have elevated incident escalation risk by the ML model.

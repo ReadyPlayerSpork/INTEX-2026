@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # Frontend Application (React/Next.js)
+  # ---------------------------------------------------------------------------
+  # frontend:
+  #   build: 
+  #     context: ./frontend/haven-for-her
+  #     # If you don't have a Dockerfile here yet, you will need one!
+  #     # dockerfile: Dockerfile 
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     # Point the frontend API calls to the backend running in Dokploy
+  #     - NEXT_PUBLIC_API_URL=http://backend:8080
+  #   depends_on:
+  #     - backend
+
+  # ---------------------------------------------------------------------------
+  # Backend API (.NET)
+  # ---------------------------------------------------------------------------
+  # backend:
+  #   build:
+  #     context: ./backend/Haven-for-Her-Backend
+  #     # If you don't have a Dockerfile here yet, you will need one!
+  #     # dockerfile: Dockerfile
+  #   ports:
+  #     - "8080:8080" # Update to match whatever port your .NET Dockerfile exposes
+  #   environment:
+  #     # This maps to your backend's MlService__BaseUrl configuration
+  #     - MlService__BaseUrl=http://ml-service:5050
+  #     # PostgreSQL connection string:
+  #     # - ConnectionStrings__DefaultConnection=Host=db;Database=haven;Username=...
+  #   depends_on:
+  #     - ml-service
+
+  # ---------------------------------------------------------------------------
+  # Python ML Service
+  # ---------------------------------------------------------------------------
+  ml-service:
+    build:
+      context: ./ml-pipelines
+      dockerfile: Dockerfile
+    ports:
+      - "5050:5050"
+    environment:
+      # Optional: any env variables your ML app needs (e.g. DB credentials)
+      - FLASK_ENV=production
+    volumes:
+      # Persist trained .joblib models so they aren't lost when container restarts
+      - ml-models:/app/ml-pipelines/models
+      # Shared volume for CSVs (Temporary fix until you query Postgres directly)
+      - shared-data:/app/lighthouse_csv_v7
+
+  # ---------------------------------------------------------------------------
+  # Database (Optional - Dokploy might provide this separately)
+  # ---------------------------------------------------------------------------
+  # db:
+  #   image: postgres:15
+  #   environment:
+  #     POSTGRES_USER: haven_admin
+  #     POSTGRES_PASSWORD: securepassword
+  #     POSTGRES_DB: haven_db
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+volumes:
+  # Named volume to keep machine learning models safe across deployments
+  ml-models:
+  # Named volume to share CSV data between the .NET backend and the Python ML service
+  shared-data:
+  # pgdata: # uncomment if using database container above

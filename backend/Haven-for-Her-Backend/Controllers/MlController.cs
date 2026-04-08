@@ -67,6 +67,39 @@ public class MlController(IHttpClientFactory httpClientFactory, ILogger<MlContro
 
     // ── Proxy helpers ───────────────────────────────────────────────────
 
+    [HttpPost("retrain")]
+    [Authorize(Roles = AuthRoles.Admin)]
+    public Task<IActionResult> RetrainModels()
+        => ProxyPostEmptyBody("/api/ml/retrain");
+
+    private async Task<IActionResult> ProxyPostEmptyBody(string path)
+    {
+        try
+        {
+            var client = CreateClient();
+            var response = await client.PostAsync(path, null);
+            var content = await response.Content.ReadAsStringAsync();
+            return new ContentResult
+            {
+                StatusCode = (int)response.StatusCode,
+                Content = content,
+                ContentType = "application/json",
+            };
+        }
+        catch (TaskCanceledException)
+        {
+            logger.LogWarning("ML service request timed out: {Path}", path);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new { error = "ML service is unavailable or timed out." });
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogWarning(ex, "ML service unreachable: {Path}", path);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new { error = "ML service is currently unavailable." });
+        }
+    }
+
     private async Task<IActionResult> ProxyGet(string path)
     {
         try

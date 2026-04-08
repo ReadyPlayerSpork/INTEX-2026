@@ -584,6 +584,33 @@ def social_media_predict():
         return jsonify({"error": str(e)}), 500
 
 
+# ── System Administration ────────────────────────────────────────────────────
+
+@app.route("/api/ml/retrain", methods=["POST"])
+def retrain_models():
+    """Trigger a retraining of all models using the latest CSV data."""
+    try:
+        # Clear CSV cache so it re-reads from disk
+        global _csv_cache, _models
+        _csv_cache.clear()
+        
+        # Import inside the function to prevent circular import issues
+        import train
+        train.train_all()
+        
+        # Clear the model cache so the next request loads the new .joblib files
+        _models.clear()
+        
+        return jsonify({
+            "status": "success", 
+            "message": "All models retrained successfully and loaded into memory.",
+            "timestamp": datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
