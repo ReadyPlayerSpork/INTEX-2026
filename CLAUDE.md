@@ -127,7 +127,7 @@ The project is deployed to a self-hosted **Dokploy** instance. External HTTPS is
 ### Environment Variables
 - Backend and frontend env vars are set in each Dokploy app's **Environment** tab.
 - See `backend/.env.production.example` and `frontend/.env.production.example` for templates.
-- DB connection strings use `postgresql://` URI format pointing to the internal Dokploy service hostname.
+- DB connection strings use standard Npgsql format (`Host=...;Database=...;Username=...;Password=...`) pointing to the internal Dokploy service hostname.
 
 ### Auto-Deploy
 Both frontend and backend have `autoDeploy: true` on the `main` branch — pushing to `main` triggers a rebuild.
