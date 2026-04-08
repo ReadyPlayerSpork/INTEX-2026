@@ -42,6 +42,7 @@ export function IncidentsPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
   const pageSize = 20
 
   const fetchIncidents = useCallback(async () => {
@@ -54,8 +55,8 @@ export function IncidentsPage() {
       const res = await api.get<PaginatedResponse<Incident>>(`/api/incidents?${qs}`)
       setIncidents(res.items)
       setTotalCount(res.totalCount)
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('Failed to load incidents', err)
     } finally {
       setLoading(false)
     }
@@ -92,6 +93,7 @@ export function IncidentsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
+    setError('')
     try {
       const body = {
         residentId: Number(form.residentId),
@@ -114,8 +116,8 @@ export function IncidentsPage() {
       setEditId(null)
       setShowForm(false)
       void fetchIncidents()
-    } catch {
-      // ignore
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save incident. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -183,6 +185,7 @@ export function IncidentsPage() {
               <textarea name="responseTaken" required rows={2} value={form.responseTaken} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
           </div>
+          {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
           <div className="mt-4">
             <Button type="submit" disabled={submitting}>
               {submitting ? 'Saving...' : editId ? 'Update Incident' : 'Save Incident'}

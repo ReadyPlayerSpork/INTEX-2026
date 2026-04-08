@@ -34,7 +34,7 @@ export function InsightsPage() {
       .catch((err) => console.error('Failed to load insights', err))
       .finally(() => setLoading(false))
 
-    getDonorChurnBatch().then(setChurnData)
+    getDonorChurnBatch().then(setChurnData).catch(() => { /* ML service unavailable */ })
   }, [])
 
   if (loading) {

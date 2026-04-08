@@ -36,7 +36,7 @@ def discover_csv_dir():
         os.path.join(BASE_DIR, "..", "backend", "Haven-for-Her-Backend", "docs", "lighthouse_csv_v7"),
         os.path.join(BASE_DIR, "..", "lighthouse_csv_v7"),
         os.path.join(BASE_DIR, "lighthouse_csv_v7"),
-        "C:\\Users\\jrdis\\source\\repos\\INTEX-2026\\backend\\Haven-for-Her-Backend\\docs\\lighthouse_csv_v7"
+        os.path.join(os.path.expanduser("~"), "source", "repos", "INTEX-2026", "backend", "Haven-for-Her-Backend", "docs", "lighthouse_csv_v7")
     ]
     for p in search_paths:
         if os.path.exists(p) and os.path.exists(os.path.join(p, "supporters.csv")):

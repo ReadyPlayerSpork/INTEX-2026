@@ -45,13 +45,13 @@ services:
     ports:
       - "5050:5050"
     environment:
-      # Optional: any env variables your ML app needs (e.g. DB credentials)
       - FLASK_ENV=production
+      - ML_CSV_DIR=/app/data/lighthouse_csv_v7
     volumes:
       # Persist trained .joblib models so they aren't lost when container restarts
-      - ml-models:/app/ml-pipelines/models
+      - ml-models:/app/models
       # Shared volume for CSVs (Temporary fix until you query Postgres directly)
-      - shared-data:/app/lighthouse_csv_v7
+      - shared-data:/app/data/lighthouse_csv_v7
 
   # ---------------------------------------------------------------------------
   # Database (Optional - Dokploy might provide this separately)

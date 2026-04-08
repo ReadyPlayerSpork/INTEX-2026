@@ -50,13 +50,13 @@ export function CounselorDashboardPage() {
             if (pred) {
               setProgressMap((prev) => ({ ...prev, [r.residentId]: pred }))
             }
-          })
+          }).catch(() => { /* ML service unavailable for this resident */ })
         })
       })
       .catch((err) => console.error('Failed to load counselor dashboard', err))
       .finally(() => setLoading(false))
 
-    getResidentAlerts().then(setMlAlerts)
+    getResidentAlerts().then(setMlAlerts).catch(() => { /* ML service unavailable */ })
   }, [])
 
   if (loading) {

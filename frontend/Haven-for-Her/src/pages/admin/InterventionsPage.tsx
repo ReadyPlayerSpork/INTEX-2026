@@ -34,6 +34,7 @@ export function InterventionsPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [editId, setEditId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
   const pageSize = 20
 
   const fetchInterventions = useCallback(async () => {
@@ -45,8 +46,8 @@ export function InterventionsPage() {
       const res = await api.get<PaginatedResponse<Intervention>>(`/api/interventions?${qs}`)
       setInterventions(res.items)
       setTotalCount(res.totalCount)
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('Failed to load interventions', err)
     } finally {
       setLoading(false)
     }
@@ -79,6 +80,7 @@ export function InterventionsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
+    setError('')
     try {
       const body = {
         residentId: Number(form.residentId),
@@ -97,8 +99,8 @@ export function InterventionsPage() {
       setEditId(null)
       setShowForm(false)
       void fetchInterventions()
-    } catch {
-      // ignore
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save intervention. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -155,6 +157,7 @@ export function InterventionsPage() {
               <textarea name="servicesProvided" required rows={2} value={form.servicesProvided} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
           </div>
+          {error && <p className="text-destructive mt-2 text-sm">{error}</p>}
           <div className="mt-4">
             <Button type="submit" disabled={submitting}>
               {submitting ? 'Saving...' : editId ? 'Update Plan' : 'Save Plan'}

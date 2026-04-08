@@ -249,7 +249,7 @@ export function AdminDashboardPage() {
       .catch((err) => setError(String(err)))
       .finally(() => setLoading(false))
 
-    getResidentAlerts().then(setMlAlerts)
+    getResidentAlerts().then(setMlAlerts).catch(() => { /* ML service unavailable */ })
   }, [])
 
   if (loading) return <DashboardSkeleton />

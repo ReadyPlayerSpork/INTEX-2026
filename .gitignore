@@ -123,6 +123,21 @@ web_modules/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
+# .NET SDK telemetry / machine-specific caches
+.dotnet/
+
+# Temporary / probe directories
+.tmp/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# ML trained model binaries (large; retrain in CI/CD)
+*.joblib
+
 # Misc
 .turbo
 .serverless/
