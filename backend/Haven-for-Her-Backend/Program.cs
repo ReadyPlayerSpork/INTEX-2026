@@ -154,8 +154,15 @@ using (var scope = app.Services.CreateScope())
     var csvDir = candidatePaths.FirstOrDefault(Directory.Exists);
     if (csvDir is not null)
     {
-        seedLogger.LogInformation("CSV directory resolved to {CsvDir}", csvDir);
-        await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, seedLogger);
+        try
+        {
+            seedLogger.LogInformation("CSV directory resolved to {CsvDir}", csvDir);
+            await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, seedLogger);
+        }
+        catch (Exception ex)
+        {
+            seedLogger.LogError(ex, "CSV seeding FAILED");
+        }
     }
     else
     {
