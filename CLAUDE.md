@@ -50,15 +50,16 @@ In development, the backend exposes an OpenAPI document via `Microsoft.AspNetCor
 |---|---|
 | Frontend | React 19, TypeScript ~6.0, Vite 8, Tailwind CSS, shadcn/ui |
 | Backend | ASP.NET Core / .NET 10 |
-| ORM | Entity Framework Core 10 |
+| ORM | Entity Framework Core 10 + Npgsql 10.0.1 |
 | Auth | ASP.NET Identity + Google OAuth, cookie-based sessions |
-| Dev DB | SQLite (two separate files) |
-| Prod DB | PostgreSQL (planned) |
+| DB | PostgreSQL (dev & prod) — connection strings via `.env` override, empty in `appsettings.json` |
 
 ### Backend Structure
-The backend uses **two separate DB contexts**:
-- `HavenForHerBackendDbContext` — 17 domain models (Resident, Donation, Safehouse, etc.)
+The backend uses **two separate DB contexts** (both PostgreSQL via Npgsql):
+- `HavenForHerBackendDbContext` — 18 domain models (Resident, Donation, Safehouse, etc.) with explicit Fluent API relationship configuration in `OnModelCreating`
 - `AuthIdentityDbContext` — ASP.NET Identity (users, roles)
+
+Migrations are split into **two folders**: `Migrations/Domain/` and `Migrations/Identity/`.
 
 Auth is cookie-based: HttpOnly, SameSite=Lax, Secure, 7-day sliding expiration. `GET /api/auth/me` returns `{ isAuthenticated, userName, email, roles[] }`.
 
@@ -67,7 +68,7 @@ The default seeded admin is `admin@havenforher.local` / `admin!haven4her` (overr
 Roles currently defined: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Employee`, `Donor`, `Survivor`.
 
 **Key backend files:**
-- `Data/HavenForHerBackendDbContext.cs` — domain EF context with all 17 models
+- `Data/HavenForHerBackendDbContext.cs` — domain EF context with 18 DbSets + `OnModelCreating` (15 explicit FK relationships, `Cascade`/`SetNull` delete behaviors)
 - `Data/AuthIdentityDbContext.cs` — identity EF context
 - `Data/AuthRoles.cs` / `AuthPolicies.cs` — role and policy name constants
 - `Infrastructure/SecurityHeaders.cs` — CSP middleware
