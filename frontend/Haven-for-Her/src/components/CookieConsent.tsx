@@ -11,6 +11,12 @@ export function CookieConsent() {
   useEffect(() => {
     if (visible) {
       acceptRef.current?.focus()
+      document.body.style.paddingBottom = '6rem'
+    } else {
+      document.body.style.paddingBottom = ''
+    }
+    return () => {
+      document.body.style.paddingBottom = ''
     }
   }, [visible])
 
@@ -25,7 +31,7 @@ export function CookieConsent() {
     <div
       role="region"
       aria-label="Cookie notice"
-      className="bg-card/95 border-border fixed inset-x-0 bottom-4 z-50 mx-4 rounded-2xl border px-4 py-4 shadow-[0_18px_40px_-28px_rgba(74,44,94,0.42)] backdrop-blur sm:mx-auto sm:max-w-5xl"
+      className="bg-card/95 border-border fixed inset-x-0 bottom-0 z-50 mx-0 rounded-t-2xl border border-b-0 px-5 py-5 shadow-[0_-8px_40px_-12px_rgba(74,44,94,0.15)] backdrop-blur sm:bottom-4 sm:mx-auto sm:max-w-5xl sm:rounded-2xl sm:border-b"
     >
       <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-6 text-pretty">

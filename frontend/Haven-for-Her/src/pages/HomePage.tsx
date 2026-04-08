@@ -101,27 +101,22 @@ export function HomePage() {
       {stats && (
         <section className="px-5 py-16 md:px-10 md:py-24">
           <div className="mx-auto max-w-7xl">
-            <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div>
-                <h2 className="font-heading text-3xl font-semibold text-accent">
-                  Our impact, held with care
-                </h2>
-                <p className="text-muted-foreground mt-2 max-w-2xl text-pretty">
-                  Every number below represents practical support, safer
-                  conditions, and people showing up consistently.
+            <div className="mb-10">
+              <h2 className="font-heading text-3xl font-semibold text-accent md:text-4xl">
+                Our impact, held with care
+              </h2>
+            </div>
+            
+            <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16">
+              <div className="flex-1 space-y-8">
+                <p className="font-heading text-xl leading-relaxed sm:text-2xl sm:leading-relaxed text-muted-foreground text-pretty">
+                  We have served <strong className="text-primary font-bold">{stats.totalResidentsServed}</strong> survivors on their journey to healing, with <strong className="text-primary font-bold">{stats.activeResidents}</strong> girls currently residing across our <strong className="text-primary font-bold">{stats.activeSafehouses}</strong> active safe homes.
+                </p>
+                <div className="h-px w-24 bg-border/80"></div>
+                <p className="text-lg leading-8 text-muted-foreground text-pretty">
+                  Because of our <strong className="text-primary font-bold">{stats.activePartners}</strong> active organizational partners and countless individual volunteers, we are able to provide practical support, safer conditions, and ensure our community shows up consistently for those who need it most.
                 </p>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-5 md:grid-cols-3 xl:grid-cols-6">
-              <StatCard label="Residents served" value={stats.totalResidentsServed} />
-              <StatCard label="Active residents" value={stats.activeResidents} />
-              <StatCard label="Total donations" value={stats.totalDonations} />
-              <StatCard label="Active safe homes" value={stats.activeSafehouses} />
-              <StatCard label="Active partners" value={stats.activePartners} />
-              <StatCard
-                label="Total donated (PHP)"
-                value={stats.totalDonationValuePhp.toLocaleString()}
-              />
             </div>
           </div>
         </section>
@@ -174,13 +169,4 @@ export function HomePage() {
   )
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <Card className="h-full border-border/70 bg-card/95">
-      <CardContent className="p-6 text-center">
-        <p className="font-heading text-primary text-3xl font-semibold">{value}</p>
-        <p className="text-muted-foreground mt-2 text-sm">{label}</p>
-      </CardContent>
-    </Card>
-  )
-}
+
