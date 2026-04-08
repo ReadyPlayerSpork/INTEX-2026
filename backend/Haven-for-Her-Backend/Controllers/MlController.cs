@@ -1,4 +1,3 @@
-using System.Net.Http;
 using Haven_for_Her_Backend.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -75,9 +74,12 @@ public class MlController(IHttpClientFactory httpClientFactory, ILogger<MlContro
             var client = CreateClient();
             var response = await client.GetAsync(path);
             var content = await response.Content.ReadAsStringAsync();
-            return StatusCode((int)response.StatusCode, content is { Length: > 0 }
-                ? System.Text.Json.JsonSerializer.Deserialize<object>(content)
-                : new { });
+            return new ContentResult
+            {
+                StatusCode = (int)response.StatusCode,
+                Content = content,
+                ContentType = "application/json",
+            };
         }
         catch (TaskCanceledException)
         {
@@ -103,9 +105,12 @@ public class MlController(IHttpClientFactory httpClientFactory, ILogger<MlContro
             var httpContent = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
             var response = await client.PostAsync(path, httpContent);
             var content = await response.Content.ReadAsStringAsync();
-            return StatusCode((int)response.StatusCode, content is { Length: > 0 }
-                ? System.Text.Json.JsonSerializer.Deserialize<object>(content)
-                : new { });
+            return new ContentResult
+            {
+                StatusCode = (int)response.StatusCode,
+                Content = content,
+                ContentType = "application/json",
+            };
         }
         catch (TaskCanceledException)
         {

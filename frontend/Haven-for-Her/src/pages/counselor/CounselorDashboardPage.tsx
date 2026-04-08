@@ -164,9 +164,11 @@ export function CounselorDashboardPage() {
                     <td className="px-3 py-2">{r.caseStatus}</td>
                     <td className="px-3 py-2">{r.dateOfAdmission}</td>
                     <td className="px-3 py-2 tabular-nums">
-                      {progressMap[r.residentId]
-                        ? `${(progressMap[r.residentId].readiness_score * 100).toFixed(0)}%`
-                        : <span className="text-muted-foreground text-xs">--</span>}
+                      {progressMap[r.residentId] ? (
+                        <span>{(progressMap[r.residentId].readiness_score * 100).toFixed(0)}%</span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">--</span>
+                      )}
                     </td>
                   </tr>
                 ))}
