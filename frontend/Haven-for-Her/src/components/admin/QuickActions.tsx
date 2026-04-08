@@ -1,49 +1,44 @@
 /**
- * components/admin/QuickActions.tsx
- * Quick-action pill buttons — Bloom palette.
- *
- * Primary action: sage filled rounded-full.
- * Secondary actions: cream outline rounded-full.
- *
- * TODO Phase 5: Replace alert() stubs with real navigation / modal triggers.
+ * Primary admin quick actions — routes to real pages (no alert stubs).
  */
 
-import { UserPlus, HandHeart, ClipboardList, ShieldAlert } from 'lucide-react';
+import { Link } from 'react-router-dom'
+import { UserPlus, HandHeart, ClipboardList, ShieldAlert } from 'lucide-react'
 
 const ACTIONS = [
   {
     label: 'Add Resident',
     icon: UserPlus,
     primary: true,
-    onClick: () => alert('Add Resident — Phase 5'),
+    to: '/admin/caseload',
   },
   {
     label: 'Log Donation',
     icon: HandHeart,
     primary: false,
-    onClick: () => alert('Log Donation — Phase 4'),
+    to: '/donate',
   },
   {
     label: 'New Session Note',
     icon: ClipboardList,
     primary: false,
-    onClick: () => alert('New Session Note — Phase 5'),
+    to: '/admin/caseload',
   },
   {
     label: 'Report Incident',
     icon: ShieldAlert,
     primary: false,
-    onClick: () => alert('Report Incident — Phase 5'),
+    to: '/admin/incidents',
   },
-] as const;
+] as const
 
 export function QuickActions() {
   return (
     <div className="flex flex-wrap gap-2">
-      {ACTIONS.map(({ label, icon: Icon, primary, onClick }) => (
-        <button
+      {ACTIONS.map(({ label, icon: Icon, primary, to }) => (
+        <Link
           key={label}
-          onClick={onClick}
+          to={to}
           className={[
             'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold',
             'transition-colors duration-150',
@@ -55,8 +50,8 @@ export function QuickActions() {
         >
           <Icon size={14} />
           {label}
-        </button>
+        </Link>
       ))}
     </div>
-  );
+  )
 }

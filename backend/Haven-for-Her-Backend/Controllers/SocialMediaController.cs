@@ -9,7 +9,7 @@ namespace Haven_for_Her_Backend.Controllers;
 
 [ApiController]
 [Route("api/social")]
-[Authorize(Roles = AuthRoles.SocialMedia)]
+[Authorize(Roles = $"{AuthRoles.SocialMedia},{AuthRoles.Admin}")]
 public class SocialMediaController(HavenForHerBackendDbContext db) : ControllerBase
 {
     /// <summary>
