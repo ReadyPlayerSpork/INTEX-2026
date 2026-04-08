@@ -279,4 +279,24 @@ public class CaseloadController(
 
         return Ok(new { message = "Intervention plan created.", planId = plan.PlanId });
     }
+
+    // ── Create Resident ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Create a new resident record (Admin only).
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = AuthRoles.Admin)]
+    public async Task<IActionResult> CreateResident([FromBody] Resident resident)
+    {
+        if (!ModelState.IsValid) return ValidationProblem();
+
+        resident.ResidentId = 0;
+        resident.CreatedAt = DateTime.UtcNow;
+
+        db.Residents.Add(resident);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Resident created.", residentId = resident.ResidentId });
+    }
 }

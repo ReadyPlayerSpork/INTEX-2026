@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import type { PaginatedResponse } from '@/api/types'
+import { caseloadApi, type CreateResidentRequest, type SafehouseOption } from '@/api/caseloadApi'
+import { ResidentFormModal } from '@/components/admin/ResidentFormModal'
 
 interface CaseloadItem {
   residentId: number
@@ -27,7 +29,14 @@ export function CaseloadPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [riskFilter, setRiskFilter] = useState('')
+  const [safehouseFilter, setSafehouseFilter] = useState('')
+  const [safehouses, setSafehouses] = useState<SafehouseOption[]>([])
+  const [showCreate, setShowCreate] = useState(false)
   const pageSize = 20
+
+  useEffect(() => {
+    caseloadApi.getSafehouses().then((res) => setSafehouses(res.items)).catch(() => {})
+  }, [])
 
   const fetchCaseload = useCallback(async () => {
     setLoading(true)
@@ -36,6 +45,7 @@ export function CaseloadPage() {
       if (search) qs.set('search', search)
       if (statusFilter) qs.set('status', statusFilter)
       if (riskFilter) qs.set('riskLevel', riskFilter)
+      if (safehouseFilter) qs.set('safehouseId', safehouseFilter)
       const res = await api.get<PaginatedResponse<CaseloadItem>>(`/api/caseload?${qs}`)
       setItems(res.items)
       setTotalCount(res.totalCount)
@@ -44,7 +54,7 @@ export function CaseloadPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, statusFilter, riskFilter])
+  }, [page, search, statusFilter, riskFilter, safehouseFilter])
 
   useEffect(() => {
     void fetchCaseload()
@@ -54,7 +64,10 @@ export function CaseloadPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <h1 className="mb-6 text-2xl font-bold">Caseload Management</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Caseload Management</h1>
+        <Button onClick={() => setShowCreate(true)}>New Resident</Button>
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-3">
         <input
@@ -85,6 +98,14 @@ export function CaseloadPage() {
           <option value="Medium">Medium</option>
           <option value="High">High</option>
           <option value="Critical">Critical</option>
+        </select>
+        <select
+          value={safehouseFilter}
+          onChange={(e) => { setSafehouseFilter(e.target.value); setPage(1) }}
+          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+        >
+          <option value="">All safehouses</option>
+          {safehouses.map((s) => <option key={s.safehouseId} value={s.safehouseId}>{s.name}</option>)}
         </select>
       </div>
 
@@ -141,6 +162,17 @@ export function CaseloadPage() {
             </div>
           )}
         </>
+      )}
+
+      {showCreate && (
+        <ResidentFormModal
+          onSubmit={async (data: CreateResidentRequest) => {
+            await caseloadApi.createResident(data)
+            setShowCreate(false)
+            void fetchCaseload()
+          }}
+          onClose={() => setShowCreate(false)}
+        />
       )}
     </div>
   )

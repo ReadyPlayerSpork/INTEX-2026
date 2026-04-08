@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import type { PaginatedResponse } from '@/api/types'
+import { financialApi, type CreateSupporterRequest } from '@/api/financialApi'
+import { SupporterFormModal } from '@/components/financial/SupporterFormModal'
+import { RecordDonationModal } from '@/components/financial/RecordDonationModal'
 
 interface Donor {
   supporterId: number
@@ -24,6 +28,10 @@ export function DonorManagementPage() {
   const [page, setPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [typeFilter, setTypeFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
+  const [showDonation, setShowDonation] = useState(false)
   const pageSize = 25
 
   const fetchDonors = useCallback(async () => {
@@ -34,14 +42,17 @@ export function DonorManagementPage() {
       const res = await api.get<PaginatedResponse<Donor>>(
         `/api/financial/donors?${qs}`,
       )
-      setDonors(res.items)
+      let filtered = res.items
+      if (typeFilter) filtered = filtered.filter((d) => d.supporterType === typeFilter)
+      if (statusFilter) filtered = filtered.filter((d) => d.status === statusFilter)
+      setDonors(filtered)
       setTotalCount(res.totalCount)
     } catch {
       // ignore
     } finally {
       setLoading(false)
     }
-  }, [search, page])
+  }, [search, page, typeFilter, statusFilter])
 
   useEffect(() => {
     void fetchDonors()
@@ -51,9 +62,15 @@ export function DonorManagementPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <h1 className="mb-6 text-2xl font-bold">Donor Management</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Donor Management</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowDonation(true)}>Record Donation</Button>
+          <Button onClick={() => setShowCreate(true)}>New Supporter</Button>
+        </div>
+      </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap gap-3">
         <input
           type="text"
           placeholder="Search by name or email..."
@@ -64,6 +81,17 @@ export function DonorManagementPage() {
           }}
           className="border-input bg-background w-full max-w-sm rounded-md border px-3 py-2 text-sm"
         />
+        <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm">
+          <option value="">All types</option>
+          <option value="Individual">Individual</option>
+          <option value="Organization">Organization</option>
+          <option value="Anonymous">Anonymous</option>
+        </select>
+        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm">
+          <option value="">All statuses</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
       </div>
 
       {loading ? (
@@ -85,9 +113,11 @@ export function DonorManagementPage() {
               </thead>
               <tbody>
                 {donors.map((d) => (
-                  <tr key={d.supporterId} className="border-border border-b">
+                  <tr key={d.supporterId} className="border-border hover:bg-muted/50 border-b">
                     <td className="px-3 py-2">
-                      {d.displayName ?? (`${d.firstName ?? ''} ${d.lastName ?? ''}`.trim() || '-')}
+                      <Link to={`/financial/donors/${d.supporterId}`} className="text-primary underline">
+                        {d.displayName ?? (`${d.firstName ?? ''} ${d.lastName ?? ''}`.trim() || '-')}
+                      </Link>
                     </td>
                     <td className="px-3 py-2">{d.email ?? '-'}</td>
                     <td className="px-3 py-2">{d.supporterType}</td>
@@ -117,6 +147,28 @@ export function DonorManagementPage() {
             </div>
           )}
         </>
+      )}
+
+      {showCreate && (
+        <SupporterFormModal
+          onSubmit={async (data: CreateSupporterRequest) => {
+            await financialApi.createSupporter(data)
+            setShowCreate(false)
+            void fetchDonors()
+          }}
+          onClose={() => setShowCreate(false)}
+        />
+      )}
+
+      {showDonation && (
+        <RecordDonationModal
+          onSubmit={async (data) => {
+            await financialApi.recordDonation(data)
+            setShowDonation(false)
+            void fetchDonors()
+          }}
+          onClose={() => setShowDonation(false)}
+        />
       )}
     </div>
   )
