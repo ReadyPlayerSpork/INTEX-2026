@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Haven_for_Her_Backend.Models;
 
@@ -154,14 +155,21 @@ public class Resident
     [Column("notes_restricted")]
     public string? NotesRestricted { get; set; }
 
-    // Navigation properties
+    // Navigation properties (ignored on JSON create/update so model binding succeeds)
     [ForeignKey(nameof(SafehouseId))]
+    [JsonIgnore]
     public Safehouse Safehouse { get; set; } = null!;
 
+    [JsonIgnore]
     public ICollection<ProcessRecording> ProcessRecordings { get; set; } = [];
+    [JsonIgnore]
     public ICollection<HomeVisitation> HomeVisitations { get; set; } = [];
+    [JsonIgnore]
     public ICollection<EducationRecord> EducationRecords { get; set; } = [];
+    [JsonIgnore]
     public ICollection<HealthWellbeingRecord> HealthWellbeingRecords { get; set; } = [];
+    [JsonIgnore]
     public ICollection<InterventionPlan> InterventionPlans { get; set; } = [];
+    [JsonIgnore]
     public ICollection<IncidentReport> IncidentReports { get; set; } = [];
 }

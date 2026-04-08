@@ -25,7 +25,10 @@ public class PartnerController(HavenForHerBackendDbContext db) : ControllerBase
         var query = db.Partners.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(region))
-            query = query.Where(p => p.Region == region);
+        {
+            var r = region.Trim().ToLower();
+            query = query.Where(p => p.Region.ToLower().Contains(r));
+        }
 
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(p => p.Status == status);
