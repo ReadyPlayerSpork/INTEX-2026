@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { RootLayout } from '@/layouts/RootLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -165,6 +165,12 @@ const PartnersPage = lazy(() =>
   })),
 )
 
+const AdminPortalLayout = lazy(() =>
+  import('@/layouts/AdminPortalLayout').then((m) => ({
+    default: m.AdminPortalLayout,
+  })),
+)
+
 function DonateRouter() {
   const { isAuthenticated, isLoading } = useAuth()
   if (isLoading) {
@@ -225,7 +231,9 @@ function App() {
               />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['Financial']} />}>
+            <Route
+              element={<ProtectedRoute allowedRoles={['Financial', 'Admin']} />}
+            >
               <Route
                 path="/financial/dashboard"
                 element={<FinancialDashboardPage />}
@@ -239,28 +247,35 @@ function App() {
               <Route path="/financial/reports" element={<ReportsPage />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['SocialMedia']} />}>
+            <Route
+              element={
+                <ProtectedRoute allowedRoles={['SocialMedia', 'Admin']} />
+              }
+            >
               <Route path="/social/dashboard" element={<SocialDashboardPage />} />
               <Route path="/social/posts" element={<PostsPage />} />
               <Route path="/social/post" element={<CreatePostPage />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
-              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-              <Route path="/admin/roles" element={<RolesPage />} />
-              <Route path="/admin/users" element={<UsersPage />} />
-              <Route path="/admin/caseload" element={<CaseloadPage />} />
-              <Route
-                path="/admin/caseload/:id"
-                element={<ResidentProfilePage />}
-              />
-              <Route path="/admin/incidents" element={<IncidentsPage />} />
-              <Route
-                path="/admin/interventions"
-                element={<InterventionsPage />}
-              />
-              <Route path="/admin/safehouses" element={<SafehousesPage />} />
-              <Route path="/admin/partners" element={<PartnersPage />} />
+            <Route
+              path="/admin"
+              element={<ProtectedRoute allowedRoles={['Admin']} />}
+            >
+              <Route element={<AdminPortalLayout />}>
+                <Route
+                  index
+                  element={<Navigate to="dashboard" replace />}
+                />
+                <Route path="dashboard" element={<AdminDashboardPage />} />
+                <Route path="roles" element={<RolesPage />} />
+                <Route path="users" element={<UsersPage />} />
+                <Route path="caseload" element={<CaseloadPage />} />
+                <Route path="caseload/:id" element={<ResidentProfilePage />} />
+                <Route path="incidents" element={<IncidentsPage />} />
+                <Route path="interventions" element={<InterventionsPage />} />
+                <Route path="safehouses" element={<SafehousesPage />} />
+                <Route path="partners" element={<PartnersPage />} />
+              </Route>
             </Route>
 
             <Route path="*" element={<NotFoundPage />} />
