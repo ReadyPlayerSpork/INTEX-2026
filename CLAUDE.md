@@ -65,6 +65,15 @@ Auth is cookie-based: HttpOnly, SameSite=Lax, Secure, 7-day sliding expiration. 
 
 The default seeded admin is `admin@havenforher.local` / `admin!haven4her` (overridable via `GenerateDefaultIdentityAdmin` config).
 
+Seeded role accounts (created by `AuthIdentityGenerator` on every fresh DB):
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@havenforher.local` | `admin!haven4her` |
+| Counselor | `counselor@havenforher.local` | `Counselor!haven4her` |
+
+The counselor account maps to the CSV caseload for `SW-15` (residents C0043, C3116, C9025, C3204 — 162 sessions, 69 visitations in the seed data).
+
 Roles currently defined: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Employee`, `Donor`, `Survivor`.
 
 **Key backend files:**
