@@ -103,12 +103,15 @@ public class MetaAdsService
     private async Task<string> CreateCampaignAsync(string name)
     {
         var url = $"{_config.ApiVersion}/act_{_config.AdAccountId}/campaigns";
+        // is_adset_budget_sharing_enabled is a CAMPAIGN-level field (v24+ required when
+        // child ad sets use their own daily_budget). Value must be "False" not "false".
         var payload = new Dictionary<string, string>
         {
             ["name"] = name,
-            ["objective"] = "OUTCOME_AWARENESS",   // broad awareness — works for nonprofits
+            ["objective"] = "OUTCOME_AWARENESS",
             ["status"] = "PAUSED",
-            ["special_ad_categories"] = "[]",       // no housing/credit/employment
+            ["special_ad_categories"] = "[]",
+            ["is_adset_budget_sharing_enabled"] = "False",
             ["access_token"] = _config.AccessToken,
         };
 
@@ -149,8 +152,6 @@ public class MetaAdsService
                 },
             };
 
-        // Per–ad-set daily budget: Meta v24+ requires is_adset_budget_sharing_enabled on both
-        // campaign and ad set; value must be "True" or "False" (Graph rejects lowercase "true"/"false").
         var payload = new Dictionary<string, string>
         {
             ["campaign_id"] = campaignId,
@@ -159,7 +160,6 @@ public class MetaAdsService
             ["billing_event"] = "IMPRESSIONS",
             ["bid_strategy"] = "LOWEST_COST_WITHOUT_CAP",
             ["daily_budget"] = dailyBudgetCents.ToString(),  // in cents
-            ["is_adset_budget_sharing_enabled"] = "False",
             ["targeting"] = JsonSerializer.Serialize(targetingObj),
             ["status"] = "PAUSED",
             ["access_token"] = _config.AccessToken,
