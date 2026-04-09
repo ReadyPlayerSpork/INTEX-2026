@@ -1,0 +1,64 @@
+import os
+import re
+import pandas as pd
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class DatabaseClient:
+    """
+    Handles connections to the production PostgreSQL database and
+    transforms data into the format expected by the ML pipelines.
+    """
+
+    def __init__(self):
+        self.db_url = os.environ.get("DATABASE_URL")
+        self._engine = None
+
+    @property
+    def engine(self):
+        if self._engine is None and self.db_url:
+            self._engine = create_engine(self.db_url)
+        return self._engine
+
+    def is_connected(self):
+        """Check if production database is available."""
+        if not self.engine:
+            return False
+        try:
+            with self.engine.connect() as conn:
+                return True
+        except Exception:
+            return False
+
+    def fetch_data(self, table_name: str) -> pd.DataFrame:
+        """Fetches a table from the DB or returns None if connection fails."""
+        if not self.engine:
+            return None
+        
+        try:
+            query = f'SELECT * FROM "{table_name}"'
+            df = pd.read_sql(query, self.engine)
+            return self.normalize_columns(df)
+        except Exception as e:
+            print(f"Error fetching {table_name}: {e}")
+            return None
+
+    def normalize_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Transforms snake_case DB columns to PascalCase for the ML pipelines.
+        Example: resident_id -> ResidentId
+        """
+        def to_pascal(snake_str):
+            if not snake_str:
+                return snake_str
+            # Handle standard snake_case conversion
+            components = snake_str.split("_")
+            return "".join(word.capitalize() for word in components)
+
+        df.columns = [to_pascal(col) for col in df.columns]
+        return df
+
+# Singleton instance
+db_client = DatabaseClient()

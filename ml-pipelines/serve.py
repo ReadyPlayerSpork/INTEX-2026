@@ -13,10 +13,12 @@ import os
 import traceback
 from datetime import datetime
 
+import gc
 import joblib
 import numpy as np
 import pandas as pd
 from flask import Flask, jsonify, request
+from database import db_client
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -92,126 +94,170 @@ def _csv(filename: str) -> pd.DataFrame:
 
 def _donor_features() -> pd.DataFrame:
     """Build the same feature matrix used by the donor churn notebook."""
-    supporters = _csv("supporters.csv")
-    donations = _csv("donations.csv")
+    supporters = db_client.fetch_data("Supporters")
+    if supporters is None:
+        supporters = _csv("supporters.csv")
+    
+    donations = db_client.fetch_data("Donations")
+    if donations is None:
+        donations = _csv("donations.csv")
 
-    supporters["acquisition_channel"] = supporters["acquisition_channel"].fillna("Unknown")
-    supporters["region"] = supporters["region"].fillna("Not Specified")
-    supporters["created_at"] = pd.to_datetime(supporters["created_at"])
-    donations["donation_date"] = pd.to_datetime(donations["donation_date"])
-    donations["total_val"] = donations["amount"].fillna(0) + donations["estimated_value"].fillna(0)
+    # Column normalization to handle potential naming diffs
+    supporters["AcquisitionChannel"] = supporters["AcquisitionChannel"].fillna("Unknown")
+    supporters["Region"] = supporters["Region"].fillna("Not Specified")
+    supporters["CreatedAt"] = pd.to_datetime(supporters["CreatedAt"])
+    donations["DonationDate"] = pd.to_datetime(donations["DonationDate"])
+    
+    # Handle both amount and estimated value for total worth
+    amount_col = "Amount" if "Amount" in donations.columns else "amount"
+    val_col = "EstimatedValue" if "EstimatedValue" in donations.columns else "estimated_value"
+    
+    donations["TotalVal"] = donations[amount_col].fillna(0)
+    if val_col in donations.columns:
+        donations["TotalVal"] += donations[val_col].fillna(0)
 
-    snapshot_date = donations["donation_date"].max() + pd.Timedelta(days=1)
+    snapshot_date = donations["DonationDate"].max() + pd.Timedelta(days=1)
+    if pd.isna(snapshot_date):
+        snapshot_date = pd.to_datetime(datetime.utcnow())
 
-    donor_metrics = donations.groupby("supporter_id").agg({
-        "donation_date": [
+    donor_metrics = donations.groupby("SupporterId").agg({
+        "DonationDate": [
             lambda x: (snapshot_date - x.max()).days,
             lambda x: (x.max() - x.min()).days,
             lambda x: x.dt.month.std(),
         ],
-        "donation_id": "count",
-        "total_val": ["sum", "mean"],
+        "DonationId": "count",
+        "TotalVal": ["sum", "mean"],
     })
-    donor_metrics.columns = ["recency", "active_span", "seasonality_std", "frequency", "ltv", "avg_donation_val"]
-    donor_metrics["seasonality_std"] = donor_metrics["seasonality_std"].fillna(0)
-    donor_metrics["is_churned"] = (donor_metrics["recency"] > 365).astype(int)
+    donor_metrics.columns = ["Recency", "ActiveSpan", "SeasonalityStd", "Frequency", "Ltv", "AvgDonationVal"]
+    donor_metrics["SeasonalityStd"] = donor_metrics["SeasonalityStd"].fillna(0)
+    donor_metrics["IsChurned"] = (donor_metrics["Recency"] > 365).astype(int)
 
-    df = pd.merge(supporters, donor_metrics, left_on="supporter_id", right_index=True, how="left")
-    df["frequency"] = df["frequency"].fillna(0)
-    df["ltv"] = df["ltv"].fillna(0)
-    df["avg_donation_val"] = df["avg_donation_val"].fillna(0)
-    df["is_churned"] = df["is_churned"].fillna(1)
-    df["recency"] = df["recency"].fillna((snapshot_date - df["created_at"]).dt.days)
-    df["tenure_days"] = (snapshot_date - df["created_at"]).dt.days
-    df["loyalty_ratio"] = df["frequency"] / (df["tenure_days"] / 30.44)
-    df["seasonality_std"] = df["seasonality_std"].fillna(0)
+    df = pd.merge(supporters, donor_metrics, left_on="SupporterId", right_index=True, how="left")
+    df["Frequency"] = df["Frequency"].fillna(0)
+    df["Ltv"] = df["Ltv"].fillna(0)
+    df["AvgDonationVal"] = df["AvgDonationVal"].fillna(0)
+    df["IsChurned"] = df["IsChurned"].fillna(1)
+    df["Recency"] = df["Recency"].fillna((snapshot_date - df["CreatedAt"]).dt.days)
+    df["TenureDays"] = (snapshot_date - df["CreatedAt"]).dt.days
+    df["LoyaltyRatio"] = df["Frequency"] / ((df["TenureDays"] / 30.44).replace(0, 1))
+    df["SeasonalityStd"] = df["SeasonalityStd"].fillna(0)
 
     model_features = [
-        "supporter_type", "relationship_type", "region", "acquisition_channel",
-        "tenure_days", "frequency", "ltv", "avg_donation_val", "seasonality_std",
+        "SupporterType", "RelationshipType", "Region", "AcquisitionChannel",
+        "TenureDays", "Frequency", "Ltv", "AvgDonationVal", "SeasonalityStd",
     ]
-    X = pd.get_dummies(df[model_features], drop_first=True)
+    available = [f for f in model_features if f in df.columns]
+    X = pd.get_dummies(df[available], drop_first=True)
     X = X.fillna(0)
     return df, X
 
 
 def _incident_features() -> pd.DataFrame:
     """Build the same feature matrix used by the incident risk notebook."""
-    residents = _csv("residents.csv")
-    incidents = _csv("incident_reports.csv")
-    recordings = _csv("process_recordings.csv")
+    residents = db_client.fetch_data("Residents")
+    if residents is None:
+        residents = _csv("residents.csv")
+    
+    incidents = db_client.fetch_data("IncidentReports")
+    if incidents is None:
+        incidents = _csv("incident_reports.csv")
+    
+    recordings = db_client.fetch_data("ProcessRecordings")
+    if recordings is None:
+        recordings = _csv("process_recordings.csv")
 
-    residents["date_of_admission"] = pd.to_datetime(residents["date_of_admission"])
-    residents["date_closed"] = pd.to_datetime(residents["date_closed"])
-    today = residents["date_closed"].max() if residents["date_closed"].notnull().any() else pd.to_datetime("2026-03-10")
-    residents["end_date"] = residents["date_closed"].fillna(today)
-    residents["tenure_days"] = (residents["end_date"] - residents["date_of_admission"]).dt.days
-    residents["tenure_months"] = residents["tenure_days"] / 30.44
+    residents["DateOfAdmission"] = pd.to_datetime(residents["DateOfAdmission"])
+    residents["DateClosed"] = pd.to_datetime(residents["DateClosed"], errors="coerce")
+    
+    # Use the max observed date or today
+    today = residents["DateClosed"].max() if residents["DateClosed"].notnull().any() else pd.to_datetime("2026-03-10")
+    residents["EndDate"] = residents["DateClosed"].fillna(today)
+    residents["TenureDays"] = (residents["EndDate"] - residents["DateOfAdmission"]).dt.days
+    residents["TenureMonths"] = residents["TenureDays"] / 30.44
 
     risk_map = {"Low": 1, "Medium": 2, "High": 3, "Critical": 4}
-    residents["initial_risk_num"] = residents["initial_risk_level"].map(risk_map)
+    residents["InitialRiskNum"] = residents["InitialRiskLevel"].map(risk_map)
 
     severity_map = {"Low": 1, "Medium": 2, "High": 3}
-    incidents["severity_num"] = incidents["severity"].map(severity_map)
+    incidents["SeverityNum"] = incidents["Severity"].map(severity_map)
 
-    incident_agg = incidents.groupby("resident_id").agg({
-        "incident_id": "count",
-        "severity_num": "mean",
-        "resolved": lambda x: (x == False).sum(),
-        "severity": lambda x: (x == "High").any(),
+    incident_agg = incidents.groupby("ResidentId").agg({
+        "IncidentId": "count",
+        "SeverityNum": "mean",
+        "Resolved": lambda x: (x == False).sum(),
+        "Severity": lambda x: (x == "High").any(),
     }).rename(columns={
-        "incident_id": "total_incidents",
-        "severity_num": "avg_severity",
-        "resolved": "unresolved_incidents",
-        "severity": "has_high_severity_incident",
+        "IncidentId": "TotalIncidents",
+        "SeverityNum": "AvgSeverity",
+        "Resolved": "UnresolvedIncidents",
+        "Severity": "HasHighSeverityIncident",
     }).reset_index()
 
-    recording_agg = recordings.groupby("resident_id").agg({
-        "recording_id": "count",
-        "session_duration_minutes": "mean",
-        "concerns_flagged": "sum",
+    recording_agg = recordings.groupby("ResidentId").agg({
+        "RecordingId": "count",
+        "SessionDurationMinutes": "mean",
+        "ConcernsFlagged": "sum",
     }).rename(columns={
-        "recording_id": "total_sessions",
-        "session_duration_minutes": "avg_session_duration",
-        "concerns_flagged": "concerns_flagged_count",
+        "RecordingId": "TotalSessions",
+        "SessionDurationMinutes": "AvgSessionDuration",
+        "ConcernsFlagged": "ConcernsFlaggedCount",
     }).reset_index()
 
-    df = residents.merge(incident_agg, on="resident_id", how="left")
-    df = df.merge(recording_agg, on="resident_id", how="left")
-    fill_cols = ["total_incidents", "avg_severity", "unresolved_incidents", "total_sessions", "avg_session_duration", "concerns_flagged_count"]
+    df = residents.merge(incident_agg, on="ResidentId", how="left")
+    df = df.merge(recording_agg, on="ResidentId", how="left")
+    
+    # Fill based on columns that actually exist in the merged dataframe
+    fill_cols = [c for c in ["TotalIncidents", "AvgSeverity", "UnresolvedIncidents", "TotalSessions", "AvgSessionDuration", "ConcernsFlaggedCount"] if c in df.columns]
     df[fill_cols] = df[fill_cols].fillna(0)
-    df["has_high_severity_incident"] = df["has_high_severity_incident"].fillna(False).astype(int)
+    
+    if "HasHighSeverityIncident" in df.columns:
+        df["HasHighSeverityIncident"] = df["HasHighSeverityIncident"].fillna(False).astype(int)
 
     model_features = [
-        "case_category", "initial_risk_num", "sex", "is_pwd",
-        "has_special_needs", "tenure_months", "total_sessions", "concerns_flagged_count",
+        "CaseCategory", "InitialRiskNum", "Sex", "IsPwd",
+        "HasSpecialNeeds", "TenureMonths", "TotalSessions", "ConcernsFlaggedCount",
     ]
-    X = pd.get_dummies(df[model_features], drop_first=True)
+    # Filter only available features for dummy encoding
+    available_features = [f for f in model_features if f in df.columns]
+    X = pd.get_dummies(df[available_features], drop_first=True)
     return df, X
 
 
 def _resident_progress_features() -> pd.DataFrame:
     """Build the same feature matrix used by the resident progress notebook."""
-    residents = _csv("residents.csv")
-    recordings = _csv("process_recordings.csv")
-    education = _csv("education_records.csv")
-    health = _csv("health_wellbeing_records.csv")
+    residents = db_client.fetch_data("Residents")
+    if residents is None:
+        residents = _csv("residents.csv")
+    
+    recordings = db_client.fetch_data("ProcessRecordings")
+    if recordings is None:
+        recordings = _csv("process_recordings.csv")
+    
+    education = db_client.fetch_data("EducationRecords")
+    if education is None:
+        education = _csv("education_records.csv")
+    
+    health = db_client.fetch_data("HealthWellbeingRecords")
+    if health is None:
+        health = _csv("health_wellbeing_records.csv")
 
-    recordings["session_date"] = pd.to_datetime(recordings["session_date"])
-    education["record_date"] = pd.to_datetime(education["record_date"])
-    health["record_date"] = pd.to_datetime(health["record_date"])
+    recordings["SessionDate"] = pd.to_datetime(recordings["SessionDate"])
+    education["RecordDate"] = pd.to_datetime(education["RecordDate"])
+    health["RecordDate"] = pd.to_datetime(health["RecordDate"])
 
-    session_metrics = recordings.groupby("resident_id").agg({
-        "recording_id": "count",
-        "session_duration_minutes": "mean",
-        "progress_noted": lambda x: (x == True).mean() * 100,
+    session_metrics = recordings.groupby("ResidentId").agg({
+        "RecordingId": "count",
+        "SessionDurationMinutes": "mean",
+        "ProgressNoted": lambda x: (x == True).mean() * 100,
     }).rename(columns={
-        "recording_id": "session_count",
-        "session_duration_minutes": "avg_session_duration",
-        "progress_noted": "progress_noted_pct",
+        "RecordingId": "SessionCount",
+        "SessionDurationMinutes": "AvgSessionDuration",
+        "ProgressNoted": "ProgressNotedPct",
     }).reset_index()
 
     def calculate_trend(src_df, id_col, date_col, value_col):
+        if src_df.empty: return pd.Series({}, name=f"{value_col}_trend")
         src_df = src_df.sort_values([id_col, date_col])
         trends = {}
         for rid, group in src_df.groupby(id_col):
@@ -219,63 +265,179 @@ def _resident_progress_features() -> pd.DataFrame:
                 trends[rid] = group.iloc[-1][value_col] - group.iloc[-2][value_col]
             else:
                 trends[rid] = 0
-        return pd.Series(trends, name=f"{value_col}_trend")
+        return pd.Series(trends, name=f"{value_col}_trend", dtype=float)
 
-    health_trend = calculate_trend(health, "resident_id", "record_date", "general_health_score")
-    edu_trend = calculate_trend(education, "resident_id", "record_date", "attendance_rate")
-    last_health = health.sort_values("record_date").groupby("resident_id")["general_health_score"].last().rename("current_health_score")
-    last_edu = education.sort_values("record_date").groupby("resident_id")["attendance_rate"].last().rename("current_attendance_rate")
+    health_trend = calculate_trend(health, "ResidentId", "RecordDate", "GeneralHealthScore")
+    edu_trend = calculate_trend(education, "ResidentId", "RecordDate", "AttendanceRate")
+    last_health = health.sort_values("RecordDate").groupby("ResidentId")["GeneralHealthScore"].last().rename("CurrentHealthScore")
+    last_edu = education.sort_values("RecordDate").groupby("ResidentId")["AttendanceRate"].last().rename("CurrentAttendanceRate")
 
-    df = residents.merge(session_metrics, on="resident_id", how="left")
-    df = df.merge(health_trend, left_on="resident_id", right_index=True, how="left")
-    df = df.merge(edu_trend, left_on="resident_id", right_index=True, how="left")
-    df = df.merge(last_health, on="resident_id", how="left")
-    df = df.merge(last_edu, on="resident_id", how="left")
+    df = residents.merge(session_metrics, on="ResidentId", how="left")
+    df = df.merge(health_trend, left_on="ResidentId", right_index=True, how="left")
+    df = df.merge(edu_trend, left_on="ResidentId", right_index=True, how="left")
+    df = df.merge(last_health, on="ResidentId", how="left")
+    df = df.merge(last_edu, on="ResidentId", how="left")
+    df = df.merge(last_health, left_on="ResidentId", right_index=True, how="left")
+    df = df.merge(last_edu, left_on="ResidentId", right_index=True, how="left")
 
-    df["is_ready"] = (df["reintegration_status"] == "Completed").astype(int)
-    df["length_of_stay_days"] = (pd.to_datetime("today") - pd.to_datetime(df["date_of_admission"])).dt.days
+    fill_cols = ["SessionCount", "AvgSessionDuration", "ProgressNotedPct", 
+                 "GeneralHealthScore_trend", "AttendanceRate_trend", 
+                 "CurrentHealthScore", "CurrentAttendanceRate"]
+    df[fill_cols] = df[fill_cols].fillna(0)
+    
+    # Target definition
+    df["IsReady"] = ((df["CurrentHealthScore"] >= 7) & 
+                     (df["CurrentAttendanceRate"] >= 80) & 
+                     (df["ProgressNotedPct"] >= 50)).astype(int)
 
-    metric_cols = ["session_count", "avg_session_duration", "progress_noted_pct",
-                   "general_health_score_trend", "attendance_rate_trend",
-                   "current_health_score", "current_attendance_rate"]
-    df[metric_cols] = df[metric_cols].fillna(0)
+    model_features = [
+        "CaseCategory", "InitialRiskLevel", "Sex", "SessionCount", 
+        "AvgSessionDuration", "ProgressNotedPct", "GeneralHealthScore_trend", 
+        "AttendanceRate_trend", "CurrentHealthScore", "CurrentAttendanceRate"
+    ]
+    available = [f for f in model_features if f in df.columns]
+    X = pd.get_dummies(df[available], drop_first=True)
+    return df, X
 
-    features = ["session_count", "avg_session_duration", "progress_noted_pct",
-                "general_health_score_trend", "attendance_rate_trend",
-                "current_health_score", "current_attendance_rate", "length_of_stay_days"]
-    X = df[features]
+
+def _safehouse_features() -> pd.DataFrame:
+    """Build the same feature matrix used by the safehouse outcomes notebook."""
+    safehouses = db_client.fetch_data("Safehouses")
+    if safehouses is None:
+        safehouses = _csv("safehouses.csv")
+        
+    funding = db_client.fetch_data("FundingAllocations")
+    if funding is None:
+        funding = _csv("funding_allocations.csv")
+        
+    education = db_client.fetch_data("EducationRecords")
+    if education is None:
+        education = _csv("education_records.csv")
+
+    # Aggregate funding by safehouse and period (month/year)
+    funding["AllocationDate"] = pd.to_datetime(funding["AllocationDate"])
+    funding["Month"] = funding["AllocationDate"].dt.month
+    funding["Year"] = funding["AllocationDate"].dt.year
+    funding_agg = funding.groupby(["SafehouseId", "Year", "Month"])["Amount"].sum().reset_index()
+
+    # Aggregate education by safehouse and period
+    education["RecordDate"] = pd.to_datetime(education["RecordDate"])
+    education["Month"] = education["RecordDate"].dt.month
+    education["Year"] = education["RecordDate"].dt.year
+    edu_agg = education.groupby(["SafehouseId", "Year", "Month"])["AttendanceRate"].mean().rename("AvgEducationProgress").reset_index()
+
+    # Merge foundations
+    df = pd.merge(funding_agg, edu_agg, on=["SafehouseId", "Year", "Month"], how="inner")
+    df = df.sort_values(["SafehouseId", "Year", "Month"])
+
+    # Create lag features (previous month's funding predicts current progress)
+    df["PrevMonthFunding"] = df.groupby("SafehouseId")["Amount"].shift(1)
+    df = df.dropna(subset=["PrevMonthFunding"])
+
+    model_features = ["SafehouseId", "PrevMonthFunding", "Month"]
+    X = df[model_features].copy()
+    X = pd.get_dummies(X, columns=["SafehouseId"], drop_first=True)
     return df, X
 
 
 def _social_media_features() -> pd.DataFrame:
     """Build the same feature matrix used by the social media impact notebook."""
-    df = _csv("social_media_posts.csv")
-    cols_to_zero = ["boost_budget_php", "video_views", "watch_time_seconds", "avg_view_duration_seconds"]
-    for c in cols_to_zero:
+    df = db_client.fetch_data("SocialMediaPosts")
+    if df is None:
+        df = _csv("social_media_posts.csv")
+
+    # Column cleanup
+    numeric_cols = ["EngagementRate", "DonationReferrals", "BoostBudgetPhp", "VideoViews", "WatchTimeSeconds", "AvgViewDurationSeconds"]
+    for c in numeric_cols:
         if c in df.columns:
-            df[c] = df[c].fillna(0)
-    df["campaign_name"] = df["campaign_name"].fillna("None")
-    df["call_to_action_type"] = df["call_to_action_type"].fillna("None")
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+            
+    df["CampaignName"] = df["CampaignName"].fillna("None") if "CampaignName" in df.columns else "None"
+    df["CallToActionType"] = df["CallToActionType"].fillna("None") if "CallToActionType" in df.columns else "None"
 
     def get_time_of_day(hour):
-        if 5 <= hour < 12:
-            return "morning"
-        elif 12 <= hour < 17:
-            return "afternoon"
-        elif 17 <= hour < 22:
-            return "evening"
-        else:
+        try:
+            h = int(hour)
+            if 5 <= h < 12: return "morning"
+            if 12 <= h < 17: return "afternoon"
+            if 17 <= h < 22: return "evening"
             return "night"
+        except:
+            return "afternoon"
 
-    df["time_of_day"] = df["post_hour"].apply(get_time_of_day)
-    eng_75th = df["engagement_rate"].quantile(0.75)
-    df["is_high_engagement"] = (df["engagement_rate"] > eng_75th).astype(int)
-    df["is_donation_driver"] = (df["donation_referrals"] > 0).astype(int)
+    if "PostHour" in df.columns:
+        df["TimeOfDay"] = df["PostHour"].apply(get_time_of_day)
+    else:
+        df["TimeOfDay"] = "afternoon"
+        
+    eng_75th = df["EngagementRate"].quantile(0.75) if "EngagementRate" in df.columns else 0
+    df["IsHighEngagement"] = (df["EngagementRate"] > eng_75th).astype(int) if "EngagementRate" in df.columns else 0
+    df["IsDonationDriver"] = (df["DonationReferrals"] > 0).astype(int) if "DonationReferrals" in df.columns else 0
 
-    model_features = ["platform", "post_type", "media_type", "time_of_day",
-                       "sentiment_tone", "caption_length", "num_hashtags", "is_boosted"]
-    X = pd.get_dummies(df[model_features], drop_first=True)
+    model_features = ["Platform", "PostType", "MediaType", "TimeOfDay",
+                       "SentimentTone", "CaptionLength", "NumHashtags", "IsBoosted"]
+    available = [f for f in model_features if f in df.columns]
+    X = pd.get_dummies(df[available], drop_first=True)
     return df, X
+
+
+def _safehouse_features() -> (pd.DataFrame, pd.DataFrame):
+    """Build the feature matrix for safehouse outcomes (regression)."""
+    allocations = db_client.fetch_data("DonationAllocations")
+    if allocations is None:
+        allocations = _csv("donation_allocations.csv")
+        
+    metrics = db_client.fetch_data("SafehouseMonthlyMetrics")
+    if metrics is None:
+        metrics = _csv("safehouse_monthly_metrics.csv")
+        
+    safehouses_df = db_client.fetch_data("Safehouses")
+    if safehouses_df is None:
+        safehouses_df = _csv("safehouses.csv")
+
+    allocations["AllocationDate"] = pd.to_datetime(allocations["AllocationDate"])
+    metrics["MonthStart"] = pd.to_datetime(metrics["MonthStart"])
+    metrics_clean = metrics.dropna(subset=["AvgEducationProgress", "AvgHealthScore"])
+
+    allocations["MonthStart"] = allocations["AllocationDate"].dt.to_period("M").dt.to_timestamp()
+    funding_pivot = allocations.groupby(["SafehouseId", "MonthStart", "ProgramArea"])["AmountAllocated"].sum().unstack(fill_value=0).reset_index()
+    funding_pivot = funding_pivot.rename(columns={
+        "Education": "EduFunding", "Wellbeing": "WellbeingFunding",
+        "Operations": "OpsFunding", "Transport": "TransportFunding",
+    })
+    
+    funding_cols = ["EduFunding", "WellbeingFunding", "OpsFunding", "TransportFunding"]
+    for c in funding_cols:
+        if c not in funding_pivot.columns:
+            funding_pivot[c] = 0
+            
+    funding_pivot["TotalFunding"] = funding_pivot[funding_cols].sum(axis=1)
+
+    df = pd.merge(metrics_clean, funding_pivot, on=["SafehouseId", "MonthStart"], how="left").fillna(0)
+    df = pd.merge(df, safehouses_df[["SafehouseId", "Name", "Region"]], on="SafehouseId", how="left")
+    df = df.sort_values(["SafehouseId", "MonthStart"])
+    
+    # Calculate lags
+    df["LaggedTotalFunding"] = df.groupby("SafehouseId")["TotalFunding"].shift(1)
+    df["LaggedEduFunding"] = df.groupby("SafehouseId")["EduFunding"].shift(1)
+    df["LaggedWellbeingFunding"] = df.groupby("SafehouseId")["WellbeingFunding"].shift(1)
+    df["LaggedOpsFunding"] = df.groupby("SafehouseId")["OpsFunding"].shift(1)
+    df["LaggedTransportFunding"] = df.groupby("SafehouseId")["TransportFunding"].shift(1)
+    
+    df_final = df.dropna(subset=["LaggedTotalFunding"])
+    
+    features = [
+        "LaggedTotalFunding", "LaggedEduFunding", "LaggedWellbeingFunding", 
+        "LaggedOpsFunding", "LaggedTransportFunding", "ActiveResidents"
+    ]
+    
+    # Ensure columns exist (e.g. ActiveResidents)
+    for f in features:
+        if f not in df_final.columns:
+            df_final[f] = 0
+            
+    X = df_final[features].fillna(0)
+    return df_final, X
 
 
 # ---------------------------------------------------------------------------
@@ -325,7 +487,7 @@ def donor_churn():
         df, X = _donor_features()
         X = _align_features(X, features)
 
-        idx = df.index[df["supporter_id"] == supporter_id]
+        idx = df.index[df["SupporterId"] == supporter_id]
         if len(idx) == 0:
             return jsonify({"error": f"Supporter {supporter_id} not found"}), 404
 
@@ -337,10 +499,10 @@ def donor_churn():
         )[:5])
 
         return jsonify({
-            "supporter_id": supporter_id,
-            "churn_probability": round(prob, 4),
-            "risk_level": _risk_level(prob),
-            "top_factors": importances,
+            "SupporterId": supporter_id,
+            "ChurnProbability": round(prob, 4),
+            "RiskLevel": _risk_level(prob),
+            "TopFactors": importances,
         })
     except Exception as e:
         traceback.print_exc()
@@ -363,12 +525,12 @@ def donor_churn_batch():
         for i, (_, row) in enumerate(df.iterrows()):
             prob = float(probs[i])
             results.append({
-                "supporter_id": int(row["supporter_id"]),
-                "display_name": row.get("display_name", ""),
-                "churn_probability": round(prob, 4),
-                "risk_level": _risk_level(prob),
+                "SupporterId": int(row["SupporterId"]),
+                "DisplayName": row.get("DisplayName", ""),
+                "ChurnProbability": round(prob, 4),
+                "RiskLevel": _risk_level(prob),
             })
-        results.sort(key=lambda x: x["churn_probability"], reverse=True)
+        results.sort(key=lambda x: x["ChurnProbability"], reverse=True)
         return jsonify(results)
     except Exception as e:
         traceback.print_exc()
@@ -392,7 +554,7 @@ def incident_risk():
         df, X = _incident_features()
         X = _align_features(X, features)
 
-        idx = df.index[df["resident_id"] == resident_id]
+        idx = df.index[df["ResidentId"] == resident_id]
         if len(idx) == 0:
             return jsonify({"error": f"Resident {resident_id} not found"}), 404
 
@@ -404,10 +566,10 @@ def incident_risk():
         )[:5])
 
         return jsonify({
-            "resident_id": resident_id,
-            "escalation_probability": round(prob, 4),
-            "risk_level": _risk_level(prob),
-            "risk_factors": importances,
+            "ResidentId": resident_id,
+            "EscalationProbability": round(prob, 4),
+            "RiskLevel": _risk_level(prob),
+            "RiskFactors": importances,
         })
     except Exception as e:
         traceback.print_exc()
@@ -431,14 +593,14 @@ def incident_risk_alerts():
             prob = float(probs[i])
             if prob >= 0.5:
                 alerts.append({
-                    "resident_id": int(row["resident_id"]),
-                    "first_name": row.get("first_name", ""),
-                    "last_name": row.get("last_name", ""),
-                    "escalation_probability": round(prob, 4),
-                    "risk_level": _risk_level(prob),
-                    "current_risk_level": row.get("current_risk_level", ""),
+                    "ResidentId": int(row["ResidentId"]),
+                    "FirstName": row.get("FirstName", ""),
+                    "LastName": row.get("LastName", ""),
+                    "EscalationProbability": round(prob, 4),
+                    "RiskLevel": _risk_level(prob),
+                    "CurrentRiskLevel": row.get("CurrentRiskLevel", ""),
                 })
-        alerts.sort(key=lambda x: x["escalation_probability"], reverse=True)
+        alerts.sort(key=lambda x: x["EscalationProbability"], reverse=True)
         return jsonify(alerts)
     except Exception as e:
         traceback.print_exc()
@@ -460,7 +622,7 @@ def resident_progress():
 
     try:
         df, X = _resident_progress_features()
-        idx = df.index[df["resident_id"] == resident_id]
+        idx = df.index[df["ResidentId"] == resident_id]
         if len(idx) == 0:
             return jsonify({"error": f"Resident {resident_id} not found"}), 404
 
@@ -472,10 +634,10 @@ def resident_progress():
         )[:5])
 
         return jsonify({
-            "resident_id": resident_id,
-            "readiness_score": round(prob, 4),
-            "risk_level": _risk_level(1 - prob),  # invert: low readiness = high risk
-            "top_factors": importances,
+            "ResidentId": resident_id,
+            "ReadinessScore": round(prob, 4),
+            "RiskLevel": _risk_level(1 - prob),  # invert: low readiness = high risk
+            "TopFactors": importances,
         })
     except Exception as e:
         traceback.print_exc()
@@ -492,46 +654,21 @@ def safehouse_outcomes():
         return jsonify({"error": "Model not trained yet."}), 503
 
     try:
-        # Load and prepare data similar to notebook
-        allocations = _csv("donation_allocations.csv")
-        metrics = _csv("safehouse_monthly_metrics.csv")
-        safehouses_df = _csv("safehouses.csv")
-
-        allocations["allocation_date"] = pd.to_datetime(allocations["allocation_date"])
-        metrics["month_start"] = pd.to_datetime(metrics["month_start"])
-        metrics_clean = metrics.dropna(subset=["avg_education_progress", "avg_health_score"])
-
-        allocations["month_start"] = allocations["allocation_date"].dt.to_period("M").dt.to_timestamp()
-        funding_pivot = allocations.groupby(["safehouse_id", "month_start", "program_area"])["amount_allocated"].sum().unstack(fill_value=0).reset_index()
-        funding_pivot = funding_pivot.rename(columns={
-            "Education": "edu_funding", "Wellbeing": "wellbeing_funding",
-            "Operations": "ops_funding", "Transport": "transport_funding",
-        })
-        for c in ["edu_funding", "wellbeing_funding", "ops_funding", "transport_funding"]:
-            if c not in funding_pivot.columns:
-                funding_pivot[c] = 0
-        funding_pivot["total_funding"] = funding_pivot[["edu_funding", "wellbeing_funding", "ops_funding", "transport_funding"]].sum(axis=1)
-
-        df = pd.merge(metrics_clean, funding_pivot, on=["safehouse_id", "month_start"], how="left").fillna(0)
-        df = pd.merge(df, safehouses_df[["safehouse_id", "name", "region"]], on="safehouse_id", how="left")
-        df = df.sort_values(["safehouse_id", "month_start"])
-        df["lagged_total_funding"] = df.groupby("safehouse_id")["total_funding"].shift(1)
-        df["lagged_edu_funding"] = df.groupby("safehouse_id")["edu_funding"].shift(1)
-        df["lagged_wellbeing_funding"] = df.groupby("safehouse_id")["wellbeing_funding"].shift(1)
-        df_final = df.dropna(subset=["lagged_total_funding"])
+        df_final, X = _safehouse_features()
 
         # Get latest row per safehouse
-        latest = df_final.sort_values("month_start").groupby("safehouse_id").last().reset_index()
+        latest = df_final.sort_values("MonthStart").groupby("SafehouseId").last().reset_index()
 
         results = []
         for _, row in latest.iterrows():
             feat_row = pd.DataFrame([row[features]])
+            feat_row = _align_features(feat_row, features)
             pred = float(model.predict(feat_row)[0])
             results.append({
-                "safehouse_id": int(row["safehouse_id"]),
-                "safehouse_name": row.get("name", ""),
-                "predicted_education_progress": round(pred, 2),
-                "actual_education_progress": round(float(row.get("avg_education_progress", 0)), 2),
+                "SafehouseId": int(row["SafehouseId"]),
+                "SafehouseName": row.get("Name", ""),
+                "PredictedEducationProgress": round(pred, 2),
+                "ActualEducationProgress": round(float(row.get("AvgEducationProgress", 0)), 2),
             })
         return jsonify(results)
     except Exception as e:
@@ -545,27 +682,30 @@ def safehouse_outcomes():
 def social_media_recommendations():
     """Analyze past posts to recommend optimal posting strategy."""
     try:
-        df = _csv("social_media_posts.csv")
-        df["created_at"] = pd.to_datetime(df["created_at"])
+        df = db_client.fetch_data("SocialMediaPosts")
+        if df is None:
+            df = _csv("social_media_posts.csv")
+            
+        df["CreatedAt"] = pd.to_datetime(df["CreatedAt"])
 
         # Best day/hour by engagement
-        best_hour = df.groupby("post_hour")["engagement_rate"].mean().idxmax()
-        best_day = df.groupby("day_of_week")["engagement_rate"].mean().idxmax()
-        best_type = df.groupby("post_type")["donation_referrals"].sum().idxmax()
-        best_media = df.groupby("media_type")["engagement_rate"].mean().idxmax()
+        best_hour = df.groupby("PostHour")["EngagementRate"].mean().idxmax()
+        best_day = df.groupby("DayOfWeek")["EngagementRate"].mean().idxmax()
+        best_type = df.groupby("PostType")["DonationReferrals"].sum().idxmax()
+        best_media = df.groupby("MediaType")["EngagementRate"].mean().idxmax()
 
         # Donation-driving stats
-        donation_posts = df[df["donation_referrals"] > 0]
-        top_cta = donation_posts["call_to_action_type"].mode().iloc[0] if len(donation_posts) > 0 else "DonateNow"
+        donation_posts = df[df["DonationReferrals"] > 0]
+        top_cta = donation_posts["CallToActionType"].mode().iloc[0] if len(donation_posts) > 0 else "DonateNow"
 
         return jsonify({
-            "best_post_hour": int(best_hour),
-            "best_day_of_week": best_day,
-            "best_post_type_for_donations": best_type,
-            "best_media_type_for_engagement": best_media,
-            "recommended_cta": top_cta,
-            "avg_engagement_rate": round(float(df["engagement_rate"].mean()), 4),
-            "total_donation_referrals": int(df["donation_referrals"].sum()),
+            "BestPostHour": int(best_hour),
+            "BestDayOfWeek": best_day,
+            "BestPostTypeForDonations": best_type,
+            "BestMediaTypeForEngagement": best_media,
+            "RecommendedCta": top_cta,
+            "AvgEngagementRate": round(float(df["EngagementRate"].mean()), 4),
+            "TotalDonationReferrals": int(df["DonationReferrals"].sum()),
         })
     except Exception as e:
         traceback.print_exc()
@@ -587,23 +727,23 @@ def social_media_predict():
         # Build a single-row DataFrame with the same dummy encoding
         df, _ = _social_media_features()  # just to get the encoding reference
         row = pd.DataFrame([{
-            "platform": data.get("platform", "Facebook"),
-            "post_type": data.get("post_type", "ImpactStory"),
-            "media_type": data.get("media_type", "Photo"),
-            "time_of_day": data.get("time_of_day", "afternoon"),
-            "sentiment_tone": data.get("sentiment_tone", "Hopeful"),
-            "caption_length": data.get("caption_length", 200),
-            "num_hashtags": data.get("num_hashtags", 5),
-            "is_boosted": data.get("is_boosted", False),
+            "Platform": data.get("Platform", data.get("platform", "Facebook")),
+            "PostType": data.get("PostType", data.get("post_type", "ImpactStory")),
+            "MediaType": data.get("MediaType", data.get("media_type", "Photo")),
+            "TimeOfDay": data.get("TimeOfDay", data.get("time_of_day", "afternoon")),
+            "SentimentTone": data.get("SentimentTone", data.get("sentiment_tone", "Hopeful")),
+            "CaptionLength": data.get("CaptionLength", data.get("caption_length", 200)),
+            "NumHashtags": data.get("NumHashtags", data.get("num_hashtags", 5)),
+            "IsBoosted": data.get("IsBoosted", data.get("is_boosted", False)),
         }])
         X_row = pd.get_dummies(row, drop_first=True)
         X_row = _align_features(X_row, features)
 
         prob = float(model.predict_proba(X_row)[0, 1])
         return jsonify({
-            "donation_driver_probability": round(prob, 4),
-            "predicted_donation_driver": prob >= 0.5,
-            "recommendation": "This post is likely to drive donations!" if prob >= 0.5
+            "DonationDriverProbability": round(prob, 4),
+            "PredictedDonationDriver": prob >= 0.5,
+            "Recommendation": "This post is likely to drive donations!" if prob >= 0.5
                 else "Consider adding a stronger CTA or using video content to improve donation conversion.",
         })
     except Exception as e:
@@ -611,26 +751,57 @@ def social_media_predict():
         return jsonify({"error": str(e)}), 500
 
 
-# ── System Administration ────────────────────────────────────────────────────
+@app.route("/api/ml/status", methods=["GET"])
+def ml_status():
+    """Return model health and last trained metadata."""
+    metadata_path = os.path.join(MODEL_DIR, "metadata.json")
+    last_trained = "Never"
+    if os.path.exists(metadata_path):
+        try:
+            with open(metadata_path, "r") as f:
+                meta = json.load(f)
+                last_trained = meta.get("last_trained", "Unknown")
+        except:
+            pass
+
+    # Check which models are missing
+    model_names = ["donor_churn", "incident_risk", "resident_progress", "safehouse_outcomes", "social_media_impact"]
+    missing = []
+    for name in model_names:
+        if not os.path.exists(os.path.join(MODEL_DIR, f"{name}_model.joblib")):
+            missing.append(name)
+
+    return jsonify({
+        "status": "Running",
+        "database_connected": db_client.is_connected(),
+        "last_trained": last_trained,
+        "missing_models": missing,
+        "is_healthy": len(missing) == 0
+    })
+
 
 @app.route("/api/ml/retrain", methods=["POST"])
 def retrain_models():
-    """Trigger a retraining of all models using the latest CSV data."""
+    """Trigger a retraining of all models using the latest database data."""
     try:
-        # Clear CSV cache so it re-reads from disk
+        # Clear caches and explicitly free memory BEFORE retraining
         global _csv_cache, _models
         _csv_cache.clear()
+        _models.clear()
+        gc.collect()
         
         # Import inside the function to prevent circular import issues
         import train
         train.train_all()
         
-        # Clear the model cache so the next request loads the new .joblib files
+        # Explicitly clear again in case train_all left anything in memory
+        _csv_cache.clear()
         _models.clear()
+        gc.collect()
         
         return jsonify({
             "status": "success", 
-            "message": "All models retrained successfully and loaded into memory.",
+            "message": "All models retrained successfully using live data. Models will be re-loaded into memory on next use.",
             "timestamp": datetime.utcnow().isoformat()
         })
     except Exception as e:
