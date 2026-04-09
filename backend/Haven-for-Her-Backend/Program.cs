@@ -21,6 +21,7 @@ var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecr
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
@@ -200,7 +201,10 @@ using (var scope = app.Services.CreateScope())
 // Trust Cloudflare Tunnel's forwarded headers (X-Forwarded-For, X-Forwarded-Proto, etc.)
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // Clear known networks/proxies to trust all proxies (required for many load balancers/Cloudflare)
+    KnownIPNetworks = { },
+    KnownProxies = { }
 });
 
 if (app.Environment.IsDevelopment())

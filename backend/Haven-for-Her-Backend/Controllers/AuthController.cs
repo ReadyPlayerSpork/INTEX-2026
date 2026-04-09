@@ -296,20 +296,19 @@ public class AuthController(
         return returnPath;
     }
 
+    private string ResolvedFrontendUrl =>
+        configuration["FrontendUrl"] ??
+        configuration["FrontendUrls"]?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ??
+        DefaultFrontendUrl;
+    
     private string BuildFrontendSuccessUrl(string? returnPath)
     {
-        var frontendUrl = configuration["FrontendUrl"] ??
-            configuration["FrontendUrls"]?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ??
-            DefaultFrontendUrl;
-        return $"{frontendUrl.TrimEnd('/')}{NormalizeReturnPath(returnPath)}";
+        return $"{ResolvedFrontendUrl.TrimEnd('/')}{NormalizeReturnPath(returnPath)}";
     }
 
     private string BuildFrontendErrorUrl(string errorMessage)
     {
-        var frontendUrl = configuration["FrontendUrl"] ??
-            configuration["FrontendUrls"]?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ??
-            DefaultFrontendUrl;
-        var loginUrl = $"{frontendUrl.TrimEnd('/')}/login";
+        var loginUrl = $"{ResolvedFrontendUrl.TrimEnd('/')}/login";
         return QueryHelpers.AddQueryString(loginUrl, "externalError", errorMessage);
     }
 }
