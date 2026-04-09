@@ -61,7 +61,7 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
 
       <svg
         viewBox={`0 0 ${w} ${h}`}
-        className="text-primary flex-1 min-h-0 w-full"
+        className="text-primary h-auto w-full"
         role="img"
         aria-label="Donation totals by month"
       >
@@ -98,6 +98,9 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
           </text>
         ))}
       </svg>
+
+      {/* Spacer pushes footer to the bottom of the flex card */}
+      <div className="flex-1" />
 
       <p className="text-muted-foreground mt-2 text-center text-xs">
         Peak this window:{' '}
