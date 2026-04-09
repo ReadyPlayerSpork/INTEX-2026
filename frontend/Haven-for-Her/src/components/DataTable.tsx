@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Separator } from '@/components/ui/separator'
 import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Trash2 } from 'lucide-react'
 import type { SortState } from '@/hooks/useServerTable'
 import type { CascadeImpact } from '@/types/cascade'
@@ -306,66 +307,82 @@ export function DataTable<T>({
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) handleDeleteCancel() }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {deleteEntityLabel}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {getDeleteName && deleteTarget ? (
-                <>Are you sure you want to delete <strong>{getDeleteName(deleteTarget)}</strong>?</>
-              ) : (
-                <>Are you sure you want to delete this {deleteEntityLabel}?</>
-              )}
-              {cascadeLoading && (
-                <span className="text-muted-foreground mt-2 block animate-pulse text-sm">
-                  Checking related records...
-                </span>
-              )}
-              {!cascadeLoading && cascadeError && (
-                <span className="text-destructive mt-2 block text-sm">
-                  {cascadeError}
-                </span>
-              )}
-              {!cascadeLoading && !cascadeError && cascadeTotal > 0 && (
-                <div className="mt-3 space-y-3 text-sm">
-                  {renderCascadeSection(
-                    'Delete blocked by related records',
-                    `Resolve these records before deleting this ${deleteEntityLabel}.`,
-                    blockingCascadeItems,
-                    'font-semibold text-destructive',
+        <AlertDialogContent className="max-h-[85vh] overflow-hidden p-0 sm:max-w-2xl">
+          <div className="flex min-h-0 flex-col">
+            <AlertDialogHeader className="shrink-0 px-6 pt-6 pb-4">
+              <AlertDialogTitle>Delete {deleteEntityLabel}?</AlertDialogTitle>
+            </AlertDialogHeader>
+
+            <Separator />
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+              <AlertDialogDescription className="flex flex-col gap-3 text-left">
+                <p>
+                  {getDeleteName && deleteTarget ? (
+                    <>Are you sure you want to delete <strong>{getDeleteName(deleteTarget)}</strong>?</>
+                  ) : (
+                    <>Are you sure you want to delete this {deleteEntityLabel}?</>
                   )}
-                  {renderCascadeSection(
-                    'These records will be permanently deleted',
-                    'Review the records that will be removed along with this item.',
-                    deletingCascadeItems,
-                  )}
-                  {renderCascadeSection(
-                    'These records will be unlinked',
-                    'These records will remain, but they will lose their connection to this item.',
-                    detachingCascadeItems,
-                  )}
-                </div>
-              )}
-              <span className="mt-2 block text-sm">
-                {hasBlockingCascadeItems
-                  ? `This ${deleteEntityLabel} cannot be deleted until the blocking records are resolved.`
-                  : 'This action cannot be undone.'}
-              </span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={handleDeleteConfirm}
-              disabled={deleting || cascadeLoading || hasBlockingCascadeItems}
-            >
-              {deleting
-                ? 'Deleting...'
-                : hasBlockingCascadeItems
-                  ? 'Delete unavailable'
-                  : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
+                </p>
+
+                {cascadeLoading && (
+                  <span className="text-muted-foreground block animate-pulse text-sm">
+                    Checking related records...
+                  </span>
+                )}
+
+                {!cascadeLoading && cascadeError && (
+                  <span className="text-destructive block text-sm">
+                    {cascadeError}
+                  </span>
+                )}
+
+                {!cascadeLoading && !cascadeError && cascadeTotal > 0 && (
+                  <div className="flex flex-col gap-3 text-sm">
+                    {renderCascadeSection(
+                      'Delete blocked by related records',
+                      `Resolve these records before deleting this ${deleteEntityLabel}.`,
+                      blockingCascadeItems,
+                      'font-semibold text-destructive',
+                    )}
+                    {renderCascadeSection(
+                      'These records will be permanently deleted',
+                      'Review the records that will be removed along with this item.',
+                      deletingCascadeItems,
+                    )}
+                    {renderCascadeSection(
+                      'These records will be unlinked',
+                      'These records will remain, but they will lose their connection to this item.',
+                      detachingCascadeItems,
+                    )}
+                  </div>
+                )}
+
+                <p className="text-sm">
+                  {hasBlockingCascadeItems
+                    ? `This ${deleteEntityLabel} cannot be deleted until the blocking records are resolved.`
+                    : 'This action cannot be undone.'}
+                </p>
+              </AlertDialogDescription>
+            </div>
+
+            <Separator />
+
+            <AlertDialogFooter className="shrink-0 px-6 py-4">
+              <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+                disabled={deleting || cascadeLoading || hasBlockingCascadeItems}
+              >
+                {deleting
+                  ? 'Deleting...'
+                  : hasBlockingCascadeItems
+                    ? 'Delete unavailable'
+                    : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </>
