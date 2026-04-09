@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '@/api/client'
+import { getSocialMediaRecommendations, predictSocialMediaPost, type SocialMediaRecommendations } from '@/api/mlApi'
 import { Button } from '@/components/ui/button'
-import { ImagePlus, Megaphone, Loader2, CheckCircle2, ExternalLink, AlertTriangle, X } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ImagePlus, Megaphone, Loader2, CheckCircle2, ExternalLink, AlertTriangle, X, Brain } from 'lucide-react'
 
 // ── Audience presets (seed headline / link / CTA / genders) ─────────────────
 
@@ -98,6 +100,15 @@ export function CreatePostPage() {
   const [interests, setInterests] = useState<InterestPick[]>([])
   const interestDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const [mlTips, setMlTips] = useState<SocialMediaRecommendations | null>(null)
+  const [mlTipsErr, setMlTipsErr] = useState<string | null>(null)
+  const [donationDriverPreview, setDonationDriverPreview] = useState<{
+    donationDriverProbability: number
+    predictedDonationDriver: boolean
+    recommendation: string
+  } | null>(null)
+  const [donationPreviewLoading, setDonationPreviewLoading] = useState(false)
+
   const [scheduleStart, setScheduleStart] = useState('')
   const [scheduleEnd, setScheduleEnd] = useState('')
 
@@ -124,6 +135,12 @@ export function CreatePostPage() {
         })
       })
       .catch(() => setMetaConfigured(false))
+  }, [])
+
+  useEffect(() => {
+    getSocialMediaRecommendations()
+      .then(setMlTips)
+      .catch(() => setMlTipsErr('Unable to load ML posting hints.'))
   }, [])
 
   useEffect(() => {
@@ -178,6 +195,30 @@ export function CreatePostPage() {
       if (interestDebounce.current) clearTimeout(interestDebounce.current)
     }
   }, [interestQuery, searchInterests])
+
+  const estimateDonationDriver = useCallback(async () => {
+    setDonationPreviewLoading(true)
+    setDonationDriverPreview(null)
+    try {
+      const numHashtags = (caption.match(/#\w+/g) ?? []).length
+      const capLen = caption.trim().length > 0 ? caption.trim().length : 200
+      const res = await predictSocialMediaPost({
+        platform: 'Facebook',
+        postType: audience === 'donors' ? 'ImpactStory' : 'Support',
+        mediaType: 'Photo',
+        timeOfDay: 'afternoon',
+        sentimentTone: 'Hopeful',
+        captionLength: capLen,
+        numHashtags,
+        isBoosted: false,
+      })
+      setDonationDriverPreview(res)
+    } catch {
+      setDonationDriverPreview(null)
+    } finally {
+      setDonationPreviewLoading(false)
+    }
+  }, [audience, caption])
 
   function toggleCountry(code: string) {
     setCountries((prev) => {
@@ -441,6 +482,69 @@ export function CreatePostPage() {
           is created <strong>paused</strong>.
         </p>
       </div>
+
+      <Card className="border-primary/25 bg-card/95 mb-8">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-heading flex items-center gap-2 text-lg">
+            <Brain className="text-primary size-5 shrink-0" aria-hidden />
+            ML donation impact
+          </CardTitle>
+          <CardDescription>
+            Historical posting hints and a quick score for how closely your draft matches posts that drove donations.{' '}
+            <Link to="/social/dashboard" className="text-primary font-medium underline">
+              ML dashboard
+            </Link>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-0">
+          {mlTipsErr && (
+            <p className="text-muted-foreground text-sm" role="status">
+              {mlTipsErr}
+            </p>
+          )}
+          {mlTips && (
+            <div className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <span>
+                <strong className="text-foreground font-medium">Best time:</strong>{' '}
+                {mlTips.bestDayOfWeek} at {mlTips.bestPostHour}:00
+              </span>
+              <span>
+                <strong className="text-foreground font-medium">Suggested CTA:</strong>{' '}
+                {mlTips.recommendedCta}
+              </span>
+            </div>
+          )}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void estimateDonationDriver()}
+              disabled={donationPreviewLoading}
+            >
+              {donationPreviewLoading ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Scoring&hellip;
+                </>
+              ) : (
+                'Score draft (donation likelihood)'
+              )}
+            </Button>
+          </div>
+          {donationDriverPreview && (
+            <div className="bg-card border-border rounded-xl border p-4 text-sm">
+              <p className="font-medium text-foreground">
+                Estimated donation-driver probability:{' '}
+                <span className="tabular-nums">
+                  {(donationDriverPreview.donationDriverProbability * 100).toFixed(1)}%
+                </span>
+              </p>
+              <p className="text-muted-foreground mt-2">{donationDriverPreview.recommendation}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {error && (
         <div className="bg-destructive/10 text-destructive mb-6 rounded-xl border border-destructive/20 px-4 py-3 text-sm">

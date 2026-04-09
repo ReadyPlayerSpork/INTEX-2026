@@ -342,44 +342,7 @@ export function AdminDashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
-        <DonationsTrendChart
-          months={months}
-          formatMoney={php}
-          recurringPct={recurringPct}
-          oneTimePct={oneTimePct}
-        />
-        <NarrativeAlertsPanel
-          escalatingRisk={res.alerts.escalatingRisk}
-          recentConcerns={res.alerts.recentConcerns}
-          missedSessions={res.alerts.missedSessions}
-          unresolvedIncidents={res.alerts.unresolvedIncidents}
-          followUpNeeded={res.alerts.followUpNeeded}
-          maxItems={6}
-        />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <SafehouseOccupancy safehouses={res.bySafehouse} />
-        <RiskDonutChart
-          riskDistribution={res.riskDistribution}
-          criticalCount={critical}
-        />
-        <DonorHealth
-          active={fin.donorHealth.active}
-          lapsed={fin.donorHealth.lapsed}
-          churned={fin.donorHealth.churned}
-        />
-      </div>
-
-      <FinancialSnapshot
-        totalDonationsThisMonth={fin.totalDonationsThisMonth}
-        totalDonationsLastMonth={fin.totalDonationsLastMonth}
-        percentChange={fin.percentChange}
-        donationsByType={fin.donationsByType}
-        topCampaigns={fin.topCampaigns}
-        recurringVsOneTime={fin.recurringVsOneTime}
-      />      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-bloom">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-bloom">
         {isRetraining && (
           <div className="absolute inset-0 z-50 flex items-center justify-center rounded-2xl bg-background/80">
             <div className="flex items-center gap-3">
@@ -496,6 +459,45 @@ export function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+        <DonationsTrendChart
+          months={months}
+          formatMoney={php}
+          recurringPct={recurringPct}
+          oneTimePct={oneTimePct}
+        />
+        <NarrativeAlertsPanel
+          escalatingRisk={res.alerts.escalatingRisk}
+          recentConcerns={res.alerts.recentConcerns}
+          missedSessions={res.alerts.missedSessions}
+          unresolvedIncidents={res.alerts.unresolvedIncidents}
+          followUpNeeded={res.alerts.followUpNeeded}
+          maxItems={6}
+        />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <SafehouseOccupancy safehouses={res.bySafehouse} />
+        <RiskDonutChart
+          riskDistribution={res.riskDistribution}
+          criticalCount={critical}
+        />
+        <DonorHealth
+          active={fin.donorHealth.active}
+          lapsed={fin.donorHealth.lapsed}
+          churned={fin.donorHealth.churned}
+        />
+      </div>
+
+      <FinancialSnapshot
+        totalDonationsThisMonth={fin.totalDonationsThisMonth}
+        totalDonationsLastMonth={fin.totalDonationsLastMonth}
+        percentChange={fin.percentChange}
+        donationsByType={fin.donationsByType}
+        topCampaigns={fin.topCampaigns}
+        recurringVsOneTime={fin.recurringVsOneTime}
+      />
 
       <CaseloadPreviewTable rows={res.caseloadPreview ?? []} />
 

@@ -36,7 +36,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
+from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score, train_test_split
 
 from serve import (
     CSV_DIR,
@@ -258,9 +258,8 @@ def train_incident_risk() -> dict:
     """
     Predict high-severity incident risk for residents.
 
-    Model: RandomForestClassifier — matches incident_risk_pipeline.ipynb
-    Split: 75/25 stratified
-    Hyperparams: n_estimators=200, max_depth=8, class_weight='balanced'
+    RandomForest with shallower trees + sigmoid calibration when n_train is sufficient,
+    to reduce overconfident scores on tabular NGO data (same idea as donor churn).
     """
     print("\n" + "="*60)
     print("Training: Incident Risk Model")
@@ -284,30 +283,49 @@ def train_incident_risk() -> dict:
         X, y, test_size=0.25, stratify=_stratify_arg(y), random_state=RANDOM_STATE
     )
 
-    # Model: Random Forest with balanced class weights (matches notebook)
-    model = RandomForestClassifier(
-        n_estimators=200,
-        max_depth=8,
+    rf_params = dict(
+        n_estimators=150,
+        max_depth=6,
+        min_samples_leaf=6,
+        min_samples_split=12,
+        max_features="sqrt",
         class_weight="balanced",
         random_state=RANDOM_STATE,
     )
+
+    try:
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+        cv_scores = cross_val_score(
+            RandomForestClassifier(**rf_params), X, y, cv=cv, scoring="accuracy"
+        )
+    except ValueError as e:
+        print(f"  [WARN] Stratified CV skipped: {e}")
+        cv_scores = np.array([np.nan])
+
+    if len(X_train) >= 30:
+        model = CalibratedClassifierCV(
+            estimator=RandomForestClassifier(**rf_params), cv=3, method="sigmoid"
+        )
+        print("  Using CalibratedClassifierCV (sigmoid) on top of regularized RandomForest.")
+    else:
+        model = RandomForestClassifier(**rf_params)
+        print("  Dataset small; using RandomForest without calibration (add data for softer scores).")
+
     model.fit(X_train, y_train)
 
     # Evaluate
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]
 
-    try:
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-        cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
-    except ValueError as e:
-        print(f"  [WARN] Stratified CV skipped: {e}")
-        cv_scores = np.array([np.nan])
-
     report = _print_classification_results("Incident Risk", y_test, y_pred, y_prob, cv_scores)
-    report["feature_importances"] = _print_feature_importances(feature_names, model.feature_importances_)
+    report["feature_importances"] = _print_feature_importances(
+        feature_names, _gb_or_calibrated_importances(model, len(feature_names))
+    )
     report["hyperparameters"] = {
-        "n_estimators": 200, "max_depth": 8, "class_weight": "balanced",
+        **rf_params,
+        "calibration": "sigmoid (CalibratedClassifierCV cv=3)"
+        if len(X_train) >= 30
+        else "none (n_train < 30)",
     }
 
     # Save
@@ -326,9 +344,7 @@ def train_resident_progress() -> dict:
     """
     Predict reintegration readiness (binary: completed vs not).
 
-    Model: GradientBoostingClassifier — matches resident_progress_pipeline.ipynb
-    Split: 80/20 random
-    Hyperparams: n_estimators=100, learning_rate=0.1, max_depth=3
+    Regularized GBC + optional sigmoid calibration (aligned with donor churn).
     """
     print("\n" + "="*60)
     print("Training: Resident Progress Model")
@@ -356,30 +372,50 @@ def train_resident_progress() -> dict:
             "resident_progress: training fold has a single class after split; add more diverse labels."
         )
 
-    # Model: Gradient Boosting (matches notebook hyperparameters)
-    model = GradientBoostingClassifier(
+    base_params = dict(
         n_estimators=100,
-        learning_rate=0.1,
+        learning_rate=0.05,
         max_depth=3,
+        min_samples_leaf=8,
+        min_samples_split=20,
+        subsample=0.75,
+        max_features="sqrt",
         random_state=RANDOM_STATE,
     )
+
+    try:
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+        cv_scores = cross_val_score(
+            GradientBoostingClassifier(**base_params), X, y, cv=cv, scoring="accuracy"
+        )
+    except ValueError as e:
+        print(f"  [WARN] Stratified CV skipped: {e}")
+        cv_scores = np.array([np.nan])
+
+    if len(X_train) >= 30:
+        model = CalibratedClassifierCV(
+            estimator=GradientBoostingClassifier(**base_params), cv=3, method="sigmoid"
+        )
+        print("  Using CalibratedClassifierCV (sigmoid) on top of regularized GBC.")
+    else:
+        model = GradientBoostingClassifier(**base_params)
+        print("  Dataset small; using GBC without calibration (add data for softer scores).")
+
     model.fit(X_train, y_train)
 
     # Evaluate
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]
 
-    try:
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-        cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
-    except ValueError as e:
-        print(f"  [WARN] Stratified CV skipped: {e}")
-        cv_scores = np.array([np.nan])
-
     report = _print_classification_results("Resident Progress", y_test, y_pred, y_prob, cv_scores)
-    report["feature_importances"] = _print_feature_importances(feature_names, model.feature_importances_)
+    report["feature_importances"] = _print_feature_importances(
+        feature_names, _gb_or_calibrated_importances(model, len(feature_names))
+    )
     report["hyperparameters"] = {
-        "n_estimators": 100, "learning_rate": 0.1, "max_depth": 3,
+        **base_params,
+        "calibration": "sigmoid (CalibratedClassifierCV cv=3)"
+        if len(X_train) >= 30
+        else "none (n_train < 30)",
     }
 
     # Save
@@ -398,9 +434,7 @@ def train_safehouse_outcomes() -> dict:
     """
     Predict education progress based on lagged funding allocations (regression).
 
-    Model: RandomForestRegressor — matches safehouse_outcomes_pipeline.ipynb
-    Split: 80/20 random
-    Hyperparams: n_estimators=200, max_depth=10
+    Shallower RandomForest with min leaf/split and subsample to limit overfit on small cohorts.
     """
     print("\n" + "="*60)
     print("Training: Safehouse Outcomes Model")
@@ -418,23 +452,28 @@ def train_safehouse_outcomes() -> dict:
         X, y, test_size=0.20, random_state=RANDOM_STATE
     )
 
-    # Model: Random Forest Regressor (matches notebook hyperparameters)
-    model = RandomForestRegressor(
-        n_estimators=200,
-        max_depth=10,
+    rf_reg_params = dict(
+        n_estimators=120,
+        max_depth=6,
+        min_samples_leaf=6,
+        min_samples_split=12,
+        max_samples=0.85,
+        max_features="sqrt",
         random_state=RANDOM_STATE,
     )
+    model = RandomForestRegressor(**rf_reg_params)
     model.fit(X_train, y_train)
 
     # Evaluate
     y_pred = model.predict(X_test)
-    cv_scores = cross_val_score(model, X, y, cv=5, scoring="r2")
+    cv = KFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+    cv_scores = cross_val_score(
+        RandomForestRegressor(**rf_reg_params), X, y, cv=cv, scoring="r2"
+    )
 
     report = _print_regression_results("Safehouse Outcomes", y_test, y_pred, cv_scores)
     report["feature_importances"] = _print_feature_importances(feature_names, model.feature_importances_)
-    report["hyperparameters"] = {
-        "n_estimators": 200, "max_depth": 10,
-    }
+    report["hyperparameters"] = rf_reg_params
 
     # Save
     os.makedirs(MODEL_DIR, exist_ok=True)
@@ -453,9 +492,7 @@ def train_social_media_impact() -> dict:
     """
     Predict whether a post will drive donations (binary classification).
 
-    Model: RandomForestClassifier — matches social_media_impact_pipeline.ipynb
-    Split: 80/20 random
-    Hyperparams: n_estimators=100, max_depth=10
+    Regularized RandomForest + optional sigmoid calibration (consistent with incident risk).
     """
     print("\n" + "="*60)
     print("Training: Social Media Impact Model")
@@ -479,29 +516,48 @@ def train_social_media_impact() -> dict:
         X, y, test_size=0.20, stratify=_stratify_arg(y), random_state=RANDOM_STATE
     )
 
-    # Model: Random Forest (matches notebook hyperparameters)
-    model = RandomForestClassifier(
-        n_estimators=100,
-        max_depth=10,
+    rf_params = dict(
+        n_estimators=120,
+        max_depth=6,
+        min_samples_leaf=4,
+        min_samples_split=10,
+        max_features="sqrt",
         random_state=RANDOM_STATE,
     )
+
+    try:
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+        cv_scores = cross_val_score(
+            RandomForestClassifier(**rf_params), X, y, cv=cv, scoring="accuracy"
+        )
+    except ValueError as e:
+        print(f"  [WARN] Stratified CV skipped: {e}")
+        cv_scores = np.array([np.nan])
+
+    if len(X_train) >= 30:
+        model = CalibratedClassifierCV(
+            estimator=RandomForestClassifier(**rf_params), cv=3, method="sigmoid"
+        )
+        print("  Using CalibratedClassifierCV (sigmoid) on top of regularized RandomForest.")
+    else:
+        model = RandomForestClassifier(**rf_params)
+        print("  Dataset small; using RandomForest without calibration (add data for softer scores).")
+
     model.fit(X_train, y_train)
 
     # Evaluate
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]
 
-    try:
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-        cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
-    except ValueError as e:
-        print(f"  [WARN] Stratified CV skipped: {e}")
-        cv_scores = np.array([np.nan])
-
     report = _print_classification_results("Social Media Impact", y_test, y_pred, y_prob, cv_scores)
-    report["feature_importances"] = _print_feature_importances(feature_names, model.feature_importances_)
+    report["feature_importances"] = _print_feature_importances(
+        feature_names, _gb_or_calibrated_importances(model, len(feature_names))
+    )
     report["hyperparameters"] = {
-        "n_estimators": 100, "max_depth": 10,
+        **rf_params,
+        "calibration": "sigmoid (CalibratedClassifierCV cv=3)"
+        if len(X_train) >= 30
+        else "none (n_train < 30)",
     }
 
     # Save

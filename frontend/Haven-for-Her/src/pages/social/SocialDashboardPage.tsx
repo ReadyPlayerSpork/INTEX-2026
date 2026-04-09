@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Brain } from 'lucide-react'
 import { api } from '@/api/client'
-import { Card, CardContent } from '@/components/ui/card'
+import { getSocialMediaRecommendations, type SocialMediaRecommendations } from '@/api/mlApi'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 /* ---------- Types matching SocialMediaController.GetDashboard ---------- */
 
@@ -59,6 +61,8 @@ interface SocialDashboard {
 export function SocialDashboardPage() {
   const [data, setData] = useState<SocialDashboard | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mlIntel, setMlIntel] = useState<SocialMediaRecommendations | null>(null)
+  const [mlIntelErr, setMlIntelErr] = useState<string | null>(null)
 
   useEffect(() => {
     api
@@ -66,6 +70,12 @@ export function SocialDashboardPage() {
       .then(setData)
       .catch((err) => console.error('Failed to load social dashboard', err))
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    getSocialMediaRecommendations()
+      .then(setMlIntel)
+      .catch(() => setMlIntelErr('ML recommendations are unavailable (train models or check the ML service).'))
   }, [])
 
   if (loading) {
@@ -106,6 +116,43 @@ export function SocialDashboardPage() {
           Create Post
         </Link>
       </div>
+
+      {mlIntelErr && (
+        <p className="text-muted-foreground mb-6 text-sm" role="status">
+          {mlIntelErr}
+        </p>
+      )}
+      {mlIntel && (
+        <Card className="border-primary/25 bg-card/95 mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="font-heading flex items-center gap-2 text-lg">
+              <Brain className="text-primary size-5 shrink-0" aria-hidden />
+              ML posting intelligence
+            </CardTitle>
+            <CardDescription>
+              Data-driven timing, format, and CTA hints from the ML pipeline (same signals as donation-driver scoring on Create Post).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <MlStat label="Best hour (UTC-style)" value={`${mlIntel.bestPostHour}:00`} />
+              <MlStat label="Best day" value={mlIntel.bestDayOfWeek} />
+              <MlStat label="Post type (donations)" value={mlIntel.bestPostTypeForDonations} />
+              <MlStat label="Media (engagement)" value={mlIntel.bestMediaTypeForEngagement} />
+            </div>
+            <div className="text-muted-foreground mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border/70 pt-4 text-sm">
+              <span>
+                <strong className="text-foreground font-medium">Suggested CTA:</strong>{' '}
+                {mlIntel.recommendedCta}
+              </span>
+              <span className="tabular-nums">
+                Avg engagement {mlIntel.avgEngagementRate.toFixed(2)}% ·{' '}
+                {mlIntel.totalDonationReferrals.toLocaleString()} donation referrals (historical)
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary cards */}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -224,6 +271,15 @@ export function SocialDashboardPage() {
           )}
         </section>
       </div>
+    </div>
+  )
+}
+
+function MlStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-card border-border/70 rounded-xl border p-4">
+      <p className="text-muted-foreground text-xs font-medium">{label}</p>
+      <p className="font-heading mt-1 text-sm font-semibold text-foreground">{value}</p>
     </div>
   )
 }

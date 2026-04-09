@@ -56,7 +56,9 @@ export function CounselorDashboardPage() {
       .catch((err) => console.error('Failed to load counselor dashboard', err))
       .finally(() => setLoading(false))
 
-    getResidentAlerts().then(setMlAlerts).catch(() => { /* ML service unavailable */ })
+    getResidentAlerts()
+      .then(setMlAlerts)
+      .catch(() => setMlAlerts([]))
   }, [])
 
   if (loading) {
@@ -77,7 +79,55 @@ export function CounselorDashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <h1 className="mb-6 text-2xl font-bold">Counselor Dashboard</h1>
+      <h1 className="text-2xl font-bold">Counselor Dashboard</h1>
+      <p className="text-muted-foreground mt-2 mb-8 max-w-2xl text-sm leading-relaxed">
+        ML surfaces escalation risk and reintegration readiness so you can prioritize sessions and follow-ups.
+      </p>
+
+      {mlAlerts !== null && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-lg font-semibold">ML risk alerts</h2>
+          <p className="text-muted-foreground mb-3 text-sm">
+            Residents flagged by the incident-risk model for elevated escalation probability.
+          </p>
+          {mlAlerts.length === 0 ? (
+            <p className="text-muted-foreground border-border bg-card rounded-lg border px-4 py-3 text-sm">
+              No ML escalation flags for your assigned caseload right now.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-border border-b text-left">
+                    <th className="px-3 py-2 font-medium">Resident</th>
+                    <th className="px-3 py-2 font-medium">Current Risk</th>
+                    <th className="px-3 py-2 font-medium">ML Escalation Prob.</th>
+                    <th className="px-3 py-2 font-medium">ML Risk</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mlAlerts.slice(0, 8).map((a) => (
+                    <tr key={a.residentId} className="border-border border-b">
+                      <td className="px-3 py-2">{a.internalCode}</td>
+                      <td className="px-3 py-2">{a.currentRiskLevel}</td>
+                      <td className="px-3 py-2 tabular-nums">{(a.escalationProbability * 100).toFixed(1)}%</td>
+                      <td className="px-3 py-2">
+                        <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          a.riskLevel === 'High' ? 'bg-red-100 text-red-800'
+                            : a.riskLevel === 'Medium' ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {a.riskLevel}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="mb-8 grid grid-cols-3 gap-6">
         <div className="bg-card border-border rounded-lg border p-6 text-center">
@@ -93,45 +143,6 @@ export function CounselorDashboardPage() {
           <p className="text-muted-foreground mt-1 text-sm">Open Requests</p>
         </div>
       </div>
-
-      {mlAlerts && mlAlerts.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold">ML Risk Alerts</h2>
-          <p className="text-muted-foreground mb-3 text-sm">
-            Residents flagged by the ML model for elevated incident escalation risk.
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-border border-b text-left">
-                  <th className="px-3 py-2 font-medium">Resident</th>
-                  <th className="px-3 py-2 font-medium">Current Risk</th>
-                  <th className="px-3 py-2 font-medium">ML Escalation Prob.</th>
-                  <th className="px-3 py-2 font-medium">ML Risk</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mlAlerts.slice(0, 6).map((a) => (
-                  <tr key={a.residentId} className="border-border border-b">
-                    <td className="px-3 py-2">{a.internalCode}</td>
-                    <td className="px-3 py-2">{a.currentRiskLevel}</td>
-                    <td className="px-3 py-2 tabular-nums">{(a.escalationProbability * 100).toFixed(1)}%</td>
-                    <td className="px-3 py-2">
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        a.riskLevel === 'High' ? 'bg-red-100 text-red-800'
-                          : a.riskLevel === 'Medium' ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {a.riskLevel}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
 
       <section className="mb-8">
         <div className="mb-4 flex items-center justify-between">

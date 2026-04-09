@@ -55,7 +55,10 @@ export function InsightsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <h1 className="mb-8 text-2xl font-bold">Donor Retention Insights</h1>
+      <h1 className="text-2xl font-bold">Donor Retention Insights</h1>
+      <p className="text-muted-foreground mt-2 mb-8 max-w-2xl text-sm leading-relaxed">
+        Includes ML-scored churn risk for active supporters (batch scores from the donor churn model).
+      </p>
 
       <div className="mb-8 grid grid-cols-2 gap-6 sm:grid-cols-3">
         <Card className="border-border/70 bg-card/95">
