@@ -3,8 +3,9 @@ import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { DataTable, type ColumnDef, type CascadeInfo } from '@/components/DataTable'
+import { DataTable, type ColumnDef } from '@/components/DataTable'
 import { useServerTable } from '@/hooks/useServerTable'
+import type { CascadeImpact } from '@/types/cascade'
 
 interface Safehouse {
   safehouseId: number
@@ -229,7 +230,7 @@ export function SafehousesPage() {
           await api.delete(`/api/admin/safehouses/${row.safehouseId}`)
           table.refresh()
         }}
-        getCascadeInfo={(row) => api.get<CascadeInfo[]>(`/api/admin/safehouses/${row.safehouseId}/cascade-info`)}
+        getCascadeInfo={(row) => api.get<CascadeImpact[]>(`/api/admin/safehouses/${row.safehouseId}/cascade-info`)}
         deleteEntityLabel="safehouse"
         getDeleteName={(row) => `${row.name} (${row.safehouseCode})`}
       />

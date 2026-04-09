@@ -3,8 +3,9 @@ import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { DataTable, type ColumnDef, type CascadeInfo } from '@/components/DataTable'
+import { DataTable, type ColumnDef } from '@/components/DataTable'
 import { useServerTable } from '@/hooks/useServerTable'
+import type { CascadeImpact } from '@/types/cascade'
 
 /* ---------- Types ---------- */
 
@@ -291,7 +292,7 @@ export function PartnersPage() {
           await api.delete(`/api/admin/partners/${row.partnerId}`)
           table.refresh()
         }}
-        getCascadeInfo={(row) => api.get<CascadeInfo[]>(`/api/admin/partners/${row.partnerId}/cascade-info`)}
+        getCascadeInfo={(row) => api.get<CascadeImpact[]>(`/api/admin/partners/${row.partnerId}/cascade-info`)}
         deleteEntityLabel="partner"
         getDeleteName={(row) => row.partnerName}
         rowActions={(row) => (

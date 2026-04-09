@@ -12,6 +12,8 @@ namespace Haven_for_Her_Backend.Controllers;
 [Authorize(Roles = AuthRoles.Admin)]
 public class PartnerController(HavenForHerBackendDbContext db) : ControllerBase
 {
+    private const int CascadePreviewLimit = 5;
+
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? region,
@@ -159,11 +161,28 @@ public class PartnerController(HavenForHerBackendDbContext db) : ControllerBase
         var exists = await db.Partners.AnyAsync(p => p.PartnerId == id);
         if (!exists) return NotFound();
 
-        var assignments = await db.PartnerAssignments.CountAsync(a => a.PartnerId == id);
+        var assignmentCount = await db.PartnerAssignments.CountAsync(a => a.PartnerId == id);
+        var assignmentRecords = await db.PartnerAssignments
+            .Where(a => a.PartnerId == id)
+            .OrderByDescending(a => a.AssignmentStart)
+            .Select(a => new
+            {
+                a.ProgramArea,
+                a.AssignmentStart,
+                SafehouseName = a.Safehouse != null ? a.Safehouse.Name : null,
+            })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
 
-        return Ok(new[]
+        return Ok(new List<CascadeImpactDto>
         {
-            new { label = "assignments", count = assignments },
+            BuildImpact(
+                "assignments",
+                "block",
+                assignmentCount,
+                assignmentRecords
+                    .Select(a => $"{a.ProgramArea} at {a.SafehouseName ?? "Unassigned safehouse"} ({FormatDate(a.AssignmentStart)})")
+                    .ToList()),
         });
     }
 
@@ -231,4 +250,15 @@ public class PartnerController(HavenForHerBackendDbContext db) : ControllerBase
             assignment.AssignmentId,
         });
     }
+
+    private static CascadeImpactDto BuildImpact(string label, string action, int count, IReadOnlyList<string> records) =>
+        new()
+        {
+            Label = label,
+            Action = action,
+            Count = count,
+            Records = records,
+        };
+
+    private static string FormatDate(DateOnly date) => date.ToString("MMM d, yyyy");
 }

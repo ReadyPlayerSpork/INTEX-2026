@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Trash2 } from 'lucide-react'
 import type { SortState } from '@/hooks/useServerTable'
+import type { CascadeImpact } from '@/types/cascade'
 
 // ---------------------------------------------------------------------------
 // Column definition
@@ -38,14 +39,7 @@ export interface ColumnDef<T> {
   className?: string
 }
 
-// ---------------------------------------------------------------------------
-// Cascade info for delete warnings
-// ---------------------------------------------------------------------------
-
-export interface CascadeInfo {
-  label: string
-  count: number
-}
+export type { CascadeImpact } from '@/types/cascade'
 
 // ---------------------------------------------------------------------------
 // Component props
@@ -74,7 +68,7 @@ export interface DataTableProps<T> {
   onEdit?: (row: T) => void
   onDelete?: (row: T) => void
   /** Async function to fetch cascade info before delete confirmation */
-  getCascadeInfo?: (row: T) => Promise<CascadeInfo[]>
+  getCascadeInfo?: (row: T) => Promise<CascadeImpact[]>
   /** Label to describe the entity being deleted, e.g. "resident" */
   deleteEntityLabel?: string
   /** Get display name for a row in the delete dialog */
@@ -115,8 +109,9 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null)
-  const [cascadeItems, setCascadeItems] = useState<CascadeInfo[]>([])
+  const [cascadeItems, setCascadeItems] = useState<CascadeImpact[]>([])
   const [cascadeLoading, setCascadeLoading] = useState(false)
+  const [cascadeError, setCascadeError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   const hasActions = !!(onEdit || onDelete || rowActions)
@@ -124,6 +119,8 @@ export function DataTable<T>({
   const handleDeleteClick = useCallback(
     async (row: T) => {
       setDeleteTarget(row)
+      setCascadeItems([])
+      setCascadeError(null)
       if (getCascadeInfo) {
         setCascadeLoading(true)
         try {
@@ -131,6 +128,7 @@ export function DataTable<T>({
           setCascadeItems(info)
         } catch {
           setCascadeItems([])
+          setCascadeError('Unable to load related record details.')
         } finally {
           setCascadeLoading(false)
         }
@@ -148,12 +146,14 @@ export function DataTable<T>({
       setDeleting(false)
       setDeleteTarget(null)
       setCascadeItems([])
+      setCascadeError(null)
     }
   }, [deleteTarget, onDelete])
 
   const handleDeleteCancel = useCallback(() => {
     setDeleteTarget(null)
     setCascadeItems([])
+    setCascadeError(null)
   }, [])
 
   // Sort icon helper
@@ -173,7 +173,59 @@ export function DataTable<T>({
     return <p className="text-muted-foreground animate-pulse py-8 text-center">Loading...</p>
   }
 
+  const blockingCascadeItems = cascadeItems.filter(
+    (c) => c.action === 'block' && c.count > 0,
+  )
+  const deletingCascadeItems = cascadeItems.filter(
+    (c) => c.action === 'delete' && c.count > 0,
+  )
+  const detachingCascadeItems = cascadeItems.filter(
+    (c) => c.action === 'detach' && c.count > 0,
+  )
   const cascadeTotal = cascadeItems.reduce((s, c) => s + c.count, 0)
+  const hasBlockingCascadeItems = blockingCascadeItems.length > 0
+
+  const renderCascadeSection = (
+    title: string,
+    description: string,
+    items: CascadeImpact[],
+    titleClassName?: string,
+  ) => {
+    if (items.length === 0) return null
+
+    return (
+      <div className="rounded-xl border border-border/60 bg-card/70 p-3">
+        <p className={titleClassName ?? 'font-semibold'}>{title}</p>
+        <p className="text-muted-foreground mt-1 text-xs leading-5">
+          {description}
+        </p>
+        <div className="mt-3 space-y-3">
+          {items.map((item) => {
+            const remainingCount = item.count - item.records.length
+            return (
+              <div key={`${item.action}-${item.label}`}>
+                <p className="font-medium">
+                  {item.count} {item.label}
+                </p>
+                {item.records.length > 0 && (
+                  <ul className="text-muted-foreground mt-1 space-y-1 pl-4 text-xs leading-5">
+                    {item.records.map((record) => (
+                      <li key={record} className="list-disc">
+                        {record}
+                      </li>
+                    ))}
+                    {remainingCount > 0 && (
+                      <li className="list-disc">+{remainingCount} more</li>
+                    )}
+                  </ul>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -268,21 +320,36 @@ export function DataTable<T>({
                   Checking related records...
                 </span>
               )}
-              {!cascadeLoading && cascadeTotal > 0 && (
-                <span className="mt-3 block text-sm">
-                  <strong className="text-destructive">This will also permanently delete:</strong>
-                  <ul className="mt-1 list-inside list-disc">
-                    {cascadeItems
-                      .filter((c) => c.count > 0)
-                      .map((c) => (
-                        <li key={c.label}>
-                          {c.count} {c.label}
-                        </li>
-                      ))}
-                  </ul>
+              {!cascadeLoading && cascadeError && (
+                <span className="text-destructive mt-2 block text-sm">
+                  {cascadeError}
                 </span>
               )}
-              <span className="mt-2 block text-sm">This action cannot be undone.</span>
+              {!cascadeLoading && !cascadeError && cascadeTotal > 0 && (
+                <div className="mt-3 space-y-3 text-sm">
+                  {renderCascadeSection(
+                    'Delete blocked by related records',
+                    `Resolve these records before deleting this ${deleteEntityLabel}.`,
+                    blockingCascadeItems,
+                    'font-semibold text-destructive',
+                  )}
+                  {renderCascadeSection(
+                    'These records will be permanently deleted',
+                    'Review the records that will be removed along with this item.',
+                    deletingCascadeItems,
+                  )}
+                  {renderCascadeSection(
+                    'These records will be unlinked',
+                    'These records will remain, but they will lose their connection to this item.',
+                    detachingCascadeItems,
+                  )}
+                </div>
+              )}
+              <span className="mt-2 block text-sm">
+                {hasBlockingCascadeItems
+                  ? `This ${deleteEntityLabel} cannot be deleted until the blocking records are resolved.`
+                  : 'This action cannot be undone.'}
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -290,9 +357,13 @@ export function DataTable<T>({
             <AlertDialogAction
               variant="destructive"
               onClick={handleDeleteConfirm}
-              disabled={deleting || cascadeLoading}
+              disabled={deleting || cascadeLoading || hasBlockingCascadeItems}
             >
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting
+                ? 'Deleting...'
+                : hasBlockingCascadeItems
+                  ? 'Delete unavailable'
+                  : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

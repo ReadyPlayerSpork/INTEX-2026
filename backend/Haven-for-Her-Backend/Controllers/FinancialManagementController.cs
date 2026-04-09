@@ -12,6 +12,8 @@ namespace Haven_for_Her_Backend.Controllers;
 [Authorize(Roles = "Financial,Admin")]
 public class FinancialManagementController(HavenForHerBackendDbContext db) : ControllerBase
 {
+    private const int CascadePreviewLimit = 5;
+
     /// <summary>
     /// Get a single supporter with their donation history.
     /// </summary>
@@ -213,13 +215,48 @@ public class FinancialManagementController(HavenForHerBackendDbContext db) : Con
         var exists = await db.Supporters.AnyAsync(s => s.SupporterId == id);
         if (!exists) return NotFound();
 
-        var donations = await db.Donations.CountAsync(d => d.SupporterId == id);
-        var allocations = await db.DonationAllocations.CountAsync(a => a.Donation.SupporterId == id);
+        var donationCount = await db.Donations.CountAsync(d => d.SupporterId == id);
+        var donationRecords = await db.Donations
+            .Where(d => d.SupporterId == id)
+            .OrderByDescending(d => d.DonationDate)
+            .Select(d => new
+            {
+                d.DonationType,
+                d.DonationDate,
+                d.Amount,
+                d.EstimatedValue,
+                d.CurrencyCode,
+                d.CampaignName,
+            })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
 
-        return Ok(new[]
+        var allocationCount = await db.DonationAllocations.CountAsync(a => a.Donation.SupporterId == id);
+        var allocationRecords = await db.DonationAllocations
+            .Where(a => a.Donation.SupporterId == id)
+            .OrderByDescending(a => a.AllocationDate)
+            .Select(a => new
+            {
+                a.ProgramArea,
+                a.AllocationDate,
+                a.AmountAllocated,
+                SafehouseName = a.Safehouse.Name,
+            })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        return Ok(new List<CascadeImpactDto>
         {
-            new { label = "donations", count = donations },
-            new { label = "donation allocations", count = allocations },
+            BuildImpact(
+                "donations",
+                "delete",
+                donationCount,
+                donationRecords.Select(d => FormatDonation(d.DonationType, d.DonationDate, d.Amount, d.EstimatedValue, d.CurrencyCode, d.CampaignName)).ToList()),
+            BuildImpact(
+                "donation allocations",
+                "delete",
+                allocationCount,
+                allocationRecords.Select(a => $"{a.ProgramArea} allocation to {a.SafehouseName} on {FormatDate(a.AllocationDate)} ({a.AmountAllocated:N2})").ToList()),
         });
     }
 
@@ -263,13 +300,45 @@ public class FinancialManagementController(HavenForHerBackendDbContext db) : Con
         var exists = await db.Donations.AnyAsync(d => d.DonationId == id);
         if (!exists) return NotFound();
 
-        var allocations = await db.DonationAllocations.CountAsync(a => a.DonationId == id);
-        var inKindItems = await db.InKindDonationItems.CountAsync(i => i.DonationId == id);
+        var allocationCount = await db.DonationAllocations.CountAsync(a => a.DonationId == id);
+        var allocationRecords = await db.DonationAllocations
+            .Where(a => a.DonationId == id)
+            .OrderByDescending(a => a.AllocationDate)
+            .Select(a => new
+            {
+                a.ProgramArea,
+                a.AllocationDate,
+                a.AmountAllocated,
+                SafehouseName = a.Safehouse.Name,
+            })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
 
-        return Ok(new[]
+        var inKindCount = await db.InKindDonationItems.CountAsync(i => i.DonationId == id);
+        var inKindRecords = await db.InKindDonationItems
+            .Where(i => i.DonationId == id)
+            .OrderBy(i => i.ItemName)
+            .Select(i => new
+            {
+                i.ItemName,
+                i.Quantity,
+                i.UnitOfMeasure,
+            })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        return Ok(new List<CascadeImpactDto>
         {
-            new { label = "donation allocations", count = allocations },
-            new { label = "in-kind items", count = inKindItems },
+            BuildImpact(
+                "donation allocations",
+                "delete",
+                allocationCount,
+                allocationRecords.Select(a => $"{a.ProgramArea} allocation to {a.SafehouseName} on {FormatDate(a.AllocationDate)} ({a.AmountAllocated:N2})").ToList()),
+            BuildImpact(
+                "in-kind items",
+                "delete",
+                inKindCount,
+                inKindRecords.Select(i => $"{i.ItemName} ({i.Quantity} {i.UnitOfMeasure})").ToList()),
         });
     }
 
@@ -299,5 +368,39 @@ public class FinancialManagementController(HavenForHerBackendDbContext db) : Con
             .ToListAsync();
 
         return Ok(monthlyTotals);
+    }
+
+    private static CascadeImpactDto BuildImpact(string label, string action, int count, IReadOnlyList<string> records) =>
+        new()
+        {
+            Label = label,
+            Action = action,
+            Count = count,
+            Records = records,
+        };
+
+    private static string FormatDate(DateOnly date) => date.ToString("MMM d, yyyy");
+
+    private static string FormatDonation(
+        string donationType,
+        DateOnly donationDate,
+        decimal? amount,
+        decimal? estimatedValue,
+        string? currencyCode,
+        string? campaignName)
+    {
+        var valueText = amount.HasValue
+            ? $"{currencyCode ?? "USD"} {amount.Value:N2}"
+            : estimatedValue.HasValue
+                ? $"estimated {currencyCode ?? "USD"} {estimatedValue.Value:N2}"
+                : null;
+
+        var campaignText = string.IsNullOrWhiteSpace(campaignName)
+            ? string.Empty
+            : $" - {campaignName}";
+
+        return valueText is null
+            ? $"{donationType} donation on {FormatDate(donationDate)}{campaignText}"
+            : $"{donationType} donation on {FormatDate(donationDate)} ({valueText}){campaignText}";
     }
 }

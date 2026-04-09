@@ -12,6 +12,8 @@ namespace Haven_for_Her_Backend.Controllers;
 [Authorize(Roles = AuthRoles.Admin)]
 public class SafehouseController(HavenForHerBackendDbContext db) : ControllerBase
 {
+    private const int CascadePreviewLimit = 5;
+
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? region,
@@ -149,17 +151,71 @@ public class SafehouseController(HavenForHerBackendDbContext db) : ControllerBas
         var exists = await db.Safehouses.AnyAsync(s => s.SafehouseId == id);
         if (!exists) return NotFound();
 
-        var residents = await db.Residents.CountAsync(r => r.SafehouseId == id);
-        var assignments = await db.PartnerAssignments.CountAsync(a => a.SafehouseId == id);
-        var allocations = await db.DonationAllocations.CountAsync(a => a.SafehouseId == id);
-        var incidents = await db.IncidentReports.CountAsync(ir => ir.SafehouseId == id);
+        var residentCount = await db.Residents.CountAsync(r => r.SafehouseId == id);
+        var residentRecords = await db.Residents
+            .Where(r => r.SafehouseId == id)
+            .OrderBy(r => r.CaseControlNo)
+            .Select(r => $"{r.CaseControlNo} ({r.InternalCode})")
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
 
-        return Ok(new[]
+        var assignmentCount = await db.PartnerAssignments.CountAsync(a => a.SafehouseId == id);
+        var assignmentRecords = await db.PartnerAssignments
+            .Where(a => a.SafehouseId == id)
+            .OrderByDescending(a => a.AssignmentStart)
+            .Select(a => new
+            {
+                a.ProgramArea,
+                a.AssignmentStart,
+                PartnerName = a.Partner.PartnerName,
+            })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        var allocationCount = await db.DonationAllocations.CountAsync(a => a.SafehouseId == id);
+        var allocationRecords = await db.DonationAllocations
+            .Where(a => a.SafehouseId == id)
+            .OrderByDescending(a => a.AllocationDate)
+            .Select(a => new
+            {
+                a.ProgramArea,
+                a.AmountAllocated,
+                a.AllocationDate,
+            })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        var incidentCount = await db.IncidentReports.CountAsync(ir => ir.SafehouseId == id);
+        var incidentRecords = await db.IncidentReports
+            .Where(ir => ir.SafehouseId == id)
+            .OrderByDescending(ir => ir.IncidentDate)
+            .Select(ir => new
+            {
+                ir.IncidentType,
+                ir.IncidentDate,
+                ResidentCode = ir.Resident.InternalCode,
+            })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        return Ok(new List<CascadeImpactDto>
         {
-            new { label = "residents", count = residents },
-            new { label = "partner assignments", count = assignments },
-            new { label = "donation allocations", count = allocations },
-            new { label = "incident reports", count = incidents },
+            BuildImpact("residents", "block", residentCount, residentRecords),
+            BuildImpact(
+                "partner assignments",
+                "detach",
+                assignmentCount,
+                assignmentRecords.Select(a => $"{a.PartnerName} - {a.ProgramArea} ({FormatDate(a.AssignmentStart)})").ToList()),
+            BuildImpact(
+                "donation allocations",
+                "delete",
+                allocationCount,
+                allocationRecords.Select(a => $"{a.ProgramArea} allocation on {FormatDate(a.AllocationDate)} ({a.AmountAllocated:N2})").ToList()),
+            BuildImpact(
+                "incident reports",
+                "delete",
+                incidentCount,
+                incidentRecords.Select(ir => $"{ir.IncidentType} on {FormatDate(ir.IncidentDate)} ({ir.ResidentCode})").ToList()),
         });
     }
 
@@ -180,4 +236,15 @@ public class SafehouseController(HavenForHerBackendDbContext db) : ControllerBas
         await db.SaveChangesAsync();
         return Ok(new { message = "Safehouse deleted." });
     }
+
+    private static CascadeImpactDto BuildImpact(string label, string action, int count, IReadOnlyList<string> records) =>
+        new()
+        {
+            Label = label,
+            Action = action,
+            Count = count,
+            Records = records,
+        };
+
+    private static string FormatDate(DateOnly date) => date.ToString("MMM d, yyyy");
 }

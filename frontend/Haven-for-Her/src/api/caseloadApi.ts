@@ -1,4 +1,5 @@
 import { api } from './client'
+import type { CascadeImpact } from '@/types/cascade'
 
 export interface CreateResidentRequest {
   caseControlNo: string
@@ -51,11 +52,6 @@ export interface SafehouseOption {
   name: string
 }
 
-export interface CascadeInfo {
-  label: string
-  count: number
-}
-
 export const caseloadApi = {
   createResident(data: CreateResidentRequest): Promise<{ message: string; residentId: number }> {
     return api.post('/api/caseload', data)
@@ -69,7 +65,7 @@ export const caseloadApi = {
     return api.delete(`/api/caseload/${id}`)
   },
 
-  getCascadeInfo(id: number): Promise<CascadeInfo[]> {
+  getCascadeInfo(id: number): Promise<CascadeImpact[]> {
     return api.get(`/api/caseload/${id}/cascade-info`)
   },
 
