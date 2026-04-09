@@ -59,8 +59,8 @@ export const SafehouseOccupancy = memo(function SafehouseOccupancy({ safehouses 
         </Link>
       </div>
 
-      {/* Progress bars */}
-      <div className="space-y-5">
+      {/* Progress bars — scrollable so the card stays a fixed height */}
+      <div className="space-y-5 max-h-[340px] overflow-y-auto pr-0.5">
         {safehouses.map((s) => {
           const pct = s.capacity > 0 ? s.activeCount / s.capacity : 0;
           const openBeds = s.capacity - s.activeCount;

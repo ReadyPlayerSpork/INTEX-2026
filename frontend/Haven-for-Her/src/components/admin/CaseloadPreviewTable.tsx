@@ -105,9 +105,9 @@ export const CaseloadPreviewTable = memo(function CaseloadPreviewTable({ rows }:
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border/60">
+      <div className="overflow-x-auto overflow-y-auto max-h-[400px] rounded-xl border border-border/60">
         <table className="w-full min-w-[640px] text-left text-sm" aria-label="Resident caseload preview">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-card">
             <tr className="border-border text-muted-foreground border-b text-xs font-bold uppercase tracking-wide">
               <th scope="col" className="px-3 py-2.5">Case #</th>
               <th scope="col" className="px-3 py-2.5">Safehouse</th>

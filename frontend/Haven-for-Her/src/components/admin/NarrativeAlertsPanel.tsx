@@ -165,7 +165,7 @@ export const NarrativeAlertsPanel = memo(function NarrativeAlertsPanel({
           View caseload →
         </Link>
       </div>
-      <ul className="space-y-2">
+      <ul className="space-y-2 max-h-[420px] overflow-y-auto pr-0.5">
         {picked.map((item, idx) => {
           if (item.k === 'e') {
             const d = item.d
