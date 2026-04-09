@@ -138,6 +138,27 @@ The project is deployed to a self-hosted **Dokploy** instance. External HTTPS is
 - Backend and frontend env vars are set in each Dokploy app's **Environment** tab.
 - See `backend/.env.production.example` and `frontend/.env.production.example` for templates.
 - DB connection strings use standard Npgsql format (`Host=...;Database=...;Username=...;Password=...`) pointing to the internal Dokploy service hostname.
+- **Backend → ML:** set **`MlService__BaseUrl=http://<ml-service-hostname>:5050`** on the **backend** app (use the internal Docker/Dokploy service name for the ML container, not `localhost`).
+
+### ML pipeline service (`ml-pipelines/` — models & persistence)
+
+`*.joblib` files are **gitignored** (see repo `.gitignore`), so Railpack images often ship with **only** `models/.gitkeep`. The Flask app loads from **`/app/ml-pipelines/models`** (see `ml-pipelines/serve.py` / `Dockerfile` `WORKDIR`). A 503 on `/api/ml/...` with `"Model not trained yet."` usually means **that directory is empty in the running container**.
+
+**Dokploy — persistent volume (recommended)**
+
+1. Open the **`ml-pipeline`** (or equivalent) application → **Volumes** (or advanced storage, depending on Dokploy version).
+2. Add a **named volume** (or bind mount) whose **container path** is exactly **`/app/ml-pipelines/models`**.
+3. Redeploy so the mount applies. The image’s empty `models/` layer is replaced by the volume contents.
+
+**Populate models once**
+
+- **Copy from your machine:** build `*.joblib` locally (or from CI), `scp` them to the VPS, then copy into the volume (e.g. `docker run --rm -v <volume_name>:/data -v $(pwd):/src alpine cp /src/*.joblib /data/`) or use **Dokploy’s terminal** into the ML container and upload via a method your host provides.
+- **Train on the server:** in the ML container shell (e.g. **Docker Terminal** in Dokploy), run:
+  - `cd /app/ml-pipelines`
+  - With **Postgres** (same data as prod): set **`DATABASE_URL`** on the ML service (Dokploy **Environment**) to the internal Postgres URL, then `python train.py` (all models) or `python train.py incident_risk` (one model). Writes go to `MODEL_DIR` → **`/app/ml-pipelines/models`** and persist if that path is a volume.
+  - **CSV-only** training: provide CSVs (e.g. mount `lighthouse_csv_v7` or set **`ML_CSV_DIR`**) and run with **`FLASK_ENV=development`** so `serve.py` allows CSV reads (production mode blocks CSV in `_csv()`).
+
+Repo **`docker-compose.yml`** mounts **`ml-models`** → **`/app/ml-pipelines/models`** for local stacks (fixed from the old incorrect `/app/models` path).
 
 ### Auto-Deploy
 Both frontend and backend have `autoDeploy: true` on the `main` branch — pushing to `main` triggers a rebuild.

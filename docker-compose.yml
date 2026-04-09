@@ -48,9 +48,9 @@ services:
       - FLASK_ENV=production
       - ML_CSV_DIR=/app/data/lighthouse_csv_v7
     volumes:
-      # Persist trained .joblib models so they aren't lost when container restarts
-      - ml-models:/app/models
-      # Shared volume for CSVs (Temporary fix until you query Postgres directly)
+      # Must match serve.py MODEL_DIR (/app/ml-pipelines/models). Wrong path = empty models at runtime.
+      - ml-models:/app/ml-pipelines/models
+      # Shared volume for CSVs (dev / until Postgres-only serving)
       - shared-data:/app/data/lighthouse_csv_v7
 
   # ---------------------------------------------------------------------------
