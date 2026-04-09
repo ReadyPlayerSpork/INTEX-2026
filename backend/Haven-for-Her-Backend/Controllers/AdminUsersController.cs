@@ -125,4 +125,69 @@ public class AdminUsersController(
 
         return Ok(new { message = $"Role '{role}' removed." });
     }
+
+    /// <summary>
+    /// Create a new user account with an optional initial set of roles.
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            return BadRequest(new ErrorResponse("Email and password are required."));
+
+        var existing = await userManager.FindByEmailAsync(request.Email);
+        if (existing is not null)
+            return BadRequest(new ErrorResponse("A user with that email already exists."));
+
+        var user = new ApplicationUser
+        {
+            UserName = request.Email,
+            Email = request.Email,
+            EmailConfirmed = true,
+        };
+
+        var createResult = await userManager.CreateAsync(user, request.Password);
+        if (!createResult.Succeeded)
+        {
+            var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
+            return BadRequest(new ErrorResponse(errors));
+        }
+
+        // Assign requested roles (invalid ones skipped)
+        var validRoles = (request.Roles ?? []).Where(r => AuthRoles.All.Contains(r)).ToList();
+        foreach (var role in validRoles)
+            await userManager.AddToRoleAsync(user, role);
+
+        var assignedRoles = await userManager.GetRolesAsync(user);
+        return Ok(new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            Persona = user.Persona,
+            AcquisitionSource = user.AcquisitionSource,
+            Roles = assignedRoles.OrderBy(r => r).ToList(),
+            CreatedAtUtc = user.CreatedAtUtc,
+        });
+    }
+
+    /// <summary>
+    /// Delete a user account permanently.
+    /// Admins cannot delete their own account.
+    /// </summary>
+    [HttpDelete("{userId}")]
+    public async Task<IActionResult> DeleteUser(string userId)
+    {
+        var currentUserId = userManager.GetUserId(User);
+        if (userId == currentUserId)
+            return BadRequest(new ErrorResponse("You cannot delete your own account."));
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null) return NotFound();
+
+        var result = await userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+            return BadRequest(new ErrorResponse("Failed to delete user."));
+
+        return Ok(new { message = "User deleted." });
+    }
 }

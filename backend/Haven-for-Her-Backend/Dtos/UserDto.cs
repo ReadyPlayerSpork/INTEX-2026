@@ -14,3 +14,11 @@ public record UserRoleChangeRequest
 {
     public required string Role { get; init; }
 }
+
+public record CreateUserRequest
+{
+    public required string Email { get; init; }
+    public required string Password { get; init; }
+    /// <summary>Optional initial roles to assign (invalid values are ignored).</summary>
+    public List<string>? Roles { get; init; }
+}

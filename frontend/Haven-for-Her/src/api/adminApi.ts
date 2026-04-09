@@ -39,4 +39,14 @@ export const adminApi = {
   removeRole(userId: string, role: string): Promise<void> {
     return api.delete(`/api/admin/users/${userId}/roles/${role}`)
   },
+
+  /** Permanently delete a user account */
+  deleteUser(userId: string): Promise<void> {
+    return api.delete(`/api/admin/users/${userId}`)
+  },
+
+  /** Create a new user with optional initial roles */
+  createUser(payload: { email: string; password: string; roles?: string[] }): Promise<UserDto> {
+    return api.post('/api/admin/users', payload)
+  },
 }
