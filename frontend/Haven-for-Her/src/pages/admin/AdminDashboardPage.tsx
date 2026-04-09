@@ -467,7 +467,6 @@ export function AdminDashboardPage() {
               {mlAlerts.length} flagged
             </span>
           </div>
->
           <p className="text-muted-foreground mb-3 text-xs">
             Residents predicted to have elevated incident escalation risk by the ML model.
           </p>
