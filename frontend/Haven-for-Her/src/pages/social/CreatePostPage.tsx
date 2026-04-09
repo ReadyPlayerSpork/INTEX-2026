@@ -143,7 +143,20 @@ export function CreatePostPage() {
     } catch (err) {
       if (err instanceof ApiError && err.body && typeof err.body === 'object') {
         const body = err.body as Record<string, unknown>
-        setError(String(body.detail || body.error || 'Failed to create campaign.'))
+        const detail = String(body.detail ?? '')
+        const lower = detail.toLowerCase()
+        if (
+          lower.includes('session has expired') ||
+          lower.includes('error validating access token') ||
+          detail.includes('"code":190') ||
+          detail.includes('"code": 190')
+        ) {
+          setError(
+            'Meta access token expired or invalid. Ask an admin to generate a new token and update META_SYSTEM_USER_TOKEN (then redeploy the API).',
+          )
+        } else {
+          setError(String(body.detail || body.error || 'Failed to create campaign.'))
+        }
       } else {
         setError('Failed to create campaign. Please try again.')
       }

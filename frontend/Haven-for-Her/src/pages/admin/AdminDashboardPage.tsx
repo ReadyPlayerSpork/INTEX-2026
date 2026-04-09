@@ -231,11 +231,11 @@ export function AdminDashboardPage() {
       if (res && res.status === 'success') {
         // Refresh alerts and status
         const [updatedAlerts, updatedStatus] = await Promise.all([
-          getResidentAlerts(),
-          getMLStatus()
+          getResidentAlerts().catch(() => [] as IncidentRiskAlert[]),
+          getMLStatus().catch(() => null),
         ])
         setMlAlerts(updatedAlerts)
-        setMlStatus(updatedStatus)
+        if (updatedStatus) setMlStatus(updatedStatus)
       } else {
         alert('Failed to retrain models.')
       }
