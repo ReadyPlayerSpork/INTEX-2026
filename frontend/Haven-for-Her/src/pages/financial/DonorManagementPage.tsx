@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
-import type { PaginatedResponse } from '@/api/types'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DataTable, type ColumnDef } from '@/components/DataTable'
+import { useServerTable } from '@/hooks/useServerTable'
 import { financialApi, type CreateSupporterRequest } from '@/api/financialApi'
 import { SupporterFormModal } from '@/components/financial/SupporterFormModal'
 import { RecordDonationModal } from '@/components/financial/RecordDonationModal'
@@ -22,43 +24,46 @@ interface Donor {
   firstDonationDate: string | null
 }
 
+const columns: ColumnDef<Donor>[] = [
+  {
+    key: 'displayName',
+    header: 'Name',
+    sortable: true,
+    render: (row) => (
+      <Link to={`/financial/donors/${row.supporterId}`} className="text-primary underline">
+        {row.displayName ?? (`${row.firstName ?? ''} ${row.lastName ?? ''}`.trim() || '-')}
+      </Link>
+    ),
+  },
+  { key: 'email', header: 'Email', sortable: true, render: (row) => row.email ?? '-' },
+  { key: 'supporterType', header: 'Type', sortable: true },
+  { key: 'region', header: 'Region', sortable: true, render: (row) => row.region ?? '-' },
+  { key: 'acquisitionChannel', header: 'Channel', render: (row) => row.acquisitionChannel ?? '-' },
+  { key: 'status', header: 'Status', sortable: true },
+  { key: 'firstDonationDate', header: 'First Donation', sortable: true, render: (row) => row.firstDonationDate ?? '-' },
+]
+
 export function DonorManagementPage() {
-  const [donors, setDonors] = useState<Donor[]>([])
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
-  const [loading, setLoading] = useState(true)
   const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  const [editTarget, setEditTarget] = useState<Donor | null>(null)
+  const [editInitial, setEditInitial] = useState<CreateSupporterRequest | null>(null)
   const [showDonation, setShowDonation] = useState(false)
-  const pageSize = 25
 
-  const fetchDonors = useCallback(async () => {
-    setLoading(true)
-    try {
-      const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
-      if (search) qs.set('search', search)
-      const res = await api.get<PaginatedResponse<Donor>>(
-        `/api/financial/donors?${qs}`,
-      )
-      let filtered = res.items
-      if (typeFilter) filtered = filtered.filter((d) => d.supporterType === typeFilter)
-      if (statusFilter) filtered = filtered.filter((d) => d.status === statusFilter)
-      setDonors(filtered)
-      setTotalCount(res.totalCount)
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false)
-    }
-  }, [search, page, typeFilter, statusFilter])
+  const filters = useMemo(
+    () => ({ search, supporterType: typeFilter, status: statusFilter }),
+    [search, typeFilter, statusFilter],
+  )
 
-  useEffect(() => {
-    void fetchDonors()
-  }, [fetchDonors])
-
-  const totalPages = Math.ceil(totalCount / pageSize)
+  const table = useServerTable<Donor>({
+    endpoint: '/api/financial/donors',
+    pageSize: 25,
+    defaultSort: 'displayName',
+    defaultDirection: 'asc',
+    filters,
+  })
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
@@ -71,92 +76,99 @@ export function DonorManagementPage() {
       </div>
 
       <div className="mb-4 flex flex-wrap gap-3">
-        <input
+        <Input
           type="text"
           placeholder="Search by name or email..."
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(1)
-          }}
-          className="border-input bg-background w-full max-w-sm rounded-md border px-3 py-2 text-sm"
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-56"
         />
-        <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm">
-          <option value="">All types</option>
-          <option value="Individual">Individual</option>
-          <option value="Organization">Organization</option>
-          <option value="Anonymous">Anonymous</option>
-        </select>
-        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm">
-          <option value="">All statuses</option>
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-        </select>
+        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All types</SelectItem>
+              <SelectItem value="Individual">Individual</SelectItem>
+              <SelectItem value="Organization">Organization</SelectItem>
+              <SelectItem value="Anonymous">Anonymous</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All statuses</SelectItem>
+              <SelectItem value="Active">Active</SelectItem>
+              <SelectItem value="Inactive">Inactive</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
 
-      {loading ? (
-        <p className="text-muted-foreground animate-pulse">Loading...</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-border border-b text-left">
-                  <th className="px-3 py-2 font-medium">Name</th>
-                  <th className="px-3 py-2 font-medium">Email</th>
-                  <th className="px-3 py-2 font-medium">Type</th>
-                  <th className="px-3 py-2 font-medium">Region</th>
-                  <th className="px-3 py-2 font-medium">Channel</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium">First Donation</th>
-                </tr>
-              </thead>
-              <tbody>
-                {donors.map((d) => (
-                  <tr key={d.supporterId} className="border-border hover:bg-muted/50 border-b">
-                    <td className="px-3 py-2">
-                      <Link to={`/financial/donors/${d.supporterId}`} className="text-primary underline">
-                        {d.displayName ?? (`${d.firstName ?? ''} ${d.lastName ?? ''}`.trim() || '-')}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2">{d.email ?? '-'}</td>
-                    <td className="px-3 py-2">{d.supporterType}</td>
-                    <td className="px-3 py-2">{d.region ?? '-'}</td>
-                    <td className="px-3 py-2">{d.acquisitionChannel ?? '-'}</td>
-                    <td className="px-3 py-2">{d.status}</td>
-                    <td className="px-3 py-2">{d.firstDonationDate ?? '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">
-                Page {page} of {totalPages} ({totalCount} donors)
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                  Previous
-                </Button>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <DataTable
+        columns={columns}
+        data={table.items}
+        rowKey={(row) => row.supporterId}
+        sort={table.sort}
+        onSort={table.setSort}
+        page={table.page}
+        totalPages={table.totalPages}
+        totalCount={table.totalCount}
+        onPageChange={table.setPage}
+        loading={table.loading}
+        onEdit={async (row) => {
+          const full = await financialApi.getSupporter(row.supporterId)
+          setEditInitial({
+            supporterType: full.supporterType,
+            displayName: full.displayName,
+            organizationName: full.organizationName,
+            firstName: full.firstName,
+            lastName: full.lastName,
+            relationshipType: full.relationshipType,
+            region: full.region,
+            country: full.country,
+            email: full.email,
+            phone: full.phone,
+            status: full.status,
+            acquisitionChannel: full.acquisitionChannel,
+          })
+          setEditTarget(row)
+        }}
+        onDelete={async (row) => {
+          await financialApi.deleteSupporter(row.supporterId)
+          table.refresh()
+        }}
+        getCascadeInfo={(row) => financialApi.getSupporterCascadeInfo(row.supporterId)}
+        deleteEntityLabel="supporter"
+        getDeleteName={(row) => row.displayName ?? (`${row.firstName ?? ''} ${row.lastName ?? ''}`.trim() || `Supporter #${row.supporterId}`)}
+      />
 
       {showCreate && (
         <SupporterFormModal
           onSubmit={async (data: CreateSupporterRequest) => {
             await financialApi.createSupporter(data)
             setShowCreate(false)
-            void fetchDonors()
+            table.refresh()
           }}
           onClose={() => setShowCreate(false)}
+        />
+      )}
+
+      {editTarget && (
+        <SupporterFormModal
+          initial={editInitial}
+          onSubmit={async (data: CreateSupporterRequest) => {
+            await financialApi.updateSupporter(editTarget.supporterId, data)
+            setEditTarget(null)
+            setEditInitial(null)
+            table.refresh()
+          }}
+          onClose={() => { setEditTarget(null); setEditInitial(null) }}
         />
       )}
 
@@ -165,7 +177,7 @@ export function DonorManagementPage() {
           onSubmit={async (data) => {
             await financialApi.recordDonation(data)
             setShowDonation(false)
-            void fetchDonors()
+            table.refresh()
           }}
           onClose={() => setShowDonation(false)}
         />

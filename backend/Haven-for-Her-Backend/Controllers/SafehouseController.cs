@@ -16,6 +16,8 @@ public class SafehouseController(HavenForHerBackendDbContext db) : ControllerBas
     public async Task<IActionResult> GetAll(
         [FromQuery] string? region,
         [FromQuery] string? status,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -32,8 +34,20 @@ public class SafehouseController(HavenForHerBackendDbContext db) : ControllerBas
 
         var totalCount = await query.CountAsync();
 
+        var desc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.ToLower() switch
+        {
+            "name" => desc ? query.OrderByDescending(s => s.Name) : query.OrderBy(s => s.Name),
+            "safehousecode" => desc ? query.OrderByDescending(s => s.SafehouseCode) : query.OrderBy(s => s.SafehouseCode),
+            "region" => desc ? query.OrderByDescending(s => s.Region) : query.OrderBy(s => s.Region),
+            "status" => desc ? query.OrderByDescending(s => s.Status) : query.OrderBy(s => s.Status),
+            "capacitygirls" => desc ? query.OrderByDescending(s => s.CapacityGirls) : query.OrderBy(s => s.CapacityGirls),
+            "currentoccupancy" => desc ? query.OrderByDescending(s => s.CurrentOccupancy) : query.OrderBy(s => s.CurrentOccupancy),
+            "opendate" => desc ? query.OrderByDescending(s => s.OpenDate) : query.OrderBy(s => s.OpenDate),
+            _ => query.OrderBy(s => s.Name),
+        };
+
         var items = await query
-            .OrderBy(s => s.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(s => new
@@ -124,6 +138,29 @@ public class SafehouseController(HavenForHerBackendDbContext db) : ControllerBas
 
         await db.SaveChangesAsync();
         return Ok(new { message = "Safehouse updated.", existing.SafehouseId });
+    }
+
+    /// <summary>
+    /// Get counts of related records for a safehouse.
+    /// </summary>
+    [HttpGet("{id:int}/cascade-info")]
+    public async Task<IActionResult> GetCascadeInfo(int id)
+    {
+        var exists = await db.Safehouses.AnyAsync(s => s.SafehouseId == id);
+        if (!exists) return NotFound();
+
+        var residents = await db.Residents.CountAsync(r => r.SafehouseId == id);
+        var assignments = await db.PartnerAssignments.CountAsync(a => a.SafehouseId == id);
+        var allocations = await db.DonationAllocations.CountAsync(a => a.SafehouseId == id);
+        var incidents = await db.IncidentReports.CountAsync(ir => ir.SafehouseId == id);
+
+        return Ok(new[]
+        {
+            new { label = "residents", count = residents },
+            new { label = "partner assignments", count = assignments },
+            new { label = "donation allocations", count = allocations },
+            new { label = "incident reports", count = incidents },
+        });
     }
 
     [HttpDelete("{id:int}")]

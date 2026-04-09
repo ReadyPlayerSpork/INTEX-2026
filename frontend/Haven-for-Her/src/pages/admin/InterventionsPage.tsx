@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
-import type { PaginatedResponse } from '@/api/types'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DataTable, type ColumnDef } from '@/components/DataTable'
+import { useServerTable } from '@/hooks/useServerTable'
 
 interface Intervention {
   planId: number
@@ -23,11 +26,31 @@ const EMPTY_FORM = {
   status: '',
 }
 
+const columns: ColumnDef<Intervention>[] = [
+  {
+    key: 'residentCode',
+    header: 'Resident',
+    sortable: true,
+    render: (row) => row.residentCode ?? String(row.residentId),
+  },
+  { key: 'planCategory', header: 'Category', sortable: true },
+  {
+    key: 'planDescription',
+    header: 'Description',
+    className: 'max-w-xs truncate',
+    render: (row) => row.planDescription ?? '-',
+  },
+  {
+    key: 'servicesProvided',
+    header: 'Services',
+    className: 'max-w-xs truncate',
+    render: (row) => row.servicesProvided ?? '-',
+  },
+  { key: 'targetDate', header: 'Target Date', sortable: true, render: (row) => row.targetDate ?? '-' },
+  { key: 'status', header: 'Status', sortable: true },
+]
+
 export function InterventionsPage() {
-  const [interventions, setInterventions] = useState<Intervention[]>([])
-  const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
-  const [loading, setLoading] = useState(true)
   const [categoryFilter, setCategoryFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -35,33 +58,20 @@ export function InterventionsPage() {
   const [editId, setEditId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const pageSize = 20
 
-  const fetchInterventions = useCallback(async () => {
-    setLoading(true)
-    try {
-      const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
-      if (categoryFilter) qs.set('category', categoryFilter)
-      if (statusFilter) qs.set('status', statusFilter)
-      const res = await api.get<PaginatedResponse<Intervention>>(`/api/interventions?${qs}`)
-      setInterventions(res.items)
-      setTotalCount(res.totalCount)
-    } catch (err) {
-      console.error('Failed to load interventions', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, categoryFilter, statusFilter])
+  const filters = useMemo(
+    () => ({ category: categoryFilter, status: statusFilter }),
+    [categoryFilter, statusFilter],
+  )
 
-  useEffect(() => {
-    void fetchInterventions()
-  }, [fetchInterventions])
-
-  const totalPages = Math.ceil(totalCount / pageSize)
+  const table = useServerTable<Intervention>({
+    endpoint: '/api/interventions',
+    pageSize: 20,
+    filters,
+  })
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-    const target = e.target
-    setForm((prev) => ({ ...prev, [target.name]: target.value }))
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   function startEdit(item: Intervention) {
@@ -98,9 +108,9 @@ export function InterventionsPage() {
       setForm(EMPTY_FORM)
       setEditId(null)
       setShowForm(false)
-      void fetchInterventions()
+      table.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save intervention. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to save intervention.')
     } finally {
       setSubmitting(false)
     }
@@ -167,81 +177,49 @@ export function InterventionsPage() {
       )}
 
       <div className="mb-4 flex flex-wrap gap-3">
-        <input
+        <Input
           type="text"
           placeholder="Filter by category..."
           value={categoryFilter}
-          onChange={(e) => { setCategoryFilter(e.target.value); setPage(1) }}
-          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="w-48"
         />
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-        >
-          <option value="">All statuses</option>
-          <option value="Open">Open</option>
-          <option value="In Progress">In Progress</option>
-          <option value="On Hold">On Hold</option>
-          <option value="Achieved">Achieved</option>
-          <option value="Closed">Closed</option>
-        </select>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All statuses</SelectItem>
+              <SelectItem value="Open">Open</SelectItem>
+              <SelectItem value="In Progress">In Progress</SelectItem>
+              <SelectItem value="On Hold">On Hold</SelectItem>
+              <SelectItem value="Achieved">Achieved</SelectItem>
+              <SelectItem value="Closed">Closed</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
 
-      {loading ? (
-        <p className="text-muted-foreground animate-pulse">Loading...</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-border border-b text-left">
-                  <th className="px-3 py-2 font-medium">Resident</th>
-                  <th className="px-3 py-2 font-medium">Category</th>
-                  <th className="px-3 py-2 font-medium">Description</th>
-                  <th className="px-3 py-2 font-medium">Services</th>
-                  <th className="px-3 py-2 font-medium">Target Date</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {interventions.map((item) => (
-                  <tr key={item.planId} className="border-border border-b">
-                    <td className="px-3 py-2">{item.residentCode ?? item.residentId}</td>
-                    <td className="px-3 py-2">{item.planCategory}</td>
-                    <td className="max-w-xs truncate px-3 py-2">{item.planDescription ?? '-'}</td>
-                    <td className="max-w-xs truncate px-3 py-2">{item.servicesProvided ?? '-'}</td>
-                    <td className="px-3 py-2">{item.targetDate ?? '-'}</td>
-                    <td className="px-3 py-2">{item.status}</td>
-                    <td className="px-3 py-2">
-                      <button onClick={() => startEdit(item)} className="text-primary text-xs underline">
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">
-                Page {page} of {totalPages} ({totalCount} records)
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                  Previous
-                </Button>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <DataTable
+        columns={columns}
+        data={table.items}
+        rowKey={(row) => row.planId}
+        sort={table.sort}
+        onSort={table.setSort}
+        page={table.page}
+        totalPages={table.totalPages}
+        totalCount={table.totalCount}
+        onPageChange={table.setPage}
+        loading={table.loading}
+        onEdit={(row) => startEdit(row)}
+        onDelete={async (row) => {
+          await api.delete(`/api/interventions/${row.planId}`)
+          table.refresh()
+        }}
+        deleteEntityLabel="intervention plan"
+        getDeleteName={(row) => `${row.planCategory} for ${row.residentCode ?? row.residentId}`}
+      />
     </div>
   )
 }

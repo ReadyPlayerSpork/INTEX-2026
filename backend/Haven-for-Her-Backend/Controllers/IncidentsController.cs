@@ -20,6 +20,8 @@ public class IncidentsController(
         [FromQuery] int? safehouseId,
         [FromQuery] string? severity,
         [FromQuery] bool? resolved,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -39,8 +41,18 @@ public class IncidentsController(
 
         var totalCount = await query.CountAsync();
 
+        var desc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.ToLower() switch
+        {
+            "incidentdate" => desc ? query.OrderByDescending(ir => ir.IncidentDate) : query.OrderBy(ir => ir.IncidentDate),
+            "incidenttype" => desc ? query.OrderByDescending(ir => ir.IncidentType) : query.OrderBy(ir => ir.IncidentType),
+            "severity" => desc ? query.OrderByDescending(ir => ir.Severity) : query.OrderBy(ir => ir.Severity),
+            "reportedby" => desc ? query.OrderByDescending(ir => ir.ReportedBy) : query.OrderBy(ir => ir.ReportedBy),
+            "safehousename" => desc ? query.OrderByDescending(ir => ir.Safehouse.Name) : query.OrderBy(ir => ir.Safehouse.Name),
+            _ => query.OrderByDescending(ir => ir.IncidentDate),
+        };
+
         var items = await query
-            .OrderByDescending(ir => ir.IncidentDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(ir => new
@@ -106,5 +118,20 @@ public class IncidentsController(
         await db.SaveChangesAsync();
 
         return Ok(new { message = "Incident report updated." });
+    }
+
+    /// <summary>
+    /// Delete an incident report.
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteIncident(int id)
+    {
+        var incident = await db.IncidentReports.FindAsync(id);
+        if (incident is null) return NotFound();
+
+        db.IncidentReports.Remove(incident);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Incident report deleted." });
     }
 }

@@ -21,6 +21,8 @@ public class CaseloadController(
         [FromQuery] string? status,
         [FromQuery] int? safehouseId,
         [FromQuery] string? riskLevel,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -45,8 +47,20 @@ public class CaseloadController(
 
         var totalCount = await query.CountAsync();
 
+        var desc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.ToLower() switch
+        {
+            "casecontrolno" => desc ? query.OrderByDescending(r => r.CaseControlNo) : query.OrderBy(r => r.CaseControlNo),
+            "internalcode" => desc ? query.OrderByDescending(r => r.InternalCode) : query.OrderBy(r => r.InternalCode),
+            "safehousename" => desc ? query.OrderByDescending(r => r.Safehouse.Name) : query.OrderBy(r => r.Safehouse.Name),
+            "casestatus" => desc ? query.OrderByDescending(r => r.CaseStatus) : query.OrderBy(r => r.CaseStatus),
+            "currentrisklevel" => desc ? query.OrderByDescending(r => r.CurrentRiskLevel) : query.OrderBy(r => r.CurrentRiskLevel),
+            "assignedsocialworker" => desc ? query.OrderByDescending(r => r.AssignedSocialWorker) : query.OrderBy(r => r.AssignedSocialWorker),
+            "dateofadmission" => desc ? query.OrderByDescending(r => r.DateOfAdmission) : query.OrderBy(r => r.DateOfAdmission),
+            _ => query.OrderByDescending(r => r.DateOfAdmission),
+        };
+
         var items = await query
-            .OrderByDescending(r => r.DateOfAdmission)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new
@@ -298,5 +312,54 @@ public class CaseloadController(
         await db.SaveChangesAsync();
 
         return Ok(new { message = "Resident created.", residentId = resident.ResidentId });
+    }
+
+    // ── Cascade Info ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Get counts of related records that would be deleted with a resident.
+    /// </summary>
+    [HttpGet("{id:int}/cascade-info")]
+    [Authorize(Roles = AuthRoles.Admin)]
+    public async Task<IActionResult> GetCascadeInfo(int id)
+    {
+        var exists = await db.Residents.AnyAsync(r => r.ResidentId == id);
+        if (!exists) return NotFound();
+
+        var recordings = await db.ProcessRecordings.CountAsync(pr => pr.ResidentId == id);
+        var visitations = await db.HomeVisitations.CountAsync(hv => hv.ResidentId == id);
+        var education = await db.EducationRecords.CountAsync(er => er.ResidentId == id);
+        var health = await db.HealthWellbeingRecords.CountAsync(h => h.ResidentId == id);
+        var interventions = await db.InterventionPlans.CountAsync(ip => ip.ResidentId == id);
+        var incidents = await db.IncidentReports.CountAsync(ir => ir.ResidentId == id);
+
+        return Ok(new[]
+        {
+            new { label = "counseling sessions", count = recordings },
+            new { label = "home visitations", count = visitations },
+            new { label = "education records", count = education },
+            new { label = "health records", count = health },
+            new { label = "intervention plans", count = interventions },
+            new { label = "incident reports", count = incidents },
+        });
+    }
+
+    // ── Delete Resident ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Delete a resident and all related records (Admin only).
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = AuthRoles.Admin)]
+    public async Task<IActionResult> DeleteResident(int id)
+    {
+        var resident = await db.Residents.FindAsync(id);
+        if (resident is null) return NotFound();
+
+        // EF cascade deletes handle child records
+        db.Residents.Remove(resident);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Resident deleted." });
     }
 }

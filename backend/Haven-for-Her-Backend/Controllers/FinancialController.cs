@@ -58,6 +58,10 @@ public class FinancialController(HavenForHerBackendDbContext db) : ControllerBas
     [HttpGet("donors")]
     public async Task<IActionResult> ListDonors(
         [FromQuery] string? search,
+        [FromQuery] string? supporterType,
+        [FromQuery] string? status,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25)
     {
@@ -73,9 +77,27 @@ public class FinancialController(HavenForHerBackendDbContext db) : ControllerBas
                 (s.LastName != null && s.LastName.ToLower().Contains(term)));
         }
 
+        if (!string.IsNullOrWhiteSpace(supporterType))
+            query = query.Where(s => s.SupporterType == supporterType);
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(s => s.Status == status);
+
         var totalCount = await query.CountAsync();
+
+        var desc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.ToLower() switch
+        {
+            "displayname" => desc ? query.OrderByDescending(s => s.DisplayName) : query.OrderBy(s => s.DisplayName),
+            "email" => desc ? query.OrderByDescending(s => s.Email) : query.OrderBy(s => s.Email),
+            "supportertype" => desc ? query.OrderByDescending(s => s.SupporterType) : query.OrderBy(s => s.SupporterType),
+            "status" => desc ? query.OrderByDescending(s => s.Status) : query.OrderBy(s => s.Status),
+            "region" => desc ? query.OrderByDescending(s => s.Region) : query.OrderBy(s => s.Region),
+            "firstdonationdate" => desc ? query.OrderByDescending(s => s.FirstDonationDate) : query.OrderBy(s => s.FirstDonationDate),
+            _ => query.OrderBy(s => s.DisplayName ?? s.Email),
+        };
+
         var items = await query
-            .OrderBy(s => s.DisplayName ?? s.Email)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(s => new
@@ -108,6 +130,8 @@ public class FinancialController(HavenForHerBackendDbContext db) : ControllerBas
         [FromQuery] DateOnly? from,
         [FromQuery] DateOnly? to,
         [FromQuery] string? search,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25)
     {
@@ -134,8 +158,19 @@ public class FinancialController(HavenForHerBackendDbContext db) : ControllerBas
         }
 
         var totalCount = await query.CountAsync();
+
+        var isDesc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.ToLower() switch
+        {
+            "donationdate" => isDesc ? query.OrderByDescending(d => d.DonationDate) : query.OrderBy(d => d.DonationDate),
+            "donationtype" => isDesc ? query.OrderByDescending(d => d.DonationType) : query.OrderBy(d => d.DonationType),
+            "amount" => isDesc ? query.OrderByDescending(d => d.Amount) : query.OrderBy(d => d.Amount),
+            "campaignname" => isDesc ? query.OrderByDescending(d => d.CampaignName) : query.OrderBy(d => d.CampaignName),
+            "channelsource" => isDesc ? query.OrderByDescending(d => d.ChannelSource) : query.OrderBy(d => d.ChannelSource),
+            _ => query.OrderByDescending(d => d.DonationDate),
+        };
+
         var items = await query
-            .OrderByDescending(d => d.DonationDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(d => new

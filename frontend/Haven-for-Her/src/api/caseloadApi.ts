@@ -51,6 +51,11 @@ export interface SafehouseOption {
   name: string
 }
 
+export interface CascadeInfo {
+  label: string
+  count: number
+}
+
 export const caseloadApi = {
   createResident(data: CreateResidentRequest): Promise<{ message: string; residentId: number }> {
     return api.post('/api/caseload', data)
@@ -58,6 +63,14 @@ export const caseloadApi = {
 
   updateResident(id: number, data: CreateResidentRequest): Promise<{ message: string }> {
     return api.put(`/api/caseload/${id}`, data)
+  },
+
+  deleteResident(id: number): Promise<{ message: string }> {
+    return api.delete(`/api/caseload/${id}`)
+  },
+
+  getCascadeInfo(id: number): Promise<CascadeInfo[]> {
+    return api.get(`/api/caseload/${id}/cascade-info`)
   },
 
   getSafehouses(): Promise<{ items: SafehouseOption[] }> {

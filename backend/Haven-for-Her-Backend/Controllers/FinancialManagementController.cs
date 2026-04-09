@@ -205,6 +205,75 @@ public class FinancialManagementController(HavenForHerBackendDbContext db) : Con
     }
 
     /// <summary>
+    /// Get counts of related records that would be deleted with a supporter.
+    /// </summary>
+    [HttpGet("donors/{id:int}/cascade-info")]
+    public async Task<IActionResult> GetSupporterCascadeInfo(int id)
+    {
+        var exists = await db.Supporters.AnyAsync(s => s.SupporterId == id);
+        if (!exists) return NotFound();
+
+        var donations = await db.Donations.CountAsync(d => d.SupporterId == id);
+        var allocations = await db.DonationAllocations.CountAsync(a => a.Donation.SupporterId == id);
+
+        return Ok(new[]
+        {
+            new { label = "donations", count = donations },
+            new { label = "donation allocations", count = allocations },
+        });
+    }
+
+    /// <summary>
+    /// Delete a supporter and all their donations (Admin only).
+    /// </summary>
+    [HttpDelete("donors/{id:int}")]
+    public async Task<IActionResult> DeleteSupporter(int id)
+    {
+        var supporter = await db.Supporters.FindAsync(id);
+        if (supporter is null) return NotFound();
+
+        // EF cascade deletes handle donations → allocations
+        db.Supporters.Remove(supporter);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Supporter deleted." });
+    }
+
+    /// <summary>
+    /// Delete a donation and its allocations.
+    /// </summary>
+    [HttpDelete("donations/{id:int}")]
+    public async Task<IActionResult> DeleteDonation(int id)
+    {
+        var donation = await db.Donations.FindAsync(id);
+        if (donation is null) return NotFound();
+
+        db.Donations.Remove(donation);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Donation deleted." });
+    }
+
+    /// <summary>
+    /// Get counts of related records that would be deleted with a donation.
+    /// </summary>
+    [HttpGet("donations/{id:int}/cascade-info")]
+    public async Task<IActionResult> GetDonationCascadeInfo(int id)
+    {
+        var exists = await db.Donations.AnyAsync(d => d.DonationId == id);
+        if (!exists) return NotFound();
+
+        var allocations = await db.DonationAllocations.CountAsync(a => a.DonationId == id);
+        var inKindItems = await db.InKindDonationItems.CountAsync(i => i.DonationId == id);
+
+        return Ok(new[]
+        {
+            new { label = "donation allocations", count = allocations },
+            new { label = "in-kind items", count = inKindItems },
+        });
+    }
+
+    /// <summary>
     /// Monthly donation totals for the last N months (for charting).
     /// </summary>
     [HttpGet("trends")]

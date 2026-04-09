@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
-import type { PaginatedResponse } from '@/api/types'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DataTable, type ColumnDef } from '@/components/DataTable'
+import { useServerTable } from '@/hooks/useServerTable'
 import { caseloadApi, type CreateResidentRequest, type SafehouseOption } from '@/api/caseloadApi'
 import { ResidentFormModal } from '@/components/admin/ResidentFormModal'
 
@@ -21,46 +24,61 @@ interface CaseloadItem {
   reintegrationStatus: string | null
 }
 
+const columns: ColumnDef<CaseloadItem>[] = [
+  {
+    key: 'caseControlNo',
+    header: 'Case Control No',
+    sortable: true,
+    render: (row) => (
+      <Link to={`/admin/caseload/${row.residentId}`} className="text-primary underline">
+        {row.caseControlNo}
+      </Link>
+    ),
+  },
+  { key: 'internalCode', header: 'Internal Code', sortable: true },
+  { key: 'safehouseName', header: 'Safehouse', sortable: true },
+  { key: 'caseStatus', header: 'Status', sortable: true },
+  { key: 'currentRiskLevel', header: 'Risk Level', sortable: true },
+  {
+    key: 'assignedSocialWorker',
+    header: 'Assigned Worker',
+    sortable: true,
+    render: (row) => row.assignedSocialWorker ?? '-',
+  },
+  { key: 'dateOfAdmission', header: 'Admission Date', sortable: true },
+]
+
 export function CaseloadPage() {
-  const [items, setItems] = useState<CaseloadItem[]>([])
-  const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
-  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [riskFilter, setRiskFilter] = useState('')
   const [safehouseFilter, setSafehouseFilter] = useState('')
   const [safehouses, setSafehouses] = useState<SafehouseOption[]>([])
   const [showCreate, setShowCreate] = useState(false)
-  const pageSize = 20
+  const [editTarget, setEditTarget] = useState<CaseloadItem | null>(null)
+  const [editInitial, setEditInitial] = useState<Partial<CreateResidentRequest> | null>(null)
 
   useEffect(() => {
     caseloadApi.getSafehouses().then((res) => setSafehouses(res.items)).catch(() => {})
   }, [])
 
-  const fetchCaseload = useCallback(async () => {
-    setLoading(true)
-    try {
-      const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
-      if (search) qs.set('search', search)
-      if (statusFilter) qs.set('status', statusFilter)
-      if (riskFilter) qs.set('riskLevel', riskFilter)
-      if (safehouseFilter) qs.set('safehouseId', safehouseFilter)
-      const res = await api.get<PaginatedResponse<CaseloadItem>>(`/api/caseload?${qs}`)
-      setItems(res.items)
-      setTotalCount(res.totalCount)
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false)
-    }
-  }, [page, search, statusFilter, riskFilter, safehouseFilter])
+  const filters = useMemo(
+    () => ({
+      search,
+      status: statusFilter,
+      riskLevel: riskFilter,
+      safehouseId: safehouseFilter,
+    }),
+    [search, statusFilter, riskFilter, safehouseFilter],
+  )
 
-  useEffect(() => {
-    void fetchCaseload()
-  }, [fetchCaseload])
-
-  const totalPages = Math.ceil(totalCount / pageSize)
+  const table = useServerTable<CaseloadItem>({
+    endpoint: '/api/caseload',
+    pageSize: 20,
+    defaultSort: 'dateOfAdmission',
+    defaultDirection: 'desc',
+    filters,
+  })
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
@@ -70,108 +88,104 @@ export function CaseloadPage() {
       </div>
 
       <div className="mb-4 flex flex-wrap gap-3">
-        <input
+        <Input
           type="text"
           placeholder="Search by name or code..."
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-56"
         />
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-        >
-          <option value="">All statuses</option>
-          <option value="Active">Active</option>
-          <option value="Discharged">Discharged</option>
-          <option value="Transferred">Transferred</option>
-          <option value="Pending">Pending</option>
-        </select>
-        <select
-          value={riskFilter}
-          onChange={(e) => { setRiskFilter(e.target.value); setPage(1) }}
-          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-        >
-          <option value="">All risk levels</option>
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
-          <option value="Critical">Critical</option>
-        </select>
-        <select
-          value={safehouseFilter}
-          onChange={(e) => { setSafehouseFilter(e.target.value); setPage(1) }}
-          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-        >
-          <option value="">All safehouses</option>
-          {safehouses.map((s) => <option key={s.safehouseId} value={s.safehouseId}>{s.name}</option>)}
-        </select>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All statuses</SelectItem>
+              <SelectItem value="Active">Active</SelectItem>
+              <SelectItem value="Discharged">Discharged</SelectItem>
+              <SelectItem value="Transferred">Transferred</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Select value={riskFilter} onValueChange={(v) => setRiskFilter(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All risk levels" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All risk levels</SelectItem>
+              <SelectItem value="Low">Low</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+              <SelectItem value="Critical">Critical</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Select value={safehouseFilter} onValueChange={(v) => setSafehouseFilter(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All safehouses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All safehouses</SelectItem>
+              {safehouses.map((s) => (
+                <SelectItem key={s.safehouseId} value={String(s.safehouseId)}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
 
-      {loading ? (
-        <p className="text-muted-foreground animate-pulse">Loading...</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-border border-b text-left">
-                  <th className="px-3 py-2 font-medium">Case Control No</th>
-                  <th className="px-3 py-2 font-medium">Internal Code</th>
-                  <th className="px-3 py-2 font-medium">Safehouse</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium">Risk Level</th>
-                  <th className="px-3 py-2 font-medium">Assigned Worker</th>
-                  <th className="px-3 py-2 font-medium">Admission Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.residentId} className="border-border hover:bg-muted/50 border-b">
-                    <td className="px-3 py-2">
-                      <Link to={`/admin/caseload/${item.residentId}`} className="text-primary underline">
-                        {item.caseControlNo}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2">{item.internalCode}</td>
-                    <td className="px-3 py-2">{item.safehouseName}</td>
-                    <td className="px-3 py-2">{item.caseStatus}</td>
-                    <td className="px-3 py-2">{item.currentRiskLevel}</td>
-                    <td className="px-3 py-2">{item.assignedSocialWorker ?? '-'}</td>
-                    <td className="px-3 py-2">{item.dateOfAdmission}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">
-                Page {page} of {totalPages} ({totalCount} records)
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                  Previous
-                </Button>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <DataTable
+        columns={columns}
+        data={table.items}
+        rowKey={(row) => row.residentId}
+        sort={table.sort}
+        onSort={table.setSort}
+        page={table.page}
+        totalPages={table.totalPages}
+        totalCount={table.totalCount}
+        onPageChange={table.setPage}
+        loading={table.loading}
+        onEdit={async (row) => {
+          const full = await api.get<CreateResidentRequest>(`/api/caseload/${row.residentId}`)
+          setEditInitial(full)
+          setEditTarget(row)
+        }}
+        onDelete={async (row) => {
+          await caseloadApi.deleteResident(row.residentId)
+          table.refresh()
+        }}
+        getCascadeInfo={(row) => caseloadApi.getCascadeInfo(row.residentId)}
+        deleteEntityLabel="resident"
+        getDeleteName={(row) => `${row.caseControlNo} (${row.internalCode})`}
+      />
 
       {showCreate && (
         <ResidentFormModal
           onSubmit={async (data: CreateResidentRequest) => {
             await caseloadApi.createResident(data)
             setShowCreate(false)
-            void fetchCaseload()
+            table.refresh()
           }}
           onClose={() => setShowCreate(false)}
+        />
+      )}
+
+      {editTarget && (
+        <ResidentFormModal
+          initial={editInitial}
+          onSubmit={async (data: CreateResidentRequest) => {
+            await caseloadApi.updateResident(editTarget.residentId, data)
+            setEditTarget(null)
+            setEditInitial(null)
+            table.refresh()
+          }}
+          onClose={() => { setEditTarget(null); setEditInitial(null) }}
         />
       )}
     </div>

@@ -104,6 +104,11 @@ export interface RecordDonationRequest {
   notes?: string | null
 }
 
+export interface CascadeInfo {
+  label: string
+  count: number
+}
+
 export const financialApi = {
   getSupporter(id: number): Promise<SupporterDetailDto> {
     return api.get(`/api/financial/management/donors/${id}`)
@@ -117,8 +122,24 @@ export const financialApi = {
     return api.put(`/api/financial/management/donors/${id}`, data)
   },
 
+  deleteSupporter(id: number): Promise<{ message: string }> {
+    return api.delete(`/api/financial/management/donors/${id}`)
+  },
+
+  getSupporterCascadeInfo(id: number): Promise<CascadeInfo[]> {
+    return api.get(`/api/financial/management/donors/${id}/cascade-info`)
+  },
+
   recordDonation(data: RecordDonationRequest): Promise<{ message: string; donationId: number }> {
     return api.post('/api/financial/management/donations', data)
+  },
+
+  deleteDonation(id: number): Promise<{ message: string }> {
+    return api.delete(`/api/financial/management/donations/${id}`)
+  },
+
+  getDonationCascadeInfo(id: number): Promise<CascadeInfo[]> {
+    return api.get(`/api/financial/management/donations/${id}/cascade-info`)
   },
 
   getAllocations(params?: {
