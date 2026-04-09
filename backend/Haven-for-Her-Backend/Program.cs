@@ -106,6 +106,19 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Behind Cloudflare Tunnel / Docker, the container sees plain HTTP; the edge sends X-Forwarded-Proto: https.
+// .NET 8+ ignores forwarded headers from "unknown" proxies unless trusted proxy lists are cleared
+// (see https://learn.microsoft.com/en-us/dotnet/core/compatibility/aspnet-core/8.0/forwarded-headers-unknown-proxies).
+// Clearing lets OAuth build redirect_uri with https:// so Google accepts the callback.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = null;
+    options.RequireHeaderSymmetry = false;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddHsts(options =>
 {
     options.MaxAge = TimeSpan.FromDays(365);
@@ -199,12 +212,8 @@ using (var scope = app.Services.CreateScope())
 
 // Configure the HTTP request pipeline.
 
-// Trust Cloudflare Tunnel's forwarded headers (X-Forwarded-For, X-Forwarded-Proto, etc.)
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-    ForwardLimit = null,
-});
+// Must be early in the pipeline so Request.Scheme/Host reflect the public URL (see Configure<ForwardedHeadersOptions> above).
+app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
 {
