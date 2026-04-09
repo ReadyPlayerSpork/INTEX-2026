@@ -40,6 +40,7 @@ class DatabaseClient:
     def fetch_data(self, table_name: str) -> pd.DataFrame:
         """Fetches a table from the DB or returns None if connection fails."""
         if not self.engine:
+            print(f"[DB] No engine initialized for '{table_name}'")
             return None
         
         # Convert table name to snake_case for PostgreSQL
@@ -49,12 +50,15 @@ class DatabaseClient:
             # Query without quotes to allow case-insensitive or default schema matching
             query = f"SELECT * FROM {db_table}"
             df = pd.read_sql(query, self.engine)
+            if df.empty:
+                print(f"[DB] Warning: Table '{db_table}' returned 0 rows.")
             return self.normalize_columns(df)
         except Exception as e:
-            print(f"Error fetching table '{table_name}' (mapped to '{db_table}'): {e}")
+            print(f"[DB] CRITICAL ERROR fetching table '{table_name}' (mapped to '{db_table}'): {e}")
             import traceback
             traceback.print_exc()
             return None
+
 
     def normalize_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """

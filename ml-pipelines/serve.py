@@ -128,8 +128,8 @@ def _donor_features() -> pd.DataFrame:
     # Column normalization to handle potential naming diffs
     supporters["AcquisitionChannel"] = supporters["AcquisitionChannel"].fillna("Unknown")
     supporters["Region"] = supporters["Region"].fillna("Not Specified")
-    supporters["CreatedAt"] = pd.to_datetime(supporters["CreatedAt"])
-    donations["DonationDate"] = pd.to_datetime(donations["DonationDate"])
+    supporters["CreatedAt"] = pd.to_datetime(supporters["CreatedAt"], utc=True).dt.tz_localize(None)
+    donations["DonationDate"] = pd.to_datetime(donations["DonationDate"], utc=True).dt.tz_localize(None)
     
     # Handle both amount and estimated value for total worth
     amount_col = "Amount" if "Amount" in donations.columns else "amount"
@@ -139,9 +139,12 @@ def _donor_features() -> pd.DataFrame:
     if val_col in donations.columns:
         donations["TotalVal"] += donations[val_col].fillna(0)
 
-    snapshot_date = donations["DonationDate"].max() + pd.Timedelta(days=1)
-    if pd.isna(snapshot_date):
-        snapshot_date = pd.to_datetime(datetime.utcnow())
+    if pd.notna(snapshot_date):
+        if hasattr(snapshot_date, "tzinfo") and snapshot_date.tzinfo is not None:
+            snapshot_date = snapshot_date.replace(tzinfo=None)
+        snapshot_date += pd.Timedelta(days=1)
+    else:
+        snapshot_date = pd.to_datetime(datetime.utcnow().replace(tzinfo=None))
 
     donor_metrics = donations.groupby("SupporterId").agg({
         "DonationDate": [
@@ -279,14 +282,18 @@ def _resident_progress_features() -> pd.DataFrame:
     df = residents.merge(session_metrics, on="ResidentId", how="left")
     df = df.merge(health_trend, left_on="ResidentId", right_index=True, how="left")
     df = df.merge(edu_trend, left_on="ResidentId", right_index=True, how="left")
-    df = df.merge(last_health, on="ResidentId", how="left")
-    df = df.merge(last_edu, on="ResidentId", how="left")
     df = df.merge(last_health, left_on="ResidentId", right_index=True, how="left")
     df = df.merge(last_edu, left_on="ResidentId", right_index=True, how="left")
 
     fill_cols = ["SessionCount", "AvgSessionDuration", "ProgressNotedPct", 
                  "GeneralHealthScore_trend", "AttendanceRate_trend", 
                  "CurrentHealthScore", "CurrentAttendanceRate"]
+    
+    # Ensure all required columns exist (even if empty) to avoid indexing errors
+    for col in fill_cols:
+        if col not in df.columns:
+            df[col] = 0.0
+            
     df[fill_cols] = df[fill_cols].fillna(0)
     
     # Target definition
