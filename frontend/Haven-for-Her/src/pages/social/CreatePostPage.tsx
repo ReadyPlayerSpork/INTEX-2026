@@ -2,317 +2,405 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
+import { ImagePlus, Megaphone, Loader2, CheckCircle2, ExternalLink } from 'lucide-react'
 
-interface PostForm {
-  platform: string
-  platformPostId: string
-  postUrl: string
-  postType: string
-  mediaType: string
-  caption: string
-  hashtags: string
-  contentTopic: string
-  sentimentTone: string
-  campaignName: string
-  isBoosted: boolean
-  boostBudgetPhp: number | ''
-  impressions: number | ''
-  reach: number | ''
-  likes: number | ''
-  comments: number | ''
-  shares: number | ''
-  saves: number | ''
-  clickThroughs: number | ''
-  videoViews: number | ''
-  engagementRate: number | ''
-  donationReferrals: number | ''
-  estimatedDonationValuePhp: number | ''
+// ── Audience presets ───────────────────────────────────────────────────────
+
+type Audience = 'donors' | 'survivors'
+
+const AUDIENCE_PRESETS: Record<
+  Audience,
+  {
+    label: string
+    headline: string
+    linkUrl: string
+    callToAction: string
+    genders: number[] | null // null = all genders, [2] = women only
+    description: string
+  }
+> = {
+  donors: {
+    label: 'Donors',
+    headline: 'Support Survivors Today',
+    linkUrl: 'https://havenforher.lukemiller.dev/donate',
+    callToAction: 'DONATE_NOW',
+    genders: null,
+    description: 'Targets potential donors — all genders, CTA links to donation page',
+  },
+  survivors: {
+    label: 'Survivors',
+    headline: 'Find Support Today',
+    linkUrl: 'https://havenforher.lukemiller.dev/resources',
+    callToAction: 'LEARN_MORE',
+    genders: [2], // women only
+    description: 'Targets survivors — women only, CTA links to resources page',
+  },
 }
 
-const INITIAL: PostForm = {
-  platform: 'Facebook',
-  platformPostId: '',
-  postUrl: '',
-  postType: '',
-  mediaType: '',
-  caption: '',
-  hashtags: '',
-  contentTopic: '',
-  sentimentTone: '',
-  campaignName: '',
-  isBoosted: false,
-  boostBudgetPhp: '',
-  impressions: '',
-  reach: '',
-  likes: '',
-  comments: '',
-  shares: '',
-  saves: '',
-  clickThroughs: '',
-  videoViews: '',
-  engagementRate: '',
-  donationReferrals: '',
-  estimatedDonationValuePhp: '',
+// ── Component ──────────────────────────────────────────────────────────────
+
+interface CampaignResult {
+  campaignId: string
+  adSetId: string
+  adCreativeId: string
+  adId: string
+  imageHash: string
+  status: string
+  adsManagerUrl: string
 }
 
 export function CreatePostPage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState<PostForm>(INITIAL)
+
+  // Form state — only the 4 fields the user fills in + audience selector
+  const [audience, setAudience] = useState<Audience>('donors')
+  const [campaignName, setCampaignName] = useState('')
+  const [caption, setCaption] = useState('')
+  const [dailyBudget, setDailyBudget] = useState<number | ''>('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  // Submission state
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [result, setResult] = useState<CampaignResult | null>(null)
 
-  function set<K extends keyof PostForm>(key: K, value: PostForm[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }))
+  const preset = AUDIENCE_PRESETS[audience]
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
   }
 
-  function numOrNull(val: number | ''): number | null {
-    return val === '' ? null : val
+  function clearImage() {
+    setImageFile(null)
+    setImagePreview(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (!imageFile || !imagePreview) {
+      setError('Please upload an image for the ad.')
+      return
+    }
+    if (!campaignName.trim()) {
+      setError('Please enter a campaign name.')
+      return
+    }
+    if (!caption.trim()) {
+      setError('Please enter ad copy (caption).')
+      return
+    }
+    if (!dailyBudget || dailyBudget < 1) {
+      setError('Please enter a daily budget of at least $1.')
+      return
+    }
+
     setSubmitting(true)
     try {
-      await api.post('/api/social/posts', {
-        platform: form.platform,
-        platformPostId: form.platformPostId || 'MANUAL-' + Date.now(),
-        postUrl: form.postUrl || 'http://localhost',
-        postType: form.postType || 'ManualEntry',
-        mediaType: form.mediaType || 'Text',
-        caption: form.caption || '',
-        hashtags: form.hashtags || null,
-        contentTopic: form.contentTopic || 'General',
-        sentimentTone: form.sentimentTone || 'Neutral',
-        campaignName: form.campaignName || null,
-        isBoosted: form.isBoosted,
-        boostBudgetPhp: form.isBoosted ? numOrNull(form.boostBudgetPhp) : null,
-        impressions: numOrNull(form.impressions) ?? 0,
-        reach: numOrNull(form.reach) ?? 0,
-        likes: numOrNull(form.likes) ?? 0,
-        comments: numOrNull(form.comments) ?? 0,
-        shares: numOrNull(form.shares) ?? 0,
-        saves: numOrNull(form.saves) ?? 0,
-        clickThroughs: numOrNull(form.clickThroughs) ?? 0,
-        videoViews: numOrNull(form.videoViews),
-        engagementRate: numOrNull(form.engagementRate) ?? 0,
-        donationReferrals: numOrNull(form.donationReferrals) ?? 0,
-        estimatedDonationValuePhp: numOrNull(form.estimatedDonationValuePhp) ?? 0,
-        dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-        postHour: new Date().getHours(),
-        mentionsCount: 0,
-        captionLength: form.caption.length,
-        featuresResidentStory: false,
-        numHashtags: form.hashtags ? form.hashtags.split(' ').length : 0,
-        hasCallToAction: false
+      const res = await api.post<CampaignResult>('/api/meta-ads/campaigns', {
+        campaignName: campaignName.trim(),
+        imageBase64: imagePreview, // includes data URI prefix — backend strips it
+        primaryText: caption.trim(),
+        headline: preset.headline,
+        linkUrl: preset.linkUrl,
+        callToAction: preset.callToAction,
+        dailyBudgetCents: Math.round(dailyBudget * 100),
+        targeting: {
+          countries: ['US'],
+          ageMin: 18,
+          ageMax: 65,
+          genders: preset.genders,
+        },
       })
-      navigate('/social/posts')
+      setResult(res)
     } catch {
-      setError('Failed to create post. Please try again.')
+      setError('Failed to create campaign. Please try again.')
     } finally {
       setSubmitting(false)
     }
   }
 
+  // ── Success state ──────────────────────────────────────────────────────
+
+  if (result) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <CheckCircle2 className="text-primary mx-auto mb-4 size-12" />
+        <h1 className="font-heading mb-2 text-2xl font-bold">Campaign Created</h1>
+        <p className="text-muted-foreground mb-6 text-sm">
+          Your campaign has been created and is <strong>paused</strong>. Review it
+          in Meta Ads Manager before activating.
+        </p>
+
+        <div className="bg-card border-border mx-auto mb-8 max-w-md rounded-xl border p-5 text-left text-sm">
+          <dl className="space-y-2">
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Status</dt>
+              <dd className="font-semibold text-amber-600">{result.status}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Campaign ID</dt>
+              <dd className="font-mono text-xs">{result.campaignId}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Ad Set ID</dt>
+              <dd className="font-mono text-xs">{result.adSetId}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Ad ID</dt>
+              <dd className="font-mono text-xs">{result.adId}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <a
+            href={result.adsManagerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors"
+          >
+            Open Ads Manager <ExternalLink className="size-3.5" />
+          </a>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setResult(null)
+              setCampaignName('')
+              setCaption('')
+              setDailyBudget('')
+              clearImage()
+            }}
+          >
+            Create Another
+          </Button>
+          <Button variant="ghost" onClick={() => navigate('/social/posts')}>
+            Back to Posts
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Form ───────────────────────────────────────────────────────────────
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="mb-2 text-2xl font-bold">Create Social Media Post</h1>
-      <p className="text-muted-foreground mb-8 text-sm">
-        Manual entry &mdash; API integration coming soon
-      </p>
+    <div className="mx-auto max-w-2xl px-4 py-12">
+      <div className="mb-8">
+        <h1 className="font-heading mb-1 text-2xl font-bold">Create Ad Campaign</h1>
+        <p className="text-muted-foreground text-sm">
+          Upload an image, write your ad copy, and we'll create a paused campaign
+          on Meta. Review and activate it in Ads Manager when ready.
+        </p>
+      </div>
 
       {error && (
-        <div className="bg-destructive/10 text-destructive mb-4 rounded-2xl border border-destructive/20 px-4 py-2 text-sm">
+        <div className="bg-destructive/10 text-destructive mb-6 rounded-xl border border-destructive/20 px-4 py-3 text-sm">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Post Details */}
-        <fieldset className="space-y-4">
-          <legend className="mb-2 text-lg font-semibold">Post Details</legend>
+        {/* Audience selector */}
+        <fieldset className="space-y-3">
+          <legend className="mb-1 text-sm font-semibold">Target Audience</legend>
+          <div className="grid grid-cols-2 gap-3">
+            {(Object.entries(AUDIENCE_PRESETS) as [Audience, typeof preset][]).map(
+              ([key, p]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setAudience(key)}
+                  className={[
+                    'rounded-xl border-2 p-4 text-left transition-all',
+                    audience === key
+                      ? 'border-primary bg-primary/5 ring-primary/20 ring-2'
+                      : 'border-border hover:border-primary/40',
+                  ].join(' ')}
+                >
+                  <p className="text-sm font-semibold">{p.label}</p>
+                  <p className="text-muted-foreground mt-0.5 text-xs leading-snug">
+                    {p.description}
+                  </p>
+                </button>
+              ),
+            )}
+          </div>
+          <p className="text-muted-foreground text-xs">
+            Headline: <strong>{preset.headline}</strong> &middot; CTA:{' '}
+            <strong>{preset.callToAction.replace('_', ' ')}</strong> &middot;
+            Link: <strong className="break-all">{preset.linkUrl}</strong>
+          </p>
+        </fieldset>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Platform">
-              <select
-                className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-                value={form.platform}
-                onChange={(e) => set('platform', e.target.value)}
+        {/* Image upload */}
+        <fieldset className="space-y-3">
+          <legend className="mb-1 text-sm font-semibold">Ad Image</legend>
+          {imagePreview ? (
+            <div className="relative">
+              <img
+                src={imagePreview}
+                alt="Ad preview"
+                className="border-border h-64 w-full rounded-xl border object-cover"
+              />
+              <button
+                type="button"
+                onClick={clearImage}
+                className="bg-background/80 text-destructive hover:bg-background absolute right-2 top-2 rounded-lg border px-2.5 py-1 text-xs font-medium backdrop-blur-sm"
               >
-                <option>Facebook</option>
-                <option>Instagram</option>
-                <option>TikTok</option>
-              </select>
-            </Field>
-
-            <Field label="Platform Post ID">
+                Remove
+              </button>
+            </div>
+          ) : (
+            <label className="border-border hover:border-primary/50 hover:bg-primary/5 flex h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors">
+              <ImagePlus className="text-muted-foreground size-8" />
+              <span className="text-muted-foreground text-sm">
+                Click to upload image
+              </span>
+              <span className="text-muted-foreground text-xs">
+                PNG, JPG, or WebP &middot; Recommended 1200x628
+              </span>
               <input
-                type="text"
-                className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-                value={form.platformPostId}
-                onChange={(e) => set('platformPostId', e.target.value)}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={handleImageChange}
               />
-            </Field>
-
-            <Field label="Post URL">
-              <input
-                type="url"
-                className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-                value={form.postUrl}
-                onChange={(e) => set('postUrl', e.target.value)}
-              />
-            </Field>
-
-            <Field label="Post Type">
-              <input
-                type="text"
-                className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-                placeholder="e.g. image, video, story, reel"
-                value={form.postType}
-                onChange={(e) => set('postType', e.target.value)}
-              />
-            </Field>
-
-            <Field label="Media Type">
-              <input
-                type="text"
-                className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-                placeholder="e.g. photo, carousel, video"
-                value={form.mediaType}
-                onChange={(e) => set('mediaType', e.target.value)}
-              />
-            </Field>
-
-            <Field label="Content Topic">
-              <input
-                type="text"
-                className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-                value={form.contentTopic}
-                onChange={(e) => set('contentTopic', e.target.value)}
-              />
-            </Field>
-
-            <Field label="Sentiment / Tone">
-              <input
-                type="text"
-                className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-                placeholder="e.g. positive, neutral, urgent"
-                value={form.sentimentTone}
-                onChange={(e) => set('sentimentTone', e.target.value)}
-              />
-            </Field>
-
-            <Field label="Campaign Name">
-              <input
-                type="text"
-                className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-                value={form.campaignName}
-                onChange={(e) => set('campaignName', e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <Field label="Caption">
-            <textarea
-              className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-              rows={4}
-              value={form.caption}
-              onChange={(e) => set('caption', e.target.value)}
-            />
-          </Field>
-
-          <Field label="Hashtags">
-            <input
-              type="text"
-              className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-              placeholder="#tag1 #tag2"
-              value={form.hashtags}
-              onChange={(e) => set('hashtags', e.target.value)}
-            />
-          </Field>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="isBoosted"
-              checked={form.isBoosted}
-              onChange={(e) => set('isBoosted', e.target.checked)}
-            />
-            <label htmlFor="isBoosted" className="text-sm">
-              Boosted Post
             </label>
-          </div>
-
-          {form.isBoosted && (
-            <Field label="Boost Budget (PHP)">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-                value={form.boostBudgetPhp}
-                onChange={(e) =>
-                  set('boostBudgetPhp', e.target.value === '' ? '' : Number(e.target.value))
-                }
-              />
-            </Field>
           )}
         </fieldset>
 
-        {/* Engagement Metrics */}
-        <fieldset className="space-y-4">
-          <legend className="mb-2 text-lg font-semibold">Engagement Metrics</legend>
+        {/* Campaign name */}
+        <div>
+          <label className="mb-1 block text-sm font-semibold" htmlFor="campaignName">
+            Campaign Name
+          </label>
+          <input
+            id="campaignName"
+            type="text"
+            required
+            placeholder="e.g. Spring Fundraiser 2026"
+            className="border-border bg-background w-full rounded-lg border px-3 py-2 text-sm focus:border-primary focus:ring-primary/20 focus:ring-2 focus:outline-none"
+            value={campaignName}
+            onChange={(e) => setCampaignName(e.target.value)}
+          />
+        </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            {(
-              [
-                ['impressions', 'Impressions'],
-                ['reach', 'Reach'],
-                ['likes', 'Likes'],
-                ['comments', 'Comments'],
-                ['shares', 'Shares'],
-                ['saves', 'Saves'],
-                ['clickThroughs', 'Click-Throughs'],
-                ['videoViews', 'Video Views'],
-                ['engagementRate', 'Engagement Rate (%)'],
-                ['donationReferrals', 'Donation Referrals'],
-                ['estimatedDonationValuePhp', 'Est. Donation Value (PHP)'],
-              ] as const
-            ).map(([key, label]) => (
-              <Field key={key} label={label}>
-                <input
-                  type="number"
-                  min="0"
-                  step={key === 'engagementRate' ? '0.01' : '1'}
-                  className="border-border w-full rounded border bg-transparent px-3 py-1.5 text-sm"
-                  value={form[key]}
-                  onChange={(e) =>
-                    set(key, e.target.value === '' ? '' : Number(e.target.value))
-                  }
-                />
-              </Field>
-            ))}
+        {/* Caption / primary text */}
+        <div>
+          <label className="mb-1 block text-sm font-semibold" htmlFor="caption">
+            Ad Copy
+          </label>
+          <textarea
+            id="caption"
+            required
+            rows={4}
+            placeholder="Write the primary text for your ad..."
+            className="border-border bg-background w-full rounded-lg border px-3 py-2 text-sm focus:border-primary focus:ring-primary/20 focus:ring-2 focus:outline-none"
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+          />
+          <p className="text-muted-foreground mt-1 text-xs">
+            {caption.length} characters &middot; Recommended under 125 for best performance
+          </p>
+        </div>
+
+        {/* Daily budget */}
+        <div>
+          <label className="mb-1 block text-sm font-semibold" htmlFor="budget">
+            Daily Budget (USD)
+          </label>
+          <div className="relative">
+            <span className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+              $
+            </span>
+            <input
+              id="budget"
+              type="number"
+              required
+              min={1}
+              step={0.01}
+              placeholder="5.00"
+              className="border-border bg-background w-full rounded-lg border py-2 pl-7 pr-3 text-sm focus:border-primary focus:ring-primary/20 focus:ring-2 focus:outline-none"
+              value={dailyBudget}
+              onChange={(e) =>
+                setDailyBudget(e.target.value === '' ? '' : Number(e.target.value))
+              }
+            />
           </div>
-        </fieldset>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Campaign is created <strong>paused</strong> — no money is spent until
+            you activate it in Ads Manager.
+          </p>
+        </div>
 
+        {/* Preview banner */}
+        <div className="bg-secondary/50 border-border rounded-xl border p-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Campaign Preview
+          </p>
+          <div className="grid gap-1 text-sm">
+            <p>
+              <span className="text-muted-foreground">Audience:</span>{' '}
+              <strong>{preset.label}</strong>
+            </p>
+            <p>
+              <span className="text-muted-foreground">Headline:</span>{' '}
+              {preset.headline}
+            </p>
+            <p>
+              <span className="text-muted-foreground">CTA Button:</span>{' '}
+              {preset.callToAction.replace('_', ' ')}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Link:</span>{' '}
+              <span className="break-all">{preset.linkUrl}</span>
+            </p>
+            <p>
+              <span className="text-muted-foreground">Targeting:</span> US,
+              ages 18-65
+              {preset.genders ? ', women only' : ', all genders'}
+            </p>
+            {dailyBudget ? (
+              <p>
+                <span className="text-muted-foreground">Budget:</span>{' '}
+                ${Number(dailyBudget).toFixed(2)}/day
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Submit */}
         <div className="flex gap-3">
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Saving...' : 'Create Post'}
+          <Button type="submit" disabled={submitting} className="gap-2">
+            {submitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Creating Campaign...
+              </>
+            ) : (
+              <>
+                <Megaphone className="size-4" />
+                Create Paused Campaign
+              </>
+            )}
           </Button>
-          <Button type="button" variant="outline" onClick={() => navigate('/social/posts')}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/social/posts')}
+          >
             Cancel
           </Button>
         </div>
       </form>
-    </div>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="text-muted-foreground mb-1 block text-xs">{label}</label>
-      {children}
     </div>
   )
 }
