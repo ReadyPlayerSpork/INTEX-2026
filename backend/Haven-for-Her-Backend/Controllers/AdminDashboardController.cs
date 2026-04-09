@@ -189,8 +189,9 @@ public class AdminDashboardController(HavenForHerBackendDbContext db) : Controll
             .ToList();
 
         // ── Social ─────────────────────────────────────────────────────
+        var startOfMonthUtc = DateTime.SpecifyKind(startOfMonth.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
         var postsThisMonth = await db.SocialMediaPosts
-            .Where(p => p.CreatedAt >= startOfMonth.ToDateTime(TimeOnly.MinValue))
+            .Where(p => p.CreatedAt >= startOfMonthUtc)
             .ToListAsync();
 
         var totalImpressions = postsThisMonth.Sum(p => p.Impressions);
