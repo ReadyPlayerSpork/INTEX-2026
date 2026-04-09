@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, TrendingUp, Brain, RefreshCw } from 'lucide-react'
 import { api } from '@/api/client'
-import { getResidentAlerts, retrainModels, type IncidentRiskAlert } from '@/api/mlApi'
+import { getResidentAlerts, retrainModels, getMLStatus, type IncidentRiskAlert, type MLStatus } from '@/api/mlApi'
 import { QuickActions } from '@/components/admin/QuickActions'
 import { SafehouseOccupancy } from '@/components/admin/SafehouseOccupancy'
 import { DonorHealth } from '@/components/admin/DonorHealth'
@@ -221,6 +221,7 @@ export function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [mlAlerts, setMlAlerts] = useState<IncidentRiskAlert[] | null>(null)
+  const [mlStatus, setMlStatus] = useState<MLStatus | null>(null)
   const [isRetraining, setIsRetraining] = useState(false)
 
   const handleRetrain = async () => {
@@ -228,10 +229,13 @@ export function AdminDashboardPage() {
     try {
       const res = await retrainModels()
       if (res && res.status === 'success') {
-        alert('Models retrained successfully!')
-        // Optionally refresh alerts
-        const updatedAlerts = await getResidentAlerts()
+        // Refresh alerts and status
+        const [updatedAlerts, updatedStatus] = await Promise.all([
+          getResidentAlerts(),
+          getMLStatus()
+        ])
         setMlAlerts(updatedAlerts)
+        setMlStatus(updatedStatus)
       } else {
         alert('Failed to retrain models.')
       }
@@ -250,6 +254,7 @@ export function AdminDashboardPage() {
       .finally(() => setLoading(false))
 
     getResidentAlerts().then(setMlAlerts).catch(() => { /* ML service unavailable */ })
+    getMLStatus().then(setMlStatus).catch(() => { /* No metadata yet */ })
   }, [])
 
   if (loading) return <DashboardSkeleton />
@@ -365,48 +370,94 @@ export function AdminDashboardPage() {
         donationsByType={fin.donationsByType}
         topCampaigns={fin.topCampaigns}
         recurringVsOneTime={fin.recurringVsOneTime}
-      />
-
-      {mlAlerts && mlAlerts.length > 0 && (
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
-          {isRetraining && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md transition-all duration-500 animate-in fade-in">
-              <div className="relative flex flex-col items-center gap-6 rounded-3xl border border-white/20 bg-card/40 p-10 text-center shadow-2xl backdrop-blur-xl max-w-sm overflow-hidden">
-                {/* Decorative background element */}
-                <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-                <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-                
-                <div className="relative">
-                  <RefreshCw className="text-primary size-12 animate-spin transition-all duration-1000" />
-                  <div className="absolute inset-0 size-12 rounded-full border-4 border-primary/20" />
+      />      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+        {isRetraining && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md transition-all duration-500 animate-in fade-in">
+            <div className="relative flex flex-col items-center gap-6 rounded-3xl border border-white/20 bg-card/40 p-10 text-center shadow-2xl backdrop-blur-xl max-w-sm overflow-hidden">
+              {/* Decorative background element */}
+              <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+              <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+              
+              <div className="relative">
+                <RefreshCw className="text-primary size-12 animate-spin transition-all duration-1000" />
+                <div className="absolute inset-0 size-12 rounded-full border-4 border-primary/20" />
+              </div>
+              
+              <div className="space-y-3">
+                <h3 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+                  Calibrating Intelligence
+                </h3>
+                <div className="space-y-2">
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    Connecting to the live PostgreSQL cluster to process the latest resident and donor data.
+                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
+                  </div>
                 </div>
-                
-                <div className="space-y-3">
-                  <h3 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-                    Calibrating Intelligence
-                  </h3>
-                  <div className="space-y-2">
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                      Connecting to the live PostgreSQL cluster to process the latest resident and donor data.
-                    </p>
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
-                    </div>
-                  </div>
-                  <div className="pt-4 border-t border-border/50">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">
-                      Training 5 Predictive Engines
-                    </p>
-                    <p className="text-[10px] font-medium text-muted-foreground mt-1">
-                      ESTIMATED TIME: ~120 SECONDS
-                    </p>
-                  </div>
+                <div className="pt-4 border-t border-border/50">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">
+                    Training 5 Predictive Engines
+                  </p>
+                  <p className="text-[10px] font-medium text-muted-foreground mt-1">
+                    ESTIMATED TIME: ~120 SECONDS
+                  </p>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+              <Brain className="text-primary size-5" />
+            </div>
+            <div>
+              <h3 className="font-heading text-base font-semibold text-card-foreground">
+                Intelligence Governance
+              </h3>
+              <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
+                Model Status: {mlStatus?.last_trained ? (
+                  <span className="text-green-600">Dynamic (Live Data)</span>
+                ) : (
+                  <span className="text-amber-600">Static (Initialization)</span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-tight">
+                Last Trained
+              </p>
+              <p className="text-card-foreground text-xs font-semibold">
+                {mlStatus?.last_trained 
+                  ? new Date(mlStatus.last_trained).toLocaleString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric', 
+                      hour: 'numeric', 
+                      minute: '2-digit' 
+                    })
+                  : 'Never (Run Initial Train)'}
+              </p>
+            </div>
+            <button
+              onClick={handleRetrain}
+              disabled={isRetraining}
+              className="group relative flex items-center gap-2 overflow-hidden rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition-all hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(111,88,255,0.4)] disabled:opacity-50"
+            >
+              <RefreshCw className={`size-3.5 ${isRetraining ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+              {isRetraining ? 'Processing...' : 'Retrain Models'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {mlAlerts && mlAlerts.length > 0 && (
+        <div className="overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
           <div className="mb-4 flex items-center gap-2">
             <Brain className="text-primary size-5" />
             <h3 className="font-heading text-base font-semibold text-card-foreground">
@@ -415,15 +466,8 @@ export function AdminDashboardPage() {
             <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
               {mlAlerts.length} flagged
             </span>
-            <button
-              onClick={handleRetrain}
-              disabled={isRetraining}
-              className="ml-auto flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <RefreshCw className={`size-3 ${isRetraining ? 'animate-spin' : ''}`} />
-              {isRetraining ? 'Retraining...' : 'Retrain Models'}
-            </button>
           </div>
+>
           <p className="text-muted-foreground mb-3 text-xs">
             Residents predicted to have elevated incident escalation risk by the ML model.
           </p>

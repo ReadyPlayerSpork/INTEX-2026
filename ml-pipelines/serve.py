@@ -809,6 +809,27 @@ def retrain_models():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/ml/status", methods=["GET"])
+def get_ml_status():
+    """Returns the current status and performance of all models from metadata.json."""
+    try:
+        metadata_path = os.path.join(MODEL_DIR, "metadata.json")
+        if not os.path.exists(metadata_path):
+            return jsonify({
+                "status": "partial",
+                "message": "Model metadata not found. Models may have been initialized but not fully trained through the production pipeline.",
+                "last_trained": None,
+                "models": {}
+            })
+            
+        with open(metadata_path, 'r') as f:
+            metadata = json.load(f)
+            
+        return jsonify(metadata)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------

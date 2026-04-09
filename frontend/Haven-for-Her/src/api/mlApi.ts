@@ -115,3 +115,18 @@ export async function predictSocialMediaPost(data: SocialMediaPostData): Promise
 export async function retrainModels(): Promise<{ status: string; message: string; timestamp: string }> {
   return api.post('/api/ml/retrain')
 }
+
+export interface MLStatus {
+  status: string
+  last_trained: string
+  models: Record<string, {
+    trained_at: string
+    roc_auc?: number
+    r2?: number
+    test_samples: number
+  }>
+}
+
+export async function getMLStatus(): Promise<MLStatus> {
+  return api.get('/api/ml/status')
+}
