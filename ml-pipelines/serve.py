@@ -564,8 +564,7 @@ def incident_risk_alerts():
             if prob >= 0.5:
                 alerts.append({
                     "ResidentId": int(row["ResidentId"]),
-                    "FirstName": row.get("FirstName", ""),
-                    "LastName": row.get("LastName", ""),
+                    "InternalCode": row.get("InternalCode", f"RES-{row['ResidentId']}"),
                     "EscalationProbability": round(prob, 4),
                     "RiskLevel": _risk_level(prob),
                     "CurrentRiskLevel": row.get("CurrentRiskLevel", ""),

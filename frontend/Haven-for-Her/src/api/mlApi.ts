@@ -32,8 +32,7 @@ export interface IncidentRiskPrediction {
 
 export interface IncidentRiskAlert {
   residentId: number
-  firstName: string
-  lastName: string
+  internalCode: string
   escalationProbability: number
   riskLevel: 'Low' | 'Medium' | 'High'
   currentRiskLevel: string

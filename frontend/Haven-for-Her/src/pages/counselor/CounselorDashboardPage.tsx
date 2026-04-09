@@ -113,7 +113,7 @@ export function CounselorDashboardPage() {
               <tbody>
                 {mlAlerts.slice(0, 6).map((a) => (
                   <tr key={a.residentId} className="border-border border-b">
-                    <td className="px-3 py-2">{a.firstName} {a.lastName}</td>
+                    <td className="px-3 py-2">{a.internalCode}</td>
                     <td className="px-3 py-2">{a.currentRiskLevel}</td>
                     <td className="px-3 py-2 tabular-nums">{(a.escalationProbability * 100).toFixed(1)}%</td>
                     <td className="px-3 py-2">
