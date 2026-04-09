@@ -70,6 +70,18 @@ export const counselorApi = {
     return api.put(`/api/counselor/sessions/${recordingId}`, data)
   },
 
+  deleteSession(recordingId: number): Promise<{ message: string }> {
+    return api.delete(`/api/counselor/sessions/${recordingId}`)
+  },
+
+  updateVisitation(visitationId: number, data: unknown): Promise<{ message: string }> {
+    return api.put(`/api/counselor/visitations/${visitationId}`, data)
+  },
+
+  deleteVisitation(visitationId: number): Promise<{ message: string }> {
+    return api.delete(`/api/counselor/visitations/${visitationId}`)
+  },
+
   getSessions(params?: {
     residentId?: number
     sessionType?: string

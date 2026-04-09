@@ -1,4 +1,5 @@
 using Haven_for_Her_Backend.Data;
+using Haven_for_Her_Backend.Dtos;
 using Haven_for_Her_Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,8 @@ namespace Haven_for_Her_Backend.Controllers;
 public class CaseloadController(
     HavenForHerBackendDbContext db) : ControllerBase
 {
+    private const int CascadePreviewLimit = 5;
+
     /// <summary>
     /// Paginated list of all residents with search and filters.
     /// </summary>
@@ -21,6 +24,8 @@ public class CaseloadController(
         [FromQuery] string? status,
         [FromQuery] int? safehouseId,
         [FromQuery] string? riskLevel,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -45,8 +50,20 @@ public class CaseloadController(
 
         var totalCount = await query.CountAsync();
 
+        var desc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.ToLower() switch
+        {
+            "casecontrolno" => desc ? query.OrderByDescending(r => r.CaseControlNo) : query.OrderBy(r => r.CaseControlNo),
+            "internalcode" => desc ? query.OrderByDescending(r => r.InternalCode) : query.OrderBy(r => r.InternalCode),
+            "safehousename" => desc ? query.OrderByDescending(r => r.Safehouse.Name) : query.OrderBy(r => r.Safehouse.Name),
+            "casestatus" => desc ? query.OrderByDescending(r => r.CaseStatus) : query.OrderBy(r => r.CaseStatus),
+            "currentrisklevel" => desc ? query.OrderByDescending(r => r.CurrentRiskLevel) : query.OrderBy(r => r.CurrentRiskLevel),
+            "assignedsocialworker" => desc ? query.OrderByDescending(r => r.AssignedSocialWorker) : query.OrderBy(r => r.AssignedSocialWorker),
+            "dateofadmission" => desc ? query.OrderByDescending(r => r.DateOfAdmission) : query.OrderBy(r => r.DateOfAdmission),
+            _ => query.OrderByDescending(r => r.DateOfAdmission),
+        };
+
         var items = await query
-            .OrderByDescending(r => r.DateOfAdmission)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new
@@ -299,4 +316,129 @@ public class CaseloadController(
 
         return Ok(new { message = "Resident created.", residentId = resident.ResidentId });
     }
+
+    // ── Cascade Info ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Get counts of related records that would be deleted with a resident.
+    /// </summary>
+    [HttpGet("{id:int}/cascade-info")]
+    [Authorize(Roles = AuthRoles.Admin)]
+    public async Task<IActionResult> GetCascadeInfo(int id)
+    {
+        var exists = await db.Residents.AnyAsync(r => r.ResidentId == id);
+        if (!exists) return NotFound();
+
+        var recordingCount = await db.ProcessRecordings.CountAsync(pr => pr.ResidentId == id);
+        var recordingRecords = await db.ProcessRecordings
+            .Where(pr => pr.ResidentId == id)
+            .OrderByDescending(pr => pr.SessionDate)
+            .Select(pr => new { pr.SessionType, pr.SessionDate })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        var visitationCount = await db.HomeVisitations.CountAsync(hv => hv.ResidentId == id);
+        var visitationRecords = await db.HomeVisitations
+            .Where(hv => hv.ResidentId == id)
+            .OrderByDescending(hv => hv.VisitDate)
+            .Select(hv => new { hv.VisitType, hv.VisitDate })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        var educationCount = await db.EducationRecords.CountAsync(er => er.ResidentId == id);
+        var educationRecords = await db.EducationRecords
+            .Where(er => er.ResidentId == id)
+            .OrderByDescending(er => er.RecordDate)
+            .Select(er => new { er.SchoolName, er.RecordDate })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        var healthCount = await db.HealthWellbeingRecords.CountAsync(h => h.ResidentId == id);
+        var healthRecords = await db.HealthWellbeingRecords
+            .Where(h => h.ResidentId == id)
+            .OrderByDescending(h => h.RecordDate)
+            .Select(h => h.RecordDate)
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        var interventionCount = await db.InterventionPlans.CountAsync(ip => ip.ResidentId == id);
+        var interventionRecords = await db.InterventionPlans
+            .Where(ip => ip.ResidentId == id)
+            .OrderByDescending(ip => ip.TargetDate)
+            .Select(ip => new { ip.PlanCategory, ip.TargetDate })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        var incidentCount = await db.IncidentReports.CountAsync(ir => ir.ResidentId == id);
+        var incidentRecords = await db.IncidentReports
+            .Where(ir => ir.ResidentId == id)
+            .OrderByDescending(ir => ir.IncidentDate)
+            .Select(ir => new { ir.IncidentType, ir.IncidentDate })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        return Ok(new List<CascadeImpactDto>
+        {
+            BuildImpact(
+                "counseling sessions",
+                "delete",
+                recordingCount,
+                recordingRecords.Select(pr => $"{pr.SessionType} session on {FormatDate(pr.SessionDate)}").ToList()),
+            BuildImpact(
+                "home visitations",
+                "delete",
+                visitationCount,
+                visitationRecords.Select(hv => $"{hv.VisitType} on {FormatDate(hv.VisitDate)}").ToList()),
+            BuildImpact(
+                "education records",
+                "delete",
+                educationCount,
+                educationRecords.Select(er => $"{er.SchoolName} ({FormatDate(er.RecordDate)})").ToList()),
+            BuildImpact(
+                "health records",
+                "delete",
+                healthCount,
+                healthRecords.Select(date => $"Health record on {FormatDate(date)}").ToList()),
+            BuildImpact(
+                "intervention plans",
+                "delete",
+                interventionCount,
+                interventionRecords.Select(ip => $"{ip.PlanCategory} plan due {FormatDate(ip.TargetDate)}").ToList()),
+            BuildImpact(
+                "incident reports",
+                "delete",
+                incidentCount,
+                incidentRecords.Select(ir => $"{ir.IncidentType} on {FormatDate(ir.IncidentDate)}").ToList()),
+        });
+    }
+
+    // ── Delete Resident ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Delete a resident and all related records (Admin only).
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = AuthRoles.Admin)]
+    public async Task<IActionResult> DeleteResident(int id)
+    {
+        var resident = await db.Residents.FindAsync(id);
+        if (resident is null) return NotFound();
+
+        // EF cascade deletes handle child records
+        db.Residents.Remove(resident);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Resident deleted." });
+    }
+
+    private static CascadeImpactDto BuildImpact(string label, string action, int count, IReadOnlyList<string> records) =>
+        new()
+        {
+            Label = label,
+            Action = action,
+            Count = count,
+            Records = records,
+        };
+
+    private static string FormatDate(DateOnly date) => date.ToString("MMM d, yyyy");
 }

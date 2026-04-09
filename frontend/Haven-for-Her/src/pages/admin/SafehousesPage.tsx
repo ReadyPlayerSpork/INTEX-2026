@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-
-/* ---------- Types ---------- */
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DataTable, type ColumnDef } from '@/components/DataTable'
+import { useServerTable } from '@/hooks/useServerTable'
+import type { CascadeImpact } from '@/types/cascade'
 
 interface Safehouse {
   safehouseId: number
@@ -20,11 +21,6 @@ interface Safehouse {
   currentOccupancy: number
   openDate: string
   notes?: string
-}
-
-interface PagedResult {
-  items: Safehouse[]
-  totalCount: number
 }
 
 interface SafehouseForm {
@@ -55,59 +51,54 @@ const EMPTY_FORM: SafehouseForm = {
   notes: '',
 }
 
-/* ---------- Page ---------- */
+const columns: ColumnDef<Safehouse>[] = [
+  { key: 'name', header: 'Name', sortable: true },
+  { key: 'safehouseCode', header: 'Code', sortable: true },
+  {
+    key: 'city',
+    header: 'Location',
+    sortable: true,
+    render: (row) => `${row.city}, ${row.province}`,
+  },
+  { key: 'status', header: 'Status', sortable: true },
+  {
+    key: 'capacityGirls',
+    header: 'Capacity',
+    sortable: true,
+    render: (row) => `${row.capacityGirls} Girls / ${row.capacityStaff} Staff`,
+  },
+  { key: 'currentOccupancy', header: 'Occupancy', sortable: true },
+  {
+    key: 'openDate',
+    header: 'Open Date',
+    sortable: true,
+    render: (row) => row.openDate?.split('T')[0] ?? '-',
+  },
+]
 
 export function SafehousesPage() {
-  const [items, setItems] = useState<Safehouse[]>([])
-  const [totalCount, setTotalCount] = useState(0)
-  const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const pageSize = 20
-
-  /* filters */
   const [filterRegion, setFilterRegion] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
-
-  /* form state */
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<SafehouseForm>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
-  /* delete */
-  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const filters = useMemo(
+    () => ({ region: filterRegion, status: filterStatus }),
+    [filterRegion, filterStatus],
+  )
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
-      if (filterRegion) params.set('region', filterRegion)
-      if (filterStatus) params.set('status', filterStatus)
-      const res = await api.get<PagedResult>(`/api/admin/safehouses?${params}`)
-      setItems(res.items)
-      setTotalCount(res.totalCount)
-    } catch (err) {
-      setError(String(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [page, filterRegion, filterStatus])
+  const table = useServerTable<Safehouse>({
+    endpoint: '/api/admin/safehouses',
+    pageSize: 20,
+    defaultSort: 'name',
+    defaultDirection: 'asc',
+    filters,
+  })
 
-  useEffect(() => {
-    void fetchData()
-  }, [fetchData])
-
-  const totalPages = Math.ceil(totalCount / pageSize)
-
-  const openCreate = () => {
-    setEditingId(null)
-    setForm(EMPTY_FORM)
-    setShowForm(true)
-  }
-
-  const openEdit = (s: Safehouse) => {
+  function openEdit(s: Safehouse) {
     setEditingId(s.safehouseId)
     setForm({
       name: s.name,
@@ -125,30 +116,28 @@ export function SafehousesPage() {
     setShowForm(true)
   }
 
-  const handleSave = async () => {
+  function cancelForm() {
+    setForm(EMPTY_FORM)
+    setEditingId(null)
+    setShowForm(false)
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
     setSaving(true)
+    setError('')
     try {
       if (editingId) {
         await api.put(`/api/admin/safehouses/${editingId}`, form)
       } else {
         await api.post('/api/admin/safehouses', form)
       }
-      setShowForm(false)
-      await fetchData()
+      cancelForm()
+      table.refresh()
     } catch (err) {
-      setError(String(err))
+      setError(err instanceof Error ? err.message : 'Failed to save safehouse.')
     } finally {
       setSaving(false)
-    }
-  }
-
-  const handleDelete = async (id: number) => {
-    try {
-      await api.delete(`/api/admin/safehouses/${id}`)
-      setDeletingId(null)
-      await fetchData()
-    } catch (err) {
-      setError(String(err))
     }
   }
 
@@ -157,59 +146,31 @@ export function SafehousesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-            Admin safehouses
-          </p>
-          <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
-            Safehouses
-          </h1>
-        </div>
-        <Button onClick={openCreate}>+ New Safehouse</Button>
+    <div className="mx-auto max-w-7xl px-4 py-12">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Safehouses</h1>
+        <Button onClick={() => (showForm ? cancelForm() : setShowForm(true))}>
+          {showForm ? 'Cancel' : 'New Safehouse'}
+        </Button>
       </div>
 
-      {error && <p className="text-destructive mb-4">{error}</p>}
+      {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
 
-      {/* Filters */}
-      <div className="flex gap-3 mb-4">
-        <Input
-          type="text"
-          placeholder="Filter region..."
-          value={filterRegion}
-          onChange={(e) => { setFilterRegion(e.target.value); setPage(1) }}
-          className="max-w-xs"
-        />
-        <select
-          value={filterStatus}
-          onChange={(e) => { setFilterStatus(e.target.value); setPage(1) }}
-          className="border-input bg-background flex h-10 w-full max-w-xs rounded-md border px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <option value="">All Statuses</option>
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-          <option value="Maintenance">Maintenance</option>
-          <option value="Full">Full</option>
-        </select>
-      </div>
-
-      {/* Create / Edit form */}
       {showForm && (
-        <Card className="mb-6 border-border/70 bg-card/95">
-          <CardContent className="space-y-3 p-4">
-          <h2 className="font-semibold">{editingId ? 'Edit Safehouse' : 'Create Safehouse'}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Input placeholder="Name" value={form.name} onChange={(e) => updateField('name', e.target.value)} />
-            <Input placeholder="Code" value={form.safehouseCode} onChange={(e) => updateField('safehouseCode', e.target.value)} />
-            <Input placeholder="Region" value={form.region} onChange={(e) => updateField('region', e.target.value)} />
-            <Input placeholder="City" value={form.city} onChange={(e) => updateField('city', e.target.value)} />
-            <Input placeholder="Province" value={form.province} onChange={(e) => updateField('province', e.target.value)} />
-            <Input placeholder="Country" value={form.country} onChange={(e) => updateField('country', e.target.value)} />
+        <form onSubmit={handleSave} className="bg-card border-border mb-6 rounded-lg border p-6">
+          <h2 className="mb-4 text-lg font-semibold">{editingId ? 'Edit Safehouse' : 'New Safehouse'}</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <Input placeholder="Name" required value={form.name} onChange={(e) => updateField('name', e.target.value)} />
+            <Input placeholder="Code" required value={form.safehouseCode} onChange={(e) => updateField('safehouseCode', e.target.value)} />
+            <Input placeholder="Region" required value={form.region} onChange={(e) => updateField('region', e.target.value)} />
+            <Input placeholder="City" required value={form.city} onChange={(e) => updateField('city', e.target.value)} />
+            <Input placeholder="Province" required value={form.province} onChange={(e) => updateField('province', e.target.value)} />
+            <Input placeholder="Country" required value={form.country} onChange={(e) => updateField('country', e.target.value)} />
             <select
+              required
               value={form.status}
               onChange={(e) => updateField('status', e.target.value)}
-              className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm"
             >
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
@@ -218,81 +179,61 @@ export function SafehousesPage() {
             </select>
             <Input type="number" placeholder="Capacity (Girls)" value={form.capacityGirls || ''} onChange={(e) => updateField('capacityGirls', Number(e.target.value))} />
             <Input type="number" placeholder="Capacity (Staff)" value={form.capacityStaff || ''} onChange={(e) => updateField('capacityStaff', Number(e.target.value))} />
-            <Input type="date" placeholder="Open Date" value={form.openDate} onChange={(e) => updateField('openDate', e.target.value)} />
+            <Input type="date" placeholder="Open Date" required value={form.openDate} onChange={(e) => updateField('openDate', e.target.value)} />
             <Input className="col-span-2" placeholder="Notes" value={form.notes} onChange={(e) => updateField('notes', e.target.value)} />
           </div>
-          <div className="flex gap-2 mt-4">
-            <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
-            <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+          <div className="mt-4">
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Saving...' : editingId ? 'Update Safehouse' : 'Save Safehouse'}
+            </Button>
           </div>
-          </CardContent>
-        </Card>
+        </form>
       )}
 
-      {/* Table */}
-      {loading ? (
-        <p className="animate-pulse">Loading...</p>
-      ) : (
-        <>
-          <Card className="overflow-hidden border-border/70 bg-card/95">
-            <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-border bg-secondary/50 border-b text-left">
-                  <th className="px-3 py-2">Name</th>
-                  <th className="px-3 py-2">Code</th>
-                  <th className="px-3 py-2">Location</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Capacity</th>
-                  <th className="px-3 py-2">Occupancy</th>
-                  <th className="px-3 py-2">Open Date</th>
-                  <th className="px-3 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((s) => (
-                  <tr key={s.safehouseId} className="border-border/70 hover:bg-secondary/40 border-b transition-colors">
-                    <td className="px-3 py-2">{s.name}</td>
-                    <td className="px-3 py-2">{s.safehouseCode}</td>
-                    <td className="px-3 py-2">{s.city}, {s.province}</td>
-                    <td className="px-3 py-2">{s.status}</td>
-                    <td className="px-3 py-2">{s.capacityGirls} Girls / {s.capacityStaff} Staff</td>
-                    <td className="px-3 py-2">{s.currentOccupancy}</td>
-                    <td className="px-3 py-2">{s.openDate?.split('T')[0]}</td>
-                    <td className="px-3 py-2 flex gap-1">
-                      <Button size="sm" variant="outline" onClick={() => openEdit(s)}>Edit</Button>
-                      {deletingId === s.safehouseId ? (
-                        <>
-                          <Button size="sm" variant="destructive" onClick={() => handleDelete(s.safehouseId)}>Confirm</Button>
-                          <Button size="sm" variant="outline" onClick={() => setDeletingId(null)}>Cancel</Button>
-                        </>
-                      ) : (
-                        <Button size="sm" variant="outline" onClick={() => setDeletingId(s.safehouseId)}>Delete</Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {items.length === 0 && (
-                  <tr><td colSpan={9} className="text-muted-foreground px-3 py-4 text-center">No safehouses found.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-            </CardContent>
-          </Card>
+      <div className="mb-4 flex flex-wrap gap-3">
+        <Input
+          type="text"
+          placeholder="Filter region..."
+          value={filterRegion}
+          onChange={(e) => setFilterRegion(e.target.value)}
+          className="w-48"
+        />
+        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All statuses</SelectItem>
+              <SelectItem value="Active">Active</SelectItem>
+              <SelectItem value="Inactive">Inactive</SelectItem>
+              <SelectItem value="Maintenance">Maintenance</SelectItem>
+              <SelectItem value="Full">Full</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
 
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">Page {page} of {totalPages} ({totalCount} total)</p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <DataTable
+        columns={columns}
+        data={table.items}
+        rowKey={(row) => row.safehouseId}
+        sort={table.sort}
+        onSort={table.setSort}
+        page={table.page}
+        totalPages={table.totalPages}
+        totalCount={table.totalCount}
+        onPageChange={table.setPage}
+        loading={table.loading}
+        onEdit={(row) => openEdit(row)}
+        onDelete={async (row) => {
+          await api.delete(`/api/admin/safehouses/${row.safehouseId}`)
+          table.refresh()
+        }}
+        getCascadeInfo={(row) => api.get<CascadeImpact[]>(`/api/admin/safehouses/${row.safehouseId}/cascade-info`)}
+        deleteEntityLabel="safehouse"
+        getDeleteName={(row) => `${row.name} (${row.safehouseCode})`}
+      />
     </div>
   )
 }

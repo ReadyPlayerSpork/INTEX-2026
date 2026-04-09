@@ -19,6 +19,8 @@ public class InterventionsController(
     public async Task<IActionResult> GetInterventions(
         [FromQuery] string? category,
         [FromQuery] string? status,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -37,8 +39,17 @@ public class InterventionsController(
 
         var totalCount = await query.CountAsync();
 
+        var desc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.ToLower() switch
+        {
+            "plancategory" => desc ? query.OrderByDescending(ip => ip.PlanCategory) : query.OrderBy(ip => ip.PlanCategory),
+            "status" => desc ? query.OrderByDescending(ip => ip.Status) : query.OrderBy(ip => ip.Status),
+            "targetdate" => desc ? query.OrderByDescending(ip => ip.TargetDate) : query.OrderBy(ip => ip.TargetDate),
+            "residentcode" => desc ? query.OrderByDescending(ip => ip.Resident.InternalCode) : query.OrderBy(ip => ip.Resident.InternalCode),
+            _ => query.OrderByDescending(ip => ip.CreatedAt),
+        };
+
         var items = await query
-            .OrderByDescending(ip => ip.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(ip => new
@@ -102,5 +113,20 @@ public class InterventionsController(
         await db.SaveChangesAsync();
 
         return Ok(new { message = "Intervention plan updated." });
+    }
+
+    /// <summary>
+    /// Delete an intervention plan.
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteIntervention(int id)
+    {
+        var plan = await db.InterventionPlans.FindAsync(id);
+        if (plan is null) return NotFound();
+
+        db.InterventionPlans.Remove(plan);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Intervention plan deleted." });
     }
 }

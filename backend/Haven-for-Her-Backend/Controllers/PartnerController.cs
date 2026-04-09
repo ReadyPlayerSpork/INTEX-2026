@@ -12,10 +12,14 @@ namespace Haven_for_Her_Backend.Controllers;
 [Authorize(Roles = AuthRoles.Admin)]
 public class PartnerController(HavenForHerBackendDbContext db) : ControllerBase
 {
+    private const int CascadePreviewLimit = 5;
+
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? region,
         [FromQuery] string? status,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -35,8 +39,19 @@ public class PartnerController(HavenForHerBackendDbContext db) : ControllerBase
 
         var totalCount = await query.CountAsync();
 
+        var desc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.ToLower() switch
+        {
+            "partnername" => desc ? query.OrderByDescending(p => p.PartnerName) : query.OrderBy(p => p.PartnerName),
+            "partnertype" => desc ? query.OrderByDescending(p => p.PartnerType) : query.OrderBy(p => p.PartnerType),
+            "region" => desc ? query.OrderByDescending(p => p.Region) : query.OrderBy(p => p.Region),
+            "status" => desc ? query.OrderByDescending(p => p.Status) : query.OrderBy(p => p.Status),
+            "email" => desc ? query.OrderByDescending(p => p.Email) : query.OrderBy(p => p.Email),
+            "startdate" => desc ? query.OrderByDescending(p => p.StartDate) : query.OrderBy(p => p.StartDate),
+            _ => query.OrderBy(p => p.PartnerName),
+        };
+
         var items = await query
-            .OrderBy(p => p.PartnerName)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new
@@ -137,6 +152,40 @@ public class PartnerController(HavenForHerBackendDbContext db) : ControllerBase
         return Ok(new { message = "Partner updated.", existing.PartnerId });
     }
 
+    /// <summary>
+    /// Get counts of related records for a partner.
+    /// </summary>
+    [HttpGet("{id:int}/cascade-info")]
+    public async Task<IActionResult> GetCascadeInfo(int id)
+    {
+        var exists = await db.Partners.AnyAsync(p => p.PartnerId == id);
+        if (!exists) return NotFound();
+
+        var assignmentCount = await db.PartnerAssignments.CountAsync(a => a.PartnerId == id);
+        var assignmentRecords = await db.PartnerAssignments
+            .Where(a => a.PartnerId == id)
+            .OrderByDescending(a => a.AssignmentStart)
+            .Select(a => new
+            {
+                a.ProgramArea,
+                a.AssignmentStart,
+                SafehouseName = a.Safehouse != null ? a.Safehouse.Name : null,
+            })
+            .Take(CascadePreviewLimit)
+            .ToListAsync();
+
+        return Ok(new List<CascadeImpactDto>
+        {
+            BuildImpact(
+                "assignments",
+                "block",
+                assignmentCount,
+                assignmentRecords
+                    .Select(a => $"{a.ProgramArea} at {a.SafehouseName ?? "Unassigned safehouse"} ({FormatDate(a.AssignmentStart)})")
+                    .ToList()),
+        });
+    }
+
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -201,4 +250,15 @@ public class PartnerController(HavenForHerBackendDbContext db) : ControllerBase
             assignment.AssignmentId,
         });
     }
+
+    private static CascadeImpactDto BuildImpact(string label, string action, int count, IReadOnlyList<string> records) =>
+        new()
+        {
+            Label = label,
+            Action = action,
+            Count = count,
+            Records = records,
+        };
+
+    private static string FormatDate(DateOnly date) => date.ToString("MMM d, yyyy");
 }

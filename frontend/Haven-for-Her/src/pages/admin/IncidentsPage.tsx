@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
-import type { PaginatedResponse } from '@/api/types'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DataTable, type ColumnDef } from '@/components/DataTable'
+import { useServerTable } from '@/hooks/useServerTable'
 
 interface Incident {
   incidentId: number
@@ -30,11 +33,30 @@ const EMPTY_FORM = {
   resolved: false,
 }
 
+const columns: ColumnDef<Incident>[] = [
+  { key: 'incidentDate', header: 'Date', sortable: true },
+  {
+    key: 'residentCode',
+    header: 'Resident',
+    render: (row) => row.residentCode ?? String(row.residentId),
+  },
+  {
+    key: 'safehouseName',
+    header: 'Safehouse',
+    sortable: true,
+    render: (row) => row.safehouseName ?? '-',
+  },
+  { key: 'incidentType', header: 'Type', sortable: true },
+  { key: 'severity', header: 'Severity', sortable: true },
+  {
+    key: 'resolved',
+    header: 'Resolved',
+    render: (row) => (row.resolved ? 'Yes' : 'No'),
+  },
+  { key: 'reportedBy', header: 'Reported By', sortable: true },
+]
+
 export function IncidentsPage() {
-  const [incidents, setIncidents] = useState<Incident[]>([])
-  const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
-  const [loading, setLoading] = useState(true)
   const [safehouseFilter, setSafehouseFilter] = useState('')
   const [severityFilter, setSeverityFilter] = useState('')
   const [resolvedFilter, setResolvedFilter] = useState('')
@@ -43,30 +65,23 @@ export function IncidentsPage() {
   const [editId, setEditId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const pageSize = 20
 
-  const fetchIncidents = useCallback(async () => {
-    setLoading(true)
-    try {
-      const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
-      if (safehouseFilter) qs.set('safehouseId', safehouseFilter)
-      if (severityFilter) qs.set('severity', severityFilter)
-      if (resolvedFilter) qs.set('resolved', resolvedFilter)
-      const res = await api.get<PaginatedResponse<Incident>>(`/api/incidents?${qs}`)
-      setIncidents(res.items)
-      setTotalCount(res.totalCount)
-    } catch (err) {
-      console.error('Failed to load incidents', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, safehouseFilter, severityFilter, resolvedFilter])
+  const filters = useMemo(
+    () => ({
+      safehouseId: safehouseFilter,
+      severity: severityFilter,
+      resolved: resolvedFilter,
+    }),
+    [safehouseFilter, severityFilter, resolvedFilter],
+  )
 
-  useEffect(() => {
-    void fetchIncidents()
-  }, [fetchIncidents])
-
-  const totalPages = Math.ceil(totalCount / pageSize)
+  const table = useServerTable<Incident>({
+    endpoint: '/api/incidents',
+    pageSize: 20,
+    defaultSort: 'incidentDate',
+    defaultDirection: 'desc',
+    filters,
+  })
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const target = e.target
@@ -105,7 +120,7 @@ export function IncidentsPage() {
         responseTaken: form.responseTaken || '',
         reportedBy: form.reportedBy || '',
         resolved: form.resolved,
-        followUpRequired: false
+        followUpRequired: false,
       }
       if (editId) {
         await api.put(`/api/incidents/${editId}`, body)
@@ -115,9 +130,9 @@ export function IncidentsPage() {
       setForm(EMPTY_FORM)
       setEditId(null)
       setShowForm(false)
-      void fetchIncidents()
+      table.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save incident. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to save incident.')
     } finally {
       setSubmitting(false)
     }
@@ -172,7 +187,7 @@ export function IncidentsPage() {
               <span className="text-sm font-medium">Reported By</span>
               <input name="reportedBy" type="text" required value={form.reportedBy} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
-            <label className="col-span-2 block flex items-center gap-2">
+            <label className="col-span-2 flex items-center gap-2">
               <input name="resolved" type="checkbox" checked={form.resolved} onChange={handleChange} />
               <span className="text-sm">Resolved</span>
             </label>
@@ -195,91 +210,60 @@ export function IncidentsPage() {
       )}
 
       <div className="mb-4 flex flex-wrap gap-3">
-        <input
+        <Input
           type="text"
           placeholder="Filter by safehouse ID..."
           value={safehouseFilter}
-          onChange={(e) => { setSafehouseFilter(e.target.value); setPage(1) }}
-          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+          onChange={(e) => setSafehouseFilter(e.target.value)}
+          className="w-48"
         />
-        <select
-          value={severityFilter}
-          onChange={(e) => { setSeverityFilter(e.target.value); setPage(1) }}
-          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-        >
-          <option value="">All severities</option>
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
-          <option value="Critical">Critical</option>
-        </select>
-        <select
-          value={resolvedFilter}
-          onChange={(e) => { setResolvedFilter(e.target.value); setPage(1) }}
-          className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-        >
-          <option value="">All</option>
-          <option value="true">Resolved</option>
-          <option value="false">Unresolved</option>
-        </select>
+        <Select value={severityFilter} onValueChange={(v) => setSeverityFilter(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All severities" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All severities</SelectItem>
+              <SelectItem value="Low">Low</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+              <SelectItem value="Critical">Critical</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Select value={resolvedFilter} onValueChange={(v) => setResolvedFilter(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All</SelectItem>
+              <SelectItem value="true">Resolved</SelectItem>
+              <SelectItem value="false">Unresolved</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
 
-      {loading ? (
-        <p className="text-muted-foreground animate-pulse">Loading...</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-border border-b text-left">
-                  <th className="px-3 py-2 font-medium">Date</th>
-                  <th className="px-3 py-2 font-medium">Resident</th>
-                  <th className="px-3 py-2 font-medium">Safehouse</th>
-                  <th className="px-3 py-2 font-medium">Type</th>
-                  <th className="px-3 py-2 font-medium">Severity</th>
-                  <th className="px-3 py-2 font-medium">Resolved</th>
-                  <th className="px-3 py-2 font-medium">Reported By</th>
-                  <th className="px-3 py-2 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {incidents.map((inc) => (
-                  <tr key={inc.incidentId} className="border-border border-b">
-                    <td className="px-3 py-2">{inc.incidentDate}</td>
-                    <td className="px-3 py-2">{inc.residentCode ?? inc.residentId}</td>
-                    <td className="px-3 py-2">{inc.safehouseName ?? '-'}</td>
-                    <td className="px-3 py-2">{inc.incidentType}</td>
-                    <td className="px-3 py-2">{inc.severity}</td>
-                    <td className="px-3 py-2">{inc.resolved ? 'Yes' : 'No'}</td>
-                    <td className="px-3 py-2">{inc.reportedBy ?? '-'}</td>
-                    <td className="px-3 py-2">
-                      <button onClick={() => startEdit(inc)} className="text-primary text-xs underline">
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">
-                Page {page} of {totalPages} ({totalCount} records)
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                  Previous
-                </Button>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <DataTable
+        columns={columns}
+        data={table.items}
+        rowKey={(row) => row.incidentId}
+        sort={table.sort}
+        onSort={table.setSort}
+        page={table.page}
+        totalPages={table.totalPages}
+        totalCount={table.totalCount}
+        onPageChange={table.setPage}
+        loading={table.loading}
+        onEdit={(row) => startEdit(row)}
+        onDelete={async (row) => {
+          await api.delete(`/api/incidents/${row.incidentId}`)
+          table.refresh()
+        }}
+        deleteEntityLabel="incident report"
+        getDeleteName={(row) => `Incident on ${row.incidentDate} (${row.incidentType})`}
+      />
     </div>
   )
 }

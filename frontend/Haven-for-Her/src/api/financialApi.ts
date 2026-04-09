@@ -1,4 +1,5 @@
 import { api } from './client'
+import type { CascadeImpact } from '@/types/cascade'
 
 export interface SupporterDto {
   supporterId: number
@@ -117,8 +118,24 @@ export const financialApi = {
     return api.put(`/api/financial/management/donors/${id}`, data)
   },
 
+  deleteSupporter(id: number): Promise<{ message: string }> {
+    return api.delete(`/api/financial/management/donors/${id}`)
+  },
+
+  getSupporterCascadeInfo(id: number): Promise<CascadeImpact[]> {
+    return api.get(`/api/financial/management/donors/${id}/cascade-info`)
+  },
+
   recordDonation(data: RecordDonationRequest): Promise<{ message: string; donationId: number }> {
     return api.post('/api/financial/management/donations', data)
+  },
+
+  deleteDonation(id: number): Promise<{ message: string }> {
+    return api.delete(`/api/financial/management/donations/${id}`)
+  },
+
+  getDonationCascadeInfo(id: number): Promise<CascadeImpact[]> {
+    return api.get(`/api/financial/management/donations/${id}/cascade-info`)
   },
 
   getAllocations(params?: {

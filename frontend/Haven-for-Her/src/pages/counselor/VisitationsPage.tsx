@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
-import type { PaginatedResponse } from '@/api/types'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DataTable, type ColumnDef } from '@/components/DataTable'
+import { useServerTable } from '@/hooks/useServerTable'
+import { counselorApi } from '@/api/counselorApi'
 
 interface Visitation {
   familyVisitationTrackingId: number
@@ -29,41 +33,49 @@ const EMPTY_FORM = {
   visitOutcome: '',
 }
 
+const columns: ColumnDef<Visitation>[] = [
+  { key: 'visitDate', header: 'Date', sortable: true },
+  { key: 'residentId', header: 'Resident ID', sortable: true },
+  { key: 'visitType', header: 'Type', sortable: true },
+  { key: 'locationVisited', header: 'Location', render: (row) => row.locationVisited ?? '-' },
+  { key: 'visitOutcome', header: 'Outcome', sortable: true, render: (row) => row.visitOutcome ?? '-' },
+  {
+    key: 'safetyConcernsNoted',
+    header: 'Safety Concerns',
+    render: (row) =>
+      row.safetyConcernsNoted ? <span className="font-medium text-destructive">Yes</span> : 'No',
+  },
+  {
+    key: 'followUpNeeded',
+    header: 'Follow-Up',
+    render: (row) => (row.followUpNeeded ? 'Yes' : 'No'),
+  },
+]
+
 export function VisitationsPage() {
-  const [visits, setVisits] = useState<Visitation[]>([])
-  const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
-  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
   const [filterType, setFilterType] = useState('')
   const [filterDateFrom, setFilterDateFrom] = useState('')
   const [filterDateTo, setFilterDateTo] = useState('')
-  const pageSize = 20
 
-  const fetchVisits = useCallback(async () => {
-    setLoading(true)
-    try {
-      const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
-      if (filterType) qs.set('visitType', filterType)
-      if (filterDateFrom) qs.set('dateFrom', filterDateFrom)
-      if (filterDateTo) qs.set('dateTo', filterDateTo)
-      const res = await api.get<PaginatedResponse<Visitation>>(`/api/counselor/visitations?${qs}`)
-      setVisits(res.items)
-      setTotalCount(res.totalCount)
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false)
-    }
-  }, [page, filterType, filterDateFrom, filterDateTo])
+  const filters = useMemo(
+    () => ({
+      visitType: filterType,
+      dateFrom: filterDateFrom,
+      dateTo: filterDateTo,
+    }),
+    [filterType, filterDateFrom, filterDateTo],
+  )
 
-  useEffect(() => {
-    void fetchVisits()
-  }, [fetchVisits])
-
-  const totalPages = Math.ceil(totalCount / pageSize)
+  const table = useServerTable<Visitation>({
+    endpoint: '/api/counselor/visitations',
+    pageSize: 20,
+    defaultSort: 'visitDate',
+    defaultDirection: 'desc',
+    filters,
+  })
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const target = e.target
@@ -91,7 +103,7 @@ export function VisitationsPage() {
       })
       setForm(EMPTY_FORM)
       setShowForm(false)
-      void fetchVisits()
+      table.refresh()
     } catch {
       // ignore
     } finally {
@@ -108,18 +120,24 @@ export function VisitationsPage() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="mb-4 flex flex-wrap gap-3">
-        <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm">
-          <option value="">All visit types</option>
-          <option value="Initial Assessment">Initial Assessment</option>
-          <option value="Routine Follow-Up">Routine Follow-Up</option>
-          <option value="Reintegration Assessment">Reintegration Assessment</option>
-          <option value="Post-Placement Monitoring">Post-Placement Monitoring</option>
-          <option value="Emergency">Emergency</option>
-        </select>
-        <input type="date" placeholder="From" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm" />
-        <input type="date" placeholder="To" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm" />
+        <Select value={filterType} onValueChange={(v) => setFilterType(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All visit types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All visit types</SelectItem>
+              <SelectItem value="Initial Assessment">Initial Assessment</SelectItem>
+              <SelectItem value="Routine Follow-Up">Routine Follow-Up</SelectItem>
+              <SelectItem value="Reintegration Assessment">Reintegration Assessment</SelectItem>
+              <SelectItem value="Post-Placement Monitoring">Post-Placement Monitoring</SelectItem>
+              <SelectItem value="Emergency">Emergency</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="w-40" />
+        <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="w-40" />
       </div>
 
       {showForm && (
@@ -192,56 +210,25 @@ export function VisitationsPage() {
         </form>
       )}
 
-      {loading ? (
-        <p className="text-muted-foreground animate-pulse">Loading...</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-border border-b text-left">
-                  <th className="px-3 py-2 font-medium">Date</th>
-                  <th className="px-3 py-2 font-medium">Resident ID</th>
-                  <th className="px-3 py-2 font-medium">Type</th>
-                  <th className="px-3 py-2 font-medium">Location</th>
-                  <th className="px-3 py-2 font-medium">Outcome</th>
-                  <th className="px-3 py-2 font-medium">Safety Concerns</th>
-                  <th className="px-3 py-2 font-medium">Follow-Up</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visits.map((v) => (
-                  <tr key={v.familyVisitationTrackingId} className={`border-border border-b ${v.safetyConcernsNoted ? 'bg-destructive/5' : ''}`}>
-                    <td className="px-3 py-2">{v.visitDate}</td>
-                    <td className="px-3 py-2">{v.residentId}</td>
-                    <td className="px-3 py-2">{v.visitType}</td>
-                    <td className="px-3 py-2">{v.locationVisited ?? '-'}</td>
-                    <td className="px-3 py-2">{v.visitOutcome ?? '-'}</td>
-                    <td className="px-3 py-2">{v.safetyConcernsNoted ? <span className="font-medium text-destructive">Yes</span> : 'No'}</td>
-                    <td className="px-3 py-2">{v.followUpNeeded ? 'Yes' : 'No'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">
-                Page {page} of {totalPages} ({totalCount} records)
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                  Previous
-                </Button>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <DataTable
+        columns={columns}
+        data={table.items}
+        rowKey={(row) => row.familyVisitationTrackingId}
+        sort={table.sort}
+        onSort={table.setSort}
+        page={table.page}
+        totalPages={table.totalPages}
+        totalCount={table.totalCount}
+        onPageChange={table.setPage}
+        loading={table.loading}
+        onDelete={async (row) => {
+          await counselorApi.deleteVisitation(row.familyVisitationTrackingId)
+          table.refresh()
+        }}
+        deleteEntityLabel="visitation"
+        getDeleteName={(row) => `${row.visitType} on ${row.visitDate}`}
+        rowClassName={(row) => (row.safetyConcernsNoted ? 'bg-destructive/5' : undefined)}
+      />
     </div>
   )
 }

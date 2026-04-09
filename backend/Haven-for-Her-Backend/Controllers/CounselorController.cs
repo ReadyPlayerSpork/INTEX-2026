@@ -77,6 +77,8 @@ public class CounselorController(
         [FromQuery] DateOnly? dateFrom,
         [FromQuery] DateOnly? dateTo,
         [FromQuery] bool? concernsOnly,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -103,8 +105,17 @@ public class CounselorController(
 
         var totalCount = await query.CountAsync();
 
+        var desc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.ToLower() switch
+        {
+            "sessiondate" => desc ? query.OrderByDescending(pr => pr.SessionDate) : query.OrderBy(pr => pr.SessionDate),
+            "sessiontype" => desc ? query.OrderByDescending(pr => pr.SessionType) : query.OrderBy(pr => pr.SessionType),
+            "sessiondurationminutes" => desc ? query.OrderByDescending(pr => pr.SessionDurationMinutes) : query.OrderBy(pr => pr.SessionDurationMinutes),
+            "residentid" => desc ? query.OrderByDescending(pr => pr.ResidentId) : query.OrderBy(pr => pr.ResidentId),
+            _ => query.OrderByDescending(pr => pr.SessionDate),
+        };
+
         var items = await query
-            .OrderByDescending(pr => pr.SessionDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -146,6 +157,8 @@ public class CounselorController(
         [FromQuery] string? visitType,
         [FromQuery] DateOnly? dateFrom,
         [FromQuery] DateOnly? dateTo,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -170,8 +183,17 @@ public class CounselorController(
 
         var totalCount = await query.CountAsync();
 
+        var desc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.ToLower() switch
+        {
+            "visitdate" => desc ? query.OrderByDescending(hv => hv.VisitDate) : query.OrderBy(hv => hv.VisitDate),
+            "visittype" => desc ? query.OrderByDescending(hv => hv.VisitType) : query.OrderBy(hv => hv.VisitType),
+            "residentid" => desc ? query.OrderByDescending(hv => hv.ResidentId) : query.OrderBy(hv => hv.ResidentId),
+            "visitoutcome" => desc ? query.OrderByDescending(hv => hv.VisitOutcome) : query.OrderBy(hv => hv.VisitOutcome),
+            _ => query.OrderByDescending(hv => hv.VisitDate),
+        };
+
         var items = await query
-            .OrderByDescending(hv => hv.VisitDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -276,6 +298,91 @@ public class CounselorController(
         await db.SaveChangesAsync();
 
         return Ok(new { message = "Session updated." });
+    }
+
+    // ── Delete Session ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Delete a process recording.
+    /// </summary>
+    [HttpDelete("sessions/{recordingId:int}")]
+    public async Task<IActionResult> DeleteSession(int recordingId)
+    {
+        var email = (await userManager.GetUserAsync(User))?.Email ?? "";
+
+        var recording = await db.ProcessRecordings
+            .Include(pr => pr.Resident)
+            .FirstOrDefaultAsync(pr => pr.RecordingId == recordingId);
+
+        if (recording is null) return NotFound();
+        if (recording.Resident.AssignedSocialWorker != email)
+            return Forbid();
+
+        db.ProcessRecordings.Remove(recording);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Session deleted." });
+    }
+
+    // ── Update Visitation ───────────────────────────────────────────
+
+    /// <summary>
+    /// Update an existing home visitation.
+    /// </summary>
+    [HttpPut("visitations/{visitationId:int}")]
+    public async Task<IActionResult> UpdateVisitation(int visitationId, [FromBody] HomeVisitation updated)
+    {
+        if (!ModelState.IsValid) return ValidationProblem();
+
+        var email = (await userManager.GetUserAsync(User))?.Email ?? "";
+
+        var existing = await db.HomeVisitations
+            .Include(hv => hv.Resident)
+            .FirstOrDefaultAsync(hv => hv.VisitationId == visitationId);
+
+        if (existing is null) return NotFound();
+        if (existing.Resident.AssignedSocialWorker != email)
+            return Forbid();
+
+        existing.VisitDate = updated.VisitDate;
+        existing.VisitType = updated.VisitType;
+        existing.LocationVisited = updated.LocationVisited;
+        existing.FamilyMembersPresent = updated.FamilyMembersPresent;
+        existing.Purpose = updated.Purpose;
+        existing.Observations = updated.Observations;
+        existing.FamilyCooperationLevel = updated.FamilyCooperationLevel;
+        existing.VisitOutcome = updated.VisitOutcome;
+        existing.SafetyConcernsNoted = updated.SafetyConcernsNoted;
+        existing.FollowUpNeeded = updated.FollowUpNeeded;
+        existing.FollowUpNotes = updated.FollowUpNotes;
+
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Visitation updated." });
+    }
+
+    // ── Delete Visitation ───────────────────────────────────────────
+
+    /// <summary>
+    /// Delete a home visitation.
+    /// </summary>
+    [HttpDelete("visitations/{visitationId:int}")]
+    public async Task<IActionResult> DeleteVisitation(int visitationId)
+    {
+        var email = (await userManager.GetUserAsync(User))?.Email ?? "";
+
+        var visitation = await db.HomeVisitations
+            .Include(hv => hv.Resident)
+            .FirstOrDefaultAsync(hv => hv.VisitationId == visitationId);
+
+        if (visitation is null) return NotFound();
+        if (visitation.Resident.AssignedSocialWorker != email)
+            return Forbid();
+
+        db.HomeVisitations.Remove(visitation);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Visitation deleted." });
     }
 
     // ── Case Conferences ────────────────────────────────────────────

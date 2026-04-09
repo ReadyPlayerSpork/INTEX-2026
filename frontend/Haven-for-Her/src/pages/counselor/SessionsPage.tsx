@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
-import type { PaginatedResponse } from '@/api/types'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DataTable, type ColumnDef } from '@/components/DataTable'
+import { useServerTable } from '@/hooks/useServerTable'
+import { counselorApi } from '@/api/counselorApi'
 
 interface Session {
   recordingId: number
@@ -31,11 +35,35 @@ const EMPTY_FORM = {
   referralMade: false,
 }
 
+const columns: ColumnDef<Session>[] = [
+  {
+    key: 'sessionDate',
+    header: 'Date',
+    sortable: true,
+    render: (row) => (
+      <Link to={`/counselor/sessions/${row.recordingId ?? row.processRecordingId}`} className="text-primary underline">
+        {row.sessionDate}
+      </Link>
+    ),
+  },
+  { key: 'residentId', header: 'Resident ID', sortable: true },
+  { key: 'sessionType', header: 'Type', sortable: true },
+  {
+    key: 'sessionDurationMinutes',
+    header: 'Duration',
+    sortable: true,
+    render: (row) => `${row.sessionDurationMinutes} min`,
+  },
+  { key: 'emotionalStateObserved', header: 'Emotional Start', render: (row) => row.emotionalStateObserved ?? '-' },
+  { key: 'emotionalStateEnd', header: 'Emotional End', render: (row) => row.emotionalStateEnd ?? '-' },
+  {
+    key: 'concernsFlagged',
+    header: 'Concerns',
+    render: (row) => (row.concernsFlagged ? 'Yes' : 'No'),
+  },
+]
+
 export function SessionsPage() {
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
-  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
@@ -43,31 +71,24 @@ export function SessionsPage() {
   const [filterDateFrom, setFilterDateFrom] = useState('')
   const [filterDateTo, setFilterDateTo] = useState('')
   const [filterConcernsOnly, setFilterConcernsOnly] = useState(false)
-  const pageSize = 20
 
-  const fetchSessions = useCallback(async () => {
-    setLoading(true)
-    try {
-      const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
-      if (filterType) qs.set('sessionType', filterType)
-      if (filterDateFrom) qs.set('dateFrom', filterDateFrom)
-      if (filterDateTo) qs.set('dateTo', filterDateTo)
-      if (filterConcernsOnly) qs.set('concernsOnly', 'true')
-      const res = await api.get<PaginatedResponse<Session>>(`/api/counselor/sessions?${qs}`)
-      setSessions(res.items)
-      setTotalCount(res.totalCount)
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false)
-    }
-  }, [page, filterType, filterDateFrom, filterDateTo, filterConcernsOnly])
+  const filters = useMemo(
+    () => ({
+      sessionType: filterType,
+      dateFrom: filterDateFrom,
+      dateTo: filterDateTo,
+      concernsOnly: filterConcernsOnly ? 'true' : '',
+    }),
+    [filterType, filterDateFrom, filterDateTo, filterConcernsOnly],
+  )
 
-  useEffect(() => {
-    void fetchSessions()
-  }, [fetchSessions])
-
-  const totalPages = Math.ceil(totalCount / pageSize)
+  const table = useServerTable<Session>({
+    endpoint: '/api/counselor/sessions',
+    pageSize: 20,
+    defaultSort: 'sessionDate',
+    defaultDirection: 'desc',
+    filters,
+  })
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const target = e.target
@@ -95,7 +116,7 @@ export function SessionsPage() {
       })
       setForm(EMPTY_FORM)
       setShowForm(false)
-      void fetchSessions()
+      table.refresh()
     } catch {
       // ignore
     } finally {
@@ -112,17 +133,23 @@ export function SessionsPage() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="mb-4 flex flex-wrap gap-3">
-        <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm">
-          <option value="">All types</option>
-          <option value="Individual">Individual</option>
-          <option value="Group">Group</option>
-        </select>
-        <input type="date" placeholder="From" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm" />
-        <input type="date" placeholder="To" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(1) }} className="border-input bg-background rounded-md border px-3 py-2 text-sm" />
+        <Select value={filterType} onValueChange={(v) => setFilterType(v ?? '')}>
+          <SelectTrigger>
+            <SelectValue placeholder="All types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All types</SelectItem>
+              <SelectItem value="Individual">Individual</SelectItem>
+              <SelectItem value="Group">Group</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="w-40" />
+        <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="w-40" />
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={filterConcernsOnly} onChange={(e) => { setFilterConcernsOnly(e.target.checked); setPage(1) }} />
+          <input type="checkbox" checked={filterConcernsOnly} onChange={(e) => setFilterConcernsOnly(e.target.checked)} />
           <span className="text-sm">Concerns only</span>
         </label>
       </div>
@@ -188,60 +215,24 @@ export function SessionsPage() {
         </form>
       )}
 
-      {loading ? (
-        <p className="text-muted-foreground animate-pulse">Loading...</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-border border-b text-left">
-                  <th className="px-3 py-2 font-medium">Date</th>
-                  <th className="px-3 py-2 font-medium">Resident ID</th>
-                  <th className="px-3 py-2 font-medium">Type</th>
-                  <th className="px-3 py-2 font-medium">Duration</th>
-                  <th className="px-3 py-2 font-medium">Emotional Start</th>
-                  <th className="px-3 py-2 font-medium">Emotional End</th>
-                  <th className="px-3 py-2 font-medium">Concerns</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.map((s) => (
-                  <tr key={s.recordingId ?? s.processRecordingId} className="border-border hover:bg-muted/50 border-b">
-                    <td className="px-3 py-2">
-                      <Link to={`/counselor/sessions/${s.recordingId ?? s.processRecordingId}`} className="text-primary underline">
-                        {s.sessionDate}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2">{s.residentId}</td>
-                    <td className="px-3 py-2">{s.sessionType}</td>
-                    <td className="px-3 py-2">{s.sessionDurationMinutes} min</td>
-                    <td className="px-3 py-2">{s.emotionalStateObserved ?? '-'}</td>
-                    <td className="px-3 py-2">{s.emotionalStateEnd ?? '-'}</td>
-                    <td className="px-3 py-2">{s.concernsFlagged ? 'Yes' : 'No'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">
-                Page {page} of {totalPages} ({totalCount} records)
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                  Previous
-                </Button>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <DataTable
+        columns={columns}
+        data={table.items}
+        rowKey={(row) => row.recordingId ?? row.processRecordingId}
+        sort={table.sort}
+        onSort={table.setSort}
+        page={table.page}
+        totalPages={table.totalPages}
+        totalCount={table.totalCount}
+        onPageChange={table.setPage}
+        loading={table.loading}
+        onDelete={async (row) => {
+          await counselorApi.deleteSession(row.recordingId ?? row.processRecordingId)
+          table.refresh()
+        }}
+        deleteEntityLabel="session"
+        getDeleteName={(row) => `Session on ${row.sessionDate} (${row.sessionType})`}
+      />
     </div>
   )
 }
