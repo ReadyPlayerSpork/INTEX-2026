@@ -318,7 +318,18 @@ export function CreatePostPage() {
             'Meta access token expired or invalid. Ask an admin to generate a new token and update META_SYSTEM_USER_TOKEN (then redeploy the API).',
           )
         } else {
-          setError(String(body.detail || body.error || 'Failed to create campaign.'))
+          const meta = body.meta as
+            | { error?: { error_user_msg?: string; message?: string; error_subcode?: number } }
+            | undefined
+          const userMsg = meta?.error?.error_user_msg
+          const sub = meta?.error?.error_subcode
+          if (userMsg) {
+            setError(
+              sub != null ? `${userMsg} (Meta error_subcode: ${sub})` : userMsg,
+            )
+          } else {
+            setError(String(body.detail || body.error || 'Failed to create campaign.'))
+          }
         }
       } else {
         setError('Failed to create campaign. Please try again.')

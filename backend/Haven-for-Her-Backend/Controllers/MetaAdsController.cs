@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Haven_for_Her_Backend.Data;
 using Haven_for_Her_Backend.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -126,7 +127,29 @@ public class MetaAdsController : ControllerBase
             _logger.LogError(ex, "Meta Ads API error");
             // Return 422 instead of 502 — reverse proxies (Nginx/Traefik) intercept 502
             // responses and replace them with their own error pages, stripping CORS headers.
-            return UnprocessableEntity(new { error = "Meta API error", detail = ex.Message });
+            // Parse Meta's JSON from the message so clients can read code / subcode / error_user_msg.
+            JsonElement? metaBody = null;
+            try
+            {
+                var msg = ex.Message;
+                var idx = msg.IndexOf('{', StringComparison.Ordinal);
+                if (idx >= 0)
+                {
+                    using var doc = JsonDocument.Parse(msg[idx..]);
+                    metaBody = doc.RootElement.Clone();
+                }
+            }
+            catch
+            {
+                /* leave metaBody null */
+            }
+
+            return UnprocessableEntity(new
+            {
+                error = "Meta API error",
+                detail = ex.Message,
+                meta = metaBody,
+            });
         }
     }
 
