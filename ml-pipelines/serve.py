@@ -56,6 +56,22 @@ if not os.path.exists(CSV_DIR):
 app = Flask(__name__)
 IS_PRODUCTION = os.environ.get("FLASK_ENV") == "production"
 
+def to_camel(data):
+    """Recursively converts dictionary keys from PascalCase/snake_case to camelCase."""
+    if isinstance(data, list):
+        return [to_camel(i) for i in data]
+    if isinstance(data, dict):
+        new_dict = {}
+        for k, v in data.items():
+            # Handle PascalCase to camelCase
+            if k and k[0].isupper():
+                new_key = k[0].lower() + k[1:]
+            else:
+                new_key = k
+            new_dict[new_key] = to_camel(v)
+        return new_dict
+    return data
+
 # ---------------------------------------------------------------------------
 # Model loading (lazy — loaded once on first request or at startup)
 # ---------------------------------------------------------------------------
@@ -468,15 +484,17 @@ def donor_churn():
             key=lambda x: abs(x[1]), reverse=True
         )[:5])
 
-        return jsonify({
+        return jsonify(to_camel({
             "SupporterId": supporter_id,
             "ChurnProbability": round(prob, 4),
             "RiskLevel": _risk_level(prob),
             "TopFactors": importances,
-        })
+        }))
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        gc.collect()
 
 
 @app.route("/api/ml/donor-churn/batch", methods=["GET"])
@@ -501,10 +519,12 @@ def donor_churn_batch():
                 "RiskLevel": _risk_level(prob),
             })
         results.sort(key=lambda x: x["ChurnProbability"], reverse=True)
-        return jsonify(results)
+        return jsonify(to_camel(results))
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        gc.collect()
 
 
 # ── Incident Risk ────────────────────────────────────────────────────────────
@@ -535,15 +555,17 @@ def incident_risk():
             key=lambda x: abs(x[1]), reverse=True
         )[:5])
 
-        return jsonify({
+        return jsonify(to_camel({
             "ResidentId": resident_id,
             "EscalationProbability": round(prob, 4),
             "RiskLevel": _risk_level(prob),
             "RiskFactors": importances,
-        })
+        }))
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        gc.collect()
 
 
 @app.route("/api/ml/incident-risk/alerts", methods=["GET"])
@@ -571,10 +593,12 @@ def incident_risk_alerts():
                     "CurrentRiskLevel": row.get("CurrentRiskLevel", ""),
                 })
         alerts.sort(key=lambda x: x["EscalationProbability"], reverse=True)
-        return jsonify(alerts)
+        return jsonify(to_camel(alerts))
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        gc.collect()
 
 
 # ── Resident Progress ────────────────────────────────────────────────────────
@@ -603,15 +627,17 @@ def resident_progress():
             key=lambda x: abs(x[1]), reverse=True
         )[:5])
 
-        return jsonify({
+        return jsonify(to_camel({
             "ResidentId": resident_id,
             "ReadinessScore": round(prob, 4),
             "RiskLevel": _risk_level(1 - prob),  # invert: low readiness = high risk
             "TopFactors": importances,
-        })
+        }))
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        gc.collect()
 
 
 # ── Safehouse Outcomes ───────────────────────────────────────────────────────
@@ -640,10 +666,12 @@ def safehouse_outcomes():
                 "PredictedEducationProgress": round(pred, 2),
                 "ActualEducationProgress": round(float(row.get("AvgEducationProgress", 0)), 2),
             })
-        return jsonify(results)
+        return jsonify(to_camel(results))
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        gc.collect()
 
 
 # ── Social Media ─────────────────────────────────────────────────────────────
@@ -666,7 +694,7 @@ def social_media_recommendations():
         donation_posts = df[df["DonationReferrals"] > 0]
         top_cta = donation_posts["CallToActionType"].mode().iloc[0] if len(donation_posts) > 0 else "DonateNow"
 
-        return jsonify({
+        return jsonify(to_camel({
             "BestPostHour": int(best_hour),
             "BestDayOfWeek": best_day,
             "BestPostTypeForDonations": best_type,
@@ -674,10 +702,12 @@ def social_media_recommendations():
             "RecommendedCta": top_cta,
             "AvgEngagementRate": round(float(df["EngagementRate"].mean()), 4),
             "TotalDonationReferrals": int(df["DonationReferrals"].sum()),
-        })
+        }))
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        gc.collect()
 
 
 @app.route("/api/ml/social-media/predict", methods=["POST"])
@@ -708,15 +738,17 @@ def social_media_predict():
         X_row = _align_features(X_row, features)
 
         prob = float(model.predict_proba(X_row)[0, 1])
-        return jsonify({
+        return jsonify(to_camel({
             "DonationDriverProbability": round(prob, 4),
             "PredictedDonationDriver": prob >= 0.5,
             "Recommendation": "This post is likely to drive donations!" if prob >= 0.5
                 else "Consider adding a stronger CTA or using video content to improve donation conversion.",
-        })
+        }))
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        gc.collect()
 
 
 @app.route("/api/ml/status", methods=["GET"])
@@ -739,13 +771,13 @@ def ml_status():
         if not os.path.exists(os.path.join(MODEL_DIR, f"{name}_model.joblib")):
             missing.append(name)
 
-    return jsonify({
+    return jsonify(to_camel({
         "status": "Running",
-        "database_connected": db_client.is_connected(),
-        "last_trained": last_trained,
-        "missing_models": missing,
-        "is_healthy": len(missing) == 0
-    })
+        "databaseConnected": db_client.is_connected(),
+        "lastTrained": last_trained,
+        "missingModels": missing,
+        "isHealthy": len(missing) == 0
+    }))
 
 
 @app.route("/api/ml/retrain", methods=["POST"])
@@ -793,7 +825,7 @@ def get_ml_status():
         with open(metadata_path, 'r') as f:
             metadata = json.load(f)
             
-        return jsonify(metadata)
+        return jsonify(to_camel(metadata))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

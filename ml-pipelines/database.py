@@ -64,9 +64,10 @@ class DatabaseClient:
         def to_pascal(snake_str):
             if not snake_str:
                 return snake_str
-            # Handle standard snake_case conversion
+            # Handle standard snake_case conversion: user_id -> UserId, FirstName (from DB) -> FirstName
             components = snake_str.split("_")
-            return "".join(word.capitalize() for word in components)
+            # Preserve existing case within components (e.g. FirstName stays FirstName)
+            return "".join(word[0].upper() + word[1:] if word else "" for word in components)
 
         df.columns = [to_pascal(col) for col in df.columns]
         return df
