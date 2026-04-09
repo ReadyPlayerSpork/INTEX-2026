@@ -54,6 +54,7 @@ if not os.path.exists(CSV_DIR):
     print(f"CRITICAL WARNING: {CSV_DIR} does not exist!")
 
 app = Flask(__name__)
+IS_PRODUCTION = os.environ.get("FLASK_ENV") == "production"
 
 # ---------------------------------------------------------------------------
 # Model loading (lazy — loaded once on first request or at startup)
@@ -81,6 +82,8 @@ _csv_cache: dict = {}
 
 
 def _csv(filename: str) -> pd.DataFrame:
+    if IS_PRODUCTION:
+        raise RuntimeError(f"CSV access not allowed in production: {filename}")
     if filename not in _csv_cache:
         path = os.path.join(CSV_DIR, filename)
         if not os.path.exists(path):
@@ -89,19 +92,22 @@ def _csv(filename: str) -> pd.DataFrame:
     return _csv_cache[filename].copy()
 
 
+def _get_data(table_name: str, csv_filename: str) -> pd.DataFrame:
+    """Helper to fetch data from DB, falling back to CSV only in non-production."""
+    df = db_client.fetch_data(table_name)
+    if df is not None:
+        return df
+    return _csv(csv_filename)
+
+
 # ---------------------------------------------------------------------------
 # Feature engineering helpers (mirror notebook logic)
 # ---------------------------------------------------------------------------
 
 def _donor_features() -> pd.DataFrame:
     """Build the same feature matrix used by the donor churn notebook."""
-    supporters = db_client.fetch_data("Supporters")
-    if supporters is None:
-        supporters = _csv("supporters.csv")
-    
-    donations = db_client.fetch_data("Donations")
-    if donations is None:
-        donations = _csv("donations.csv")
+    supporters = _get_data("Supporters", "supporters.csv")
+    donations = _get_data("Donations", "donations.csv")
 
     # Column normalization to handle potential naming diffs
     supporters["AcquisitionChannel"] = supporters["AcquisitionChannel"].fillna("Unknown")
@@ -156,17 +162,9 @@ def _donor_features() -> pd.DataFrame:
 
 def _incident_features() -> pd.DataFrame:
     """Build the same feature matrix used by the incident risk notebook."""
-    residents = db_client.fetch_data("Residents")
-    if residents is None:
-        residents = _csv("residents.csv")
-    
-    incidents = db_client.fetch_data("IncidentReports")
-    if incidents is None:
-        incidents = _csv("incident_reports.csv")
-    
-    recordings = db_client.fetch_data("ProcessRecordings")
-    if recordings is None:
-        recordings = _csv("process_recordings.csv")
+    residents = _get_data("Residents", "residents.csv")
+    incidents = _get_data("IncidentReports", "incident_reports.csv")
+    recordings = _get_data("ProcessRecordings", "process_recordings.csv")
 
     residents["DateOfAdmission"] = pd.to_datetime(residents["DateOfAdmission"])
     residents["DateClosed"] = pd.to_datetime(residents["DateClosed"], errors="coerce")
@@ -227,21 +225,10 @@ def _incident_features() -> pd.DataFrame:
 
 def _resident_progress_features() -> pd.DataFrame:
     """Build the same feature matrix used by the resident progress notebook."""
-    residents = db_client.fetch_data("Residents")
-    if residents is None:
-        residents = _csv("residents.csv")
-    
-    recordings = db_client.fetch_data("ProcessRecordings")
-    if recordings is None:
-        recordings = _csv("process_recordings.csv")
-    
-    education = db_client.fetch_data("EducationRecords")
-    if education is None:
-        education = _csv("education_records.csv")
-    
-    health = db_client.fetch_data("HealthWellbeingRecords")
-    if health is None:
-        health = _csv("health_wellbeing_records.csv")
+    residents = _get_data("Residents", "residents.csv")
+    recordings = _get_data("ProcessRecordings", "process_recordings.csv")
+    education = _get_data("EducationRecords", "education_records.csv")
+    health = _get_data("HealthWellbeingRecords", "health_wellbeing_records.csv")
 
     recordings["SessionDate"] = pd.to_datetime(recordings["SessionDate"])
     education["RecordDate"] = pd.to_datetime(education["RecordDate"])
@@ -301,19 +288,11 @@ def _resident_progress_features() -> pd.DataFrame:
     return df, X
 
 
-def _safehouse_features() -> pd.DataFrame:
-    """Build the same feature matrix used by the safehouse outcomes notebook."""
-    safehouses = db_client.fetch_data("Safehouses")
-    if safehouses is None:
-        safehouses = _csv("safehouses.csv")
-        
-    funding = db_client.fetch_data("FundingAllocations")
-    if funding is None:
-        funding = _csv("funding_allocations.csv")
-        
-    education = db_client.fetch_data("EducationRecords")
-    if education is None:
-        education = _csv("education_records.csv")
+def _safehouse_features_legacy() -> pd.DataFrame:
+    """Legacy feature builder for safehouses."""
+    safehouses = _get_data("Safehouses", "safehouses.csv")
+    funding = _get_data("FundingAllocations", "funding_allocations.csv")
+    education = _get_data("EducationRecords", "education_records.csv")
 
     # Aggregate funding by safehouse and period (month/year)
     funding["AllocationDate"] = pd.to_datetime(funding["AllocationDate"])
@@ -343,9 +322,7 @@ def _safehouse_features() -> pd.DataFrame:
 
 def _social_media_features() -> pd.DataFrame:
     """Build the same feature matrix used by the social media impact notebook."""
-    df = db_client.fetch_data("SocialMediaPosts")
-    if df is None:
-        df = _csv("social_media_posts.csv")
+    df = _get_data("SocialMediaPosts", "social_media_posts.csv")
 
     # Column cleanup
     numeric_cols = ["EngagementRate", "DonationReferrals", "BoostBudgetPhp", "VideoViews", "WatchTimeSeconds", "AvgViewDurationSeconds"]
@@ -384,17 +361,9 @@ def _social_media_features() -> pd.DataFrame:
 
 def _safehouse_features() -> (pd.DataFrame, pd.DataFrame):
     """Build the feature matrix for safehouse outcomes (regression)."""
-    allocations = db_client.fetch_data("DonationAllocations")
-    if allocations is None:
-        allocations = _csv("donation_allocations.csv")
-        
-    metrics = db_client.fetch_data("SafehouseMonthlyMetrics")
-    if metrics is None:
-        metrics = _csv("safehouse_monthly_metrics.csv")
-        
-    safehouses_df = db_client.fetch_data("Safehouses")
-    if safehouses_df is None:
-        safehouses_df = _csv("safehouses.csv")
+    allocations = _get_data("DonationAllocations", "donation_allocations.csv")
+    metrics = _get_data("SafehouseMonthlyMetrics", "safehouse_monthly_metrics.csv")
+    safehouses_df = _get_data("Safehouses", "safehouses.csv")
 
     allocations["AllocationDate"] = pd.to_datetime(allocations["AllocationDate"])
     metrics["MonthStart"] = pd.to_datetime(metrics["MonthStart"])
@@ -683,9 +652,7 @@ def safehouse_outcomes():
 def social_media_recommendations():
     """Analyze past posts to recommend optimal posting strategy."""
     try:
-        df = db_client.fetch_data("SocialMediaPosts")
-        if df is None:
-            df = _csv("social_media_posts.csv")
+        df = _get_data("SocialMediaPosts", "social_media_posts.csv")
             
         df["CreatedAt"] = pd.to_datetime(df["CreatedAt"])
 

@@ -32,17 +32,28 @@ class DatabaseClient:
         except Exception:
             return False
 
+    def to_snake_case(self, name: str) -> str:
+        """Converts PascalCase or camelCase to snake_case."""
+        name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
+
     def fetch_data(self, table_name: str) -> pd.DataFrame:
         """Fetches a table from the DB or returns None if connection fails."""
         if not self.engine:
             return None
         
+        # Convert table name to snake_case for PostgreSQL
+        db_table = self.to_snake_case(table_name)
+        
         try:
-            query = f'SELECT * FROM "{table_name}"'
+            # Query without quotes to allow case-insensitive or default schema matching
+            query = f"SELECT * FROM {db_table}"
             df = pd.read_sql(query, self.engine)
             return self.normalize_columns(df)
         except Exception as e:
-            print(f"Error fetching {table_name}: {e}")
+            print(f"Error fetching table '{table_name}' (mapped to '{db_table}'): {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     def normalize_columns(self, df: pd.DataFrame) -> pd.DataFrame:
