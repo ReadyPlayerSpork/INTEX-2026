@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 
-const STORAGE_KEY = 'cookie-consent-accepted'
+const STORAGE_KEY = 'cookie-consent'
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(() => !localStorage.getItem(STORAGE_KEY))
@@ -20,8 +20,8 @@ export function CookieConsent() {
     }
   }, [visible])
 
-  const accept = () => {
-    localStorage.setItem(STORAGE_KEY, 'true')
+  const respond = (choice: 'accepted' | 'declined') => {
+    localStorage.setItem(STORAGE_KEY, choice)
     setVisible(false)
   }
 
@@ -35,18 +35,39 @@ export function CookieConsent() {
     >
       <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-6 text-pretty">
-          We use essential cookies for authentication and session management.{' '}
+          We use essential cookies only for authentication and session
+          management. No tracking or advertising cookies are used. You can
+          change your preference at any time on our{' '}
           <Link
             to="/privacy"
             className="text-accent underline underline-offset-4 transition-colors hover:text-primary"
           >
             Privacy Policy
-          </Link>
+          </Link>{' '}
+          page.
         </p>
-        <Button ref={acceptRef} size="sm" onClick={accept}>
-          Accept
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => respond('declined')}
+          >
+            Decline
+          </Button>
+          <Button
+            ref={acceptRef}
+            size="sm"
+            onClick={() => respond('accepted')}
+          >
+            Accept
+          </Button>
+        </div>
       </div>
     </div>
   )
+}
+
+/** Allow other components (e.g. Privacy page) to reset cookie consent */
+export function resetCookieConsent() {
+  localStorage.removeItem(STORAGE_KEY)
 }
