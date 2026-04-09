@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Haven_for_Her_Backend.Data;
+using Haven_for_Her_Backend.Services;
 using Microsoft.AspNetCore.Identity;
 using Haven_for_Her_Backend.Infrastructure;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -125,6 +126,26 @@ builder.Services.AddHttpClient("MlService", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["MlService:BaseUrl"] ?? "http://localhost:5050");
     client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// ── Meta Ads API ───────────────────────────────────────────────────────────
+// Config is loaded from environment variables or appsettings (double-underscore → colon mapping).
+// Set META_SYSTEM_USER_TOKEN, META_AD_ACCOUNT_ID, META_PAGE_ID, etc.
+var metaAdsConfig = new MetaAdsConfig
+{
+    AccessToken = builder.Configuration["META_SYSTEM_USER_TOKEN"] ?? "",
+    AdAccountId = builder.Configuration["META_AD_ACCOUNT_ID"] ?? "",
+    PageId = builder.Configuration["META_PAGE_ID"] ?? "",
+    AppId = builder.Configuration["META_APP_ID"] ?? "",
+    AppSecret = builder.Configuration["META_APP_SECRET"] ?? "",
+    ApiVersion = builder.Configuration["META_GRAPH_API_VERSION"] ?? "v20.0",
+};
+builder.Services.AddSingleton(metaAdsConfig);
+
+builder.Services.AddHttpClient<MetaAdsService>(client =>
+{
+    client.BaseAddress = new Uri($"https://graph.facebook.com");
+    client.Timeout = TimeSpan.FromSeconds(60);
 });
 
 var app = builder.Build();
