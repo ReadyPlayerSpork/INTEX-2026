@@ -18,8 +18,13 @@ public class PublicController(HavenForHerBackendDbContext db) : ControllerBase
     public async Task<IActionResult> GetImpactStats()
     {
         var totalResidents = await db.Residents.CountAsync();
+        var activeResidents = await db.Residents.CountAsync(r => r.CaseStatus == "Active");
         var activeSafehouses = await db.Safehouses.CountAsync(s => s.Status == "Active");
         var activePartners = await db.Partners.CountAsync(p => p.Status == "Active");
+        var totalDonations = await db.Donations.CountAsync();
+        var totalDonationValuePhp = await db.Donations
+            .Where(d => d.Amount != null && d.CurrencyCode == "PHP")
+            .SumAsync(d => d.Amount!.Value);
 
         var latestSnapshot = await db.PublicImpactSnapshots
             .Where(s => s.IsPublished)
@@ -29,8 +34,11 @@ public class PublicController(HavenForHerBackendDbContext db) : ControllerBase
         return Ok(new
         {
             totalResidentsServed = totalResidents,
+            activeResidents,
             activeSafehouses,
             activePartners,
+            totalDonations,
+            totalDonationValuePhp,
             latestSnapshot = latestSnapshot is null ? null : new
             {
                 latestSnapshot.Headline,
