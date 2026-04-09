@@ -32,13 +32,21 @@ public class MetaAdsController : ControllerBase
     [HttpGet("status")]
     public IActionResult Status()
     {
-        var configured = !string.IsNullOrEmpty(_config.AccessToken)
-                      && !string.IsNullOrEmpty(_config.AdAccountId)
-                      && !string.IsNullOrEmpty(_config.PageId);
+        var hasToken = !string.IsNullOrEmpty(_config.AccessToken);
+        var hasAccount = !string.IsNullOrEmpty(_config.AdAccountId);
+        var hasPage = !string.IsNullOrEmpty(_config.PageId);
+        var configured = hasToken && hasAccount && hasPage;
+
+        _logger.LogInformation(
+            "Meta Ads status check — configured={Configured}, token={HasToken}, account={HasAccount}, page={HasPage}",
+            configured, hasToken, hasAccount, hasPage);
 
         return Ok(new
         {
             configured,
+            hasAccessToken = hasToken,
+            hasAdAccountId = hasAccount,
+            hasPageId = hasPage,
             adAccountId = _config.AdAccountId,
             pageId = _config.PageId,
             apiVersion = _config.ApiVersion,
@@ -84,39 +92,39 @@ public class MetaAdsController : ControllerBase
             return BadRequest(new { error = "ImageBase64 is not valid base64." });
         }
 
-        if (!string.IsNullOrEmpty(_config.AccessToken))
+        // Fail loudly if Meta credentials are missing — never return fake IDs
+        if (string.IsNullOrEmpty(_config.AccessToken)
+            || string.IsNullOrEmpty(_config.AdAccountId)
+            || string.IsNullOrEmpty(_config.PageId))
         {
-            // Real Meta API call
-            try
+            _logger.LogError("Meta Ads API credentials missing — cannot create campaign.");
+            return BadRequest(new
             {
-                var result = await _metaAds.CreatePausedCampaignAsync(request);
-
-                _logger.LogInformation(
-                    "Campaign created: {CampaignId} (Ad Set: {AdSetId}, Ad: {AdId})",
-                    result.CampaignId, result.AdSetId, result.AdId);
-
-                return Ok(result);
-            }
-            catch (MetaApiException ex)
-            {
-                _logger.LogError(ex, "Meta Ads API error");
-                return StatusCode(502, new { error = "Meta API error", detail = ex.Message });
-            }
-        }
-        else
-        {
-            // Dev mode — return a simulated response so frontend can be built without real credentials
-            _logger.LogWarning("Meta Ads API not configured — returning simulated response.");
-            return Ok(new CampaignResult
-            {
-                CampaignId = "SIMULATED_CAMPAIGN_123",
-                AdSetId = "SIMULATED_ADSET_456",
-                AdCreativeId = "SIMULATED_CREATIVE_789",
-                AdId = "SIMULATED_AD_012",
-                ImageHash = "SIMULATED_HASH",
-                Status = "PAUSED (simulated)",
-                AdsManagerUrl = "https://business.facebook.com/adsmanager",
+                error = "Meta Ads API is not configured.",
+                detail = "Set META_SYSTEM_USER_TOKEN, META_AD_ACCOUNT_ID, and META_PAGE_ID environment variables.",
+                configured = new
+                {
+                    hasAccessToken = !string.IsNullOrEmpty(_config.AccessToken),
+                    hasAdAccountId = !string.IsNullOrEmpty(_config.AdAccountId),
+                    hasPageId = !string.IsNullOrEmpty(_config.PageId),
+                },
             });
+        }
+
+        try
+        {
+            var result = await _metaAds.CreatePausedCampaignAsync(request);
+
+            _logger.LogInformation(
+                "Campaign created: {CampaignId} (Ad Set: {AdSetId}, Ad: {AdId})",
+                result.CampaignId, result.AdSetId, result.AdId);
+
+            return Ok(result);
+        }
+        catch (MetaApiException ex)
+        {
+            _logger.LogError(ex, "Meta Ads API error");
+            return StatusCode(502, new { error = "Meta API error", detail = ex.Message });
         }
     }
 
@@ -143,8 +151,8 @@ public class MetaAdsController : ControllerBase
 
         try
         {
-            var url = $"/{_config.ApiVersion}/search?type=adinterest&q={Uri.EscapeDataString(q)}&access_token={_config.AccessToken}";
-            var client = new HttpClient { BaseAddress = new Uri("https://graph.facebook.com") };
+            var url = $"{_config.ApiVersion}/search?type=adinterest&q={Uri.EscapeDataString(q)}&access_token={_config.AccessToken}";
+            var client = new HttpClient { BaseAddress = new Uri("https://graph.facebook.com/") };
             var response = await client.GetAsync(url);
             var body = await response.Content.ReadAsStringAsync();
 

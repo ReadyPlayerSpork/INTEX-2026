@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '@/api/client'
+import { api, ApiError } from '@/api/client'
 import { Button } from '@/components/ui/button'
-import { ImagePlus, Megaphone, Loader2, CheckCircle2, ExternalLink } from 'lucide-react'
+import { ImagePlus, Megaphone, Loader2, CheckCircle2, ExternalLink, AlertTriangle } from 'lucide-react'
 
 // ── Audience presets ───────────────────────────────────────────────────────
 
@@ -51,6 +51,26 @@ interface CampaignResult {
 
 export function CreatePostPage() {
   const navigate = useNavigate()
+
+  // Meta config check
+  const [metaConfigured, setMetaConfigured] = useState<boolean | null>(null) // null = loading
+  const [configDetail, setConfigDetail] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    api
+      .get<{ configured: boolean; hasAccessToken: boolean; hasAdAccountId: boolean; hasPageId: boolean }>(
+        '/api/meta-ads/status',
+      )
+      .then((s) => {
+        setMetaConfigured(s.configured)
+        setConfigDetail({
+          hasAccessToken: s.hasAccessToken,
+          hasAdAccountId: s.hasAdAccountId,
+          hasPageId: s.hasPageId,
+        })
+      })
+      .catch(() => setMetaConfigured(false))
+  }, [])
 
   // Form state — only the 4 fields the user fills in + audience selector
   const [audience, setAudience] = useState<Audience>('donors')
@@ -120,11 +140,56 @@ export function CreatePostPage() {
         },
       })
       setResult(res)
-    } catch {
-      setError('Failed to create campaign. Please try again.')
+    } catch (err) {
+      if (err instanceof ApiError && err.body && typeof err.body === 'object') {
+        const body = err.body as Record<string, unknown>
+        setError(String(body.detail || body.error || 'Failed to create campaign.'))
+      } else {
+        setError('Failed to create campaign. Please try again.')
+      }
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // ── Not configured state ────────────────────────────────────────────────
+
+  if (metaConfigured === false) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+          <AlertTriangle className="mx-auto mb-3 size-10 text-amber-600" />
+          <h1 className="font-heading mb-2 text-xl font-bold text-amber-900">
+            Meta Ads API Not Configured
+          </h1>
+          <p className="text-amber-800 text-sm mb-4">
+            The server is missing one or more required environment variables.
+            Contact your administrator to set these up:
+          </p>
+          <div className="mx-auto max-w-sm text-left text-sm space-y-1 mb-4">
+            {Object.entries(configDetail).map(([key, ok]) => (
+              <p key={key} className={ok ? 'text-green-700' : 'text-red-700'}>
+                {ok ? '✓' : '✗'} {key.replace('has', '').replace(/([A-Z])/g, ' $1').trim()}
+              </p>
+            ))}
+          </div>
+          <Button variant="outline" onClick={() => navigate('/social/dashboard')}>
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Loading config state ───────────────────────────────────────────────
+
+  if (metaConfigured === null) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <Loader2 className="text-muted-foreground mx-auto size-8 animate-spin" />
+        <p className="text-muted-foreground mt-3 text-sm">Checking Meta Ads configuration...</p>
+      </div>
+    )
   }
 
   // ── Success state ──────────────────────────────────────────────────────

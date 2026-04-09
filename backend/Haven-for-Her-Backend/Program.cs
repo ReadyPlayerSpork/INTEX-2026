@@ -13,6 +13,7 @@ const string FrontendCorsPolicy = "FrontendClient";
 const string DefaultFrontendUrl = "https://localhost:5173";
 var frontendUrls = (builder.Configuration["FrontendUrls"] ?? builder.Configuration["FrontendUrl"] ?? DefaultFrontendUrl)
     .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+Console.WriteLine($"CORS allowed origins: {string.Join(", ", frontendUrls)}");
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
@@ -145,7 +146,7 @@ builder.Services.AddSingleton(metaAdsConfig);
 
 builder.Services.AddHttpClient<MetaAdsService>(client =>
 {
-    client.BaseAddress = new Uri($"https://graph.facebook.com");
+    client.BaseAddress = new Uri("https://graph.facebook.com/");
     client.Timeout = TimeSpan.FromSeconds(60);
 });
 

@@ -81,7 +81,7 @@ public class MetaAdsService
 
     private async Task<string> UploadImageAsync(byte[] imageBytes, string fileName)
     {
-        var url = $"/{_config.ApiVersion}/act_{_config.AdAccountId}/adimages";
+        var url = $"{_config.ApiVersion}/act_{_config.AdAccountId}/adimages";
 
         using var form = new MultipartFormDataContent();
         form.Add(new StringContent(_config.AccessToken), "access_token");
@@ -102,7 +102,7 @@ public class MetaAdsService
 
     private async Task<string> CreateCampaignAsync(string name)
     {
-        var url = $"/{_config.ApiVersion}/act_{_config.AdAccountId}/campaigns";
+        var url = $"{_config.ApiVersion}/act_{_config.AdAccountId}/campaigns";
         var payload = new Dictionary<string, string>
         {
             ["name"] = name,
@@ -124,7 +124,7 @@ public class MetaAdsService
         DateTime? startTime,
         DateTime? endTime)
     {
-        var url = $"/{_config.ApiVersion}/act_{_config.AdAccountId}/adsets";
+        var url = $"{_config.ApiVersion}/act_{_config.AdAccountId}/adsets";
 
         var targetingObj = new Dictionary<string, object>
         {
@@ -179,7 +179,7 @@ public class MetaAdsService
         string linkUrl,
         string callToAction)
     {
-        var url = $"/{_config.ApiVersion}/act_{_config.AdAccountId}/adcreatives";
+        var url = $"{_config.ApiVersion}/act_{_config.AdAccountId}/adcreatives";
 
         var ctaValue = new Dictionary<string, string> { ["link"] = linkUrl };
 
@@ -213,7 +213,7 @@ public class MetaAdsService
 
     private async Task<string> CreateAdAsync(string adSetId, string creativeId, string name)
     {
-        var url = $"/{_config.ApiVersion}/act_{_config.AdAccountId}/ads";
+        var url = $"{_config.ApiVersion}/act_{_config.AdAccountId}/ads";
         var payload = new Dictionary<string, string>
         {
             ["name"] = name,
