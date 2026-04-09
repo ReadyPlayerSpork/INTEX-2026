@@ -65,6 +65,18 @@ public class MlController(IHttpClientFactory httpClientFactory, ILogger<MlContro
     public Task<IActionResult> SocialMediaPredict()
         => ProxyPost("/api/ml/social-media/predict");
 
+    // ── Governance & Status ─────────────────────────────────────────────
+
+    [HttpGet("status")]
+    [Authorize(Roles = AuthRoles.Admin)]
+    public Task<IActionResult> GetStatus()
+        => ProxyGet("/api/ml/status");
+
+    [HttpGet("health")]
+    [AllowAnonymous]
+    public Task<IActionResult> GetHealth()
+        => ProxyGet("/health");
+
     // ── Proxy helpers ───────────────────────────────────────────────────
 
     [HttpPost("retrain")]
