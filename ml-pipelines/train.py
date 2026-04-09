@@ -35,6 +35,7 @@ from sklearn.metrics import (
     r2_score,
     roc_auc_score,
 )
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 
 from serve import (
@@ -67,6 +68,17 @@ def _stratify_arg(y: pd.Series) -> pd.Series | None:
     if y.value_counts().min() < 2:
         return None
     return y
+
+
+def _gb_or_calibrated_importances(model, n_features: int) -> np.ndarray:
+    """Feature importances from GBC; CalibratedClassifierCV delegates to underlying estimators."""
+    if hasattr(model, "feature_importances_"):
+        return np.asarray(model.feature_importances_)
+    if getattr(model, "calibrated_classifiers_", None):
+        est = model.calibrated_classifiers_[0].estimator
+        if hasattr(est, "feature_importances_"):
+            return np.asarray(est.feature_importances_)
+    return np.zeros(n_features)
 
 
 def _save_report(name: str, report: dict) -> None:
@@ -158,9 +170,8 @@ def train_donor_churn() -> dict:
     """
     Predict donor churn (no donation in 365+ days).
 
-    Model: GradientBoostingClassifier — matches donor_loyalty_pipeline.ipynb
-    Split: 75/25 stratified
-    Hyperparams: n_estimators=150, learning_rate=0.05, max_depth=4
+    Uses regularized GradientBoosting + sigmoid calibration so batch scores are not
+    stuck at ~0% / ~100% (common with deep trees on small tabular data).
     """
     print("\n" + "="*60)
     print("Training: Donor Churn Model")
@@ -184,30 +195,50 @@ def train_donor_churn() -> dict:
         X, y, test_size=0.25, stratify=_stratify_arg(y), random_state=RANDOM_STATE
     )
 
-    # Model: Gradient Boosting (matches notebook hyperparameters)
-    model = GradientBoostingClassifier(
-        n_estimators=150,
+    # Stronger regularization than the original notebook to reduce overfitting
+    base_params = dict(
+        n_estimators=100,
         learning_rate=0.05,
-        max_depth=4,
+        max_depth=3,
+        min_samples_leaf=10,
+        min_samples_split=24,
+        subsample=0.72,
+        max_features="sqrt",
         random_state=RANDOM_STATE,
     )
+    base = GradientBoostingClassifier(**base_params)
+
+    # CV on the same base estimator (avoids nested CV cost of CalibratedClassifierCV)
+    try:
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+        cv_scores = cross_val_score(
+            GradientBoostingClassifier(**base_params), X, y, cv=cv, scoring="accuracy"
+        )
+    except ValueError as e:
+        print(f"  [WARN] Stratified CV skipped: {e}")
+        cv_scores = np.array([np.nan])
+
+    # Platt scaling on out-of-fold scores pulls extreme probabilities toward calibrated values
+    if len(X_train) >= 30:
+        model = CalibratedClassifierCV(estimator=GradientBoostingClassifier(**base_params), cv=3, method="sigmoid")
+        print("  Using CalibratedClassifierCV (sigmoid) on top of regularized GBC.")
+    else:
+        model = base
+        print("  Dataset small; using GBC without calibration (add data for softer scores).")
+
     model.fit(X_train, y_train)
 
     # Evaluate
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]
 
-    try:
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-        cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
-    except ValueError as e:
-        print(f"  [WARN] Stratified CV skipped: {e}")
-        cv_scores = np.array([np.nan])
-
     report = _print_classification_results("Donor Churn", y_test, y_pred, y_prob, cv_scores)
-    report["feature_importances"] = _print_feature_importances(feature_names, model.feature_importances_)
+    report["feature_importances"] = _print_feature_importances(
+        feature_names, _gb_or_calibrated_importances(model, len(feature_names))
+    )
     report["hyperparameters"] = {
-        "n_estimators": 150, "learning_rate": 0.05, "max_depth": 4,
+        **base_params,
+        "calibration": "sigmoid (CalibratedClassifierCV cv=3)" if len(X_train) >= 30 else "none (n_train < 30)",
     }
 
     # Save model + features
