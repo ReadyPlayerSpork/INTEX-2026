@@ -32,15 +32,13 @@ public class AdminDashboardController(HavenForHerBackendDbContext db) : Controll
         var sixtyDaysAgo = today.AddDays(-60);
 
         // ── Financial ──────────────────────────────────────────────────
-        var donations = await db.Donations.ToListAsync();
-
-        var thisMonthDonations = donations
+        var thisMonthDonations = await db.Donations
             .Where(d => d.DonationDate >= startOfMonth)
-            .ToList();
+            .ToListAsync();
 
-        var lastMonthDonations = donations
+        var lastMonthDonations = await db.Donations
             .Where(d => d.DonationDate >= startOfLastMonth && d.DonationDate < startOfMonth)
-            .ToList();
+            .ToListAsync();
 
         var totalThisMonth = thisMonthDonations.Sum(d => d.Amount ?? 0m);
         var totalLastMonth = lastMonthDonations.Sum(d => d.Amount ?? 0m);
@@ -66,10 +64,10 @@ public class AdminDashboardController(HavenForHerBackendDbContext db) : Controll
         var oneTimeCount = thisMonthDonations.Count(d => !d.IsRecurring);
 
         // Donor health: active (donated in last 90 days), lapsed (91-365), churned (>365)
-        var donorLastDonation = donations
+        var donorLastDonation = await db.Donations
             .GroupBy(d => d.SupporterId)
             .Select(g => new { SupporterId = g.Key, LastDate = g.Max(d => d.DonationDate) })
-            .ToList();
+            .ToListAsync();
 
         var ninetyDaysAgo = today.AddDays(-90);
         var oneYearAgo = today.AddDays(-365);
@@ -222,18 +220,22 @@ public class AdminDashboardController(HavenForHerBackendDbContext db) : Controll
         var upcomingVisitationsNext7Days = await db.HomeVisitations
             .CountAsync(v => v.VisitDate >= today && v.VisitDate <= visitWeekEnd);
 
+        var sixMonthsAgo = new DateOnly(today.Year, today.Month, 1).AddMonths(-5);
+        var monthlyTotals = await db.Donations
+            .Where(d =>
+                d.DonationType == "Monetary" &&
+                d.Amount.HasValue &&
+                d.DonationDate >= sixMonthsAgo)
+            .GroupBy(d => new { d.DonationDate.Year, d.DonationDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(d => d.Amount ?? 0m) })
+            .ToListAsync();
+
+        var monthlyDict = monthlyTotals.ToDictionary(m => (m.Year, m.Month), m => m.Total);
         var donationsByMonth = new List<object>();
         for (var i = 5; i >= 0; i--)
         {
             var mStart = new DateOnly(today.Year, today.Month, 1).AddMonths(-i);
-            var mEnd = mStart.AddMonths(1);
-            var monthTotal = donations
-                .Where(d =>
-                    string.Equals(d.DonationType, "Monetary", StringComparison.OrdinalIgnoreCase) &&
-                    d.Amount.HasValue &&
-                    d.DonationDate >= mStart &&
-                    d.DonationDate < mEnd)
-                .Sum(d => d.Amount ?? 0m);
+            monthlyDict.TryGetValue((mStart.Year, mStart.Month), out var monthTotal);
             donationsByMonth.Add(new
             {
                 label = mStart.ToString("MMM", CultureInfo.InvariantCulture),

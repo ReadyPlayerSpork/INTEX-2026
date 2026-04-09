@@ -2,7 +2,7 @@
  * Resident caseload preview — search + risk/status filters (client-side on API slice).
  */
 
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
 
@@ -37,7 +37,7 @@ function formatAdmit(iso: string): string {
   }
 }
 
-export function CaseloadPreviewTable({ rows }: CaseloadPreviewTableProps) {
+export const CaseloadPreviewTable = memo(function CaseloadPreviewTable({ rows }: CaseloadPreviewTableProps) {
   const [q, setQ] = useState('')
   const [risk, setRisk] = useState<string>('All risks')
   const [status, setStatus] = useState<string>('All status')
@@ -61,12 +61,12 @@ export function CaseloadPreviewTable({ rows }: CaseloadPreviewTableProps) {
   }, [rows, q, risk, status])
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div>
-          <h3 className="font-heading text-base font-semibold text-card-foreground">
+          <h2 className="font-heading text-base font-semibold text-card-foreground">
             Resident caseload
-          </h3>
+          </h2>
           <p className="text-muted-foreground text-xs">
             Showing {filtered.length} of {rows.length} active (preview)
           </p>
@@ -106,20 +106,27 @@ export function CaseloadPreviewTable({ rows }: CaseloadPreviewTableProps) {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border/60">
-        <table className="w-full min-w-[640px] text-left text-sm">
+        <table className="w-full min-w-[640px] text-left text-sm" aria-label="Resident caseload preview">
           <thead>
             <tr className="border-border text-muted-foreground border-b text-xs font-bold uppercase tracking-wide">
-              <th className="px-3 py-2.5">Case #</th>
-              <th className="px-3 py-2.5">Safehouse</th>
-              <th className="px-3 py-2.5">Status</th>
-              <th className="px-3 py-2.5">Risk</th>
-              <th className="px-3 py-2.5">Social worker</th>
-              <th className="px-3 py-2.5">Admitted</th>
-              <th className="px-3 py-2.5">Last session</th>
-              <th className="px-3 py-2.5">Flags</th>
+              <th scope="col" className="px-3 py-2.5">Case #</th>
+              <th scope="col" className="px-3 py-2.5">Safehouse</th>
+              <th scope="col" className="px-3 py-2.5">Status</th>
+              <th scope="col" className="px-3 py-2.5">Risk</th>
+              <th scope="col" className="px-3 py-2.5">Social worker</th>
+              <th scope="col" className="px-3 py-2.5">Admitted</th>
+              <th scope="col" className="px-3 py-2.5">Last session</th>
+              <th scope="col" className="px-3 py-2.5">Flags</th>
             </tr>
           </thead>
           <tbody>
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-3 py-8 text-center text-sm text-muted-foreground">
+                  No matching residents.
+                </td>
+              </tr>
+            )}
             {filtered.map((r) => (
               <tr
                 key={r.residentId}
@@ -159,7 +166,7 @@ export function CaseloadPreviewTable({ rows }: CaseloadPreviewTableProps) {
                 </td>
                 <td className="px-3 py-2.5">
                   {r.flaggedConcerns ? (
-                    <span className="bg-accent/15 text-accent inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold">
+                    <span className="bg-accent/15 text-accent inline-flex rounded-full px-2 py-0.5 text-xs font-bold">
                       Flagged
                     </span>
                   ) : (
@@ -179,4 +186,4 @@ export function CaseloadPreviewTable({ rows }: CaseloadPreviewTableProps) {
       </p>
     </div>
   )
-}
+})

@@ -9,6 +9,7 @@
  *   - Recurring vs one-time split
  */
 
+import { memo } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -46,7 +47,7 @@ function pct(value: number): string {
   return `${sign}${value.toFixed(1)}%`;
 }
 
-export function FinancialSnapshot({
+export const FinancialSnapshot = memo(function FinancialSnapshot({
   totalDonationsThisMonth,
   totalDonationsLastMonth,
   percentChange,
@@ -67,13 +68,13 @@ export function FinancialSnapshot({
         : 'text-muted-foreground';
 
   return (
-    <div className="rounded-2xl bg-card border border-border p-6 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+    <div className="rounded-2xl bg-card border border-border p-6 shadow-bloom">
       {/* Header */}
       <div className="mb-5 flex items-start justify-between">
         <div>
-          <h3 className="font-heading font-semibold text-base text-card-foreground">
+          <h2 className="font-heading font-semibold text-base text-card-foreground">
             Financial Snapshot
-          </h3>
+          </h2>
           <p className="text-xs text-muted-foreground mt-0.5">Donations overview · this month</p>
         </div>
         <Link
@@ -87,7 +88,7 @@ export function FinancialSnapshot({
       {/* Month comparison */}
       <div className="flex items-end gap-4 mb-5">
         <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold mb-0.5">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-0.5">
             This Month
           </p>
           <p className="font-heading font-semibold text-2xl text-card-foreground tabular-nums">
@@ -95,7 +96,7 @@ export function FinancialSnapshot({
           </p>
         </div>
         <div className="pb-1">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold mb-0.5">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-0.5">
             vs Last Month
           </p>
           <p className="text-sm text-muted-foreground tabular-nums">{php(totalDonationsLastMonth)}</p>
@@ -108,11 +109,11 @@ export function FinancialSnapshot({
 
       {/* Recurring vs One-time pill */}
       <div className="flex gap-2 mb-5">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-xs font-semibold text-primary">
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           {recurringVsOneTime.recurring} recurring
         </span>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-xs font-semibold text-muted-foreground">
           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
           {recurringVsOneTime.oneTime} one-time
         </span>
@@ -121,7 +122,7 @@ export function FinancialSnapshot({
       {/* Donations by type */}
       {donationsByType.length > 0 && (
         <div className="mb-5">
-          <h4 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-3">
+          <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-3">
             By Type
           </h4>
           <div className="space-y-3">
@@ -133,7 +134,7 @@ export function FinancialSnapshot({
                     <span className="text-xs font-semibold text-card-foreground">{d.type}</span>
                     <span className="text-xs text-muted-foreground tabular-nums">
                       {php(d.total)}{' '}
-                      <span className="text-[10px]">({d.count})</span>
+                      <span className="text-xs">({d.count})</span>
                     </span>
                   </div>
                   <div className="h-1.5 rounded-full bg-muted overflow-hidden">
@@ -152,13 +153,13 @@ export function FinancialSnapshot({
       {/* Top campaigns */}
       {topCampaigns.length > 0 && (
         <div>
-          <h4 className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-2">
+          <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
             Top Campaigns
           </h4>
           <ul className="space-y-1.5">
             {topCampaigns.slice(0, 4).map((c, i) => (
               <li key={c.campaign} className="flex items-center gap-2 text-xs">
-                <span className="w-4 h-4 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center text-[9px] font-bold shrink-0">
+                <span className="w-4 h-4 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center text-xs font-bold shrink-0">
                   {i + 1}
                 </span>
                 <span className="truncate text-card-foreground font-medium flex-1">
@@ -174,4 +175,4 @@ export function FinancialSnapshot({
       )}
     </div>
   );
-}
+})

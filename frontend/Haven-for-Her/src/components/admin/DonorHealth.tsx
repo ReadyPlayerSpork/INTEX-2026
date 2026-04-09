@@ -8,6 +8,7 @@
  *   Churned → warm-red (destructive)
  */
 
+import { memo } from 'react';
 import { Users, TrendingDown, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -17,7 +18,7 @@ interface DonorHealthProps {
   churned: number;
 }
 
-export function DonorHealth({ active, lapsed, churned }: DonorHealthProps) {
+export const DonorHealth = memo(function DonorHealth({ active, lapsed, churned }: DonorHealthProps) {
   const items = [
     {
       label: 'Active',
@@ -49,13 +50,13 @@ export function DonorHealth({ active, lapsed, churned }: DonorHealthProps) {
   ];
 
   return (
-    <div className="rounded-2xl bg-card border border-border p-6 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+    <div className="rounded-2xl bg-card border border-border p-6 shadow-bloom">
       {/* Header */}
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <h3 className="font-heading font-semibold text-base text-card-foreground">
+          <h2 className="font-heading font-semibold text-base text-card-foreground">
             Donor Health
-          </h3>
+          </h2>
           <p className="text-xs text-muted-foreground mt-0.5">Retention overview</p>
         </div>
         <Link
@@ -81,11 +82,11 @@ export function DonorHealth({ active, lapsed, churned }: DonorHealthProps) {
             <p className="font-heading font-semibold text-xl text-card-foreground tabular-nums">
               {value}
             </p>
-            <p className={`text-[11px] font-semibold mt-0.5 ${valueColor}`}>{label}</p>
-            <p className="text-[10px] mt-1 text-muted-foreground leading-tight">{note}</p>
+            <p className={`text-xs font-semibold mt-0.5 ${valueColor}`}>{label}</p>
+            <p className="text-xs mt-1 text-muted-foreground leading-tight">{note}</p>
           </div>
         ))}
       </div>
     </div>
   );
-}
+})

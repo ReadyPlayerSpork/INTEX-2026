@@ -2,6 +2,7 @@
  * Mockup-style narrative alert cards (data from /api/admin/dashboard).
  */
 
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, Flag, CalendarX, ShieldAlert, ClipboardCheck } from 'lucide-react'
 
@@ -110,15 +111,15 @@ function Card({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-card-foreground text-xs font-bold">{title}</p>
-          <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">{body}</p>
-          <p className="text-muted-foreground mt-1.5 text-[10px] font-medium">{when}</p>
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">{body}</p>
+          <p className="text-muted-foreground mt-1.5 text-xs font-medium">{when}</p>
         </div>
       </div>
     </Link>
   )
 }
 
-export function NarrativeAlertsPanel({
+export const NarrativeAlertsPanel = memo(function NarrativeAlertsPanel({
   escalatingRisk,
   recentConcerns,
   missedSessions,
@@ -146,7 +147,7 @@ export function NarrativeAlertsPanel({
 
   if (picked.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+      <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-bloom">
         <p className="text-card-foreground text-sm font-semibold">No priority alerts</p>
         <p className="text-muted-foreground mt-1 text-xs">Caseload is clear for surfaced items.</p>
       </div>
@@ -154,9 +155,9 @@ export function NarrativeAlertsPanel({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="font-heading text-base font-semibold text-card-foreground">Active alerts</h3>
+        <h2 className="font-heading text-base font-semibold text-card-foreground">Active alerts</h2>
         <Link
           to="/admin/caseload"
           className="text-primary text-xs font-semibold hover:underline"
@@ -243,4 +244,4 @@ export function NarrativeAlertsPanel({
       </ul>
     </div>
   )
-}
+})

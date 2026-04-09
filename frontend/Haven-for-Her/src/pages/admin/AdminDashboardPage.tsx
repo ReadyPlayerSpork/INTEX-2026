@@ -1,6 +1,6 @@
 /**
  * Admin executive dashboard — portal layout + mockup-aligned sections.
- * Data: GET /api/admin/dashboard (SQLite via EF Core).
+ * Data: GET /api/admin/dashboard (PostgreSQL via EF Core).
  */
 
 import { useEffect, useState } from 'react'
@@ -173,10 +173,10 @@ function SummaryCard({
   return (
     <Link
       to={href}
-      className="border-border bg-card hover:bg-secondary/50 block rounded-2xl border p-4 shadow-[0_4px_24px_rgba(74,44,94,0.03)] transition-colors duration-150 focus-visible:ring-ring focus-visible:ring-offset-2 outline-none focus-visible:ring-2"
+      className="border-border bg-card hover:bg-secondary/50 block rounded-2xl border p-4 shadow-bloom transition-colors duration-150 focus-visible:ring-ring focus-visible:ring-offset-2 outline-none focus-visible:ring-2"
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wide">
+        <p className="text-muted-foreground text-xs font-bold uppercase tracking-wide">
           {label}
         </p>
         {icon}
@@ -190,7 +190,7 @@ function SummaryCard({
         {value}
       </p>
       {sub ? (
-        <p className="text-muted-foreground mt-1 text-[11px] leading-snug">{sub}</p>
+        <p className="text-muted-foreground mt-1 text-xs leading-snug">{sub}</p>
       ) : null}
     </Link>
   )
@@ -198,7 +198,7 @@ function SummaryCard({
 
 function DashboardSkeleton() {
   return (
-    <div className="mx-auto max-w-6xl animate-pulse space-y-6 px-0">
+    <div className="mx-auto max-w-6xl animate-pulse space-y-8 px-0">
       <div className="space-y-2">
         <div className="bg-muted h-3 w-40 rounded-full" />
         <div className="bg-muted h-9 w-72 rounded-xl" />
@@ -209,9 +209,17 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="bg-muted h-72 rounded-2xl" />
-        <div className="bg-muted h-72 rounded-2xl" />
+        <div className="bg-muted h-56 rounded-2xl" />
+        <div className="bg-muted h-56 rounded-2xl" />
       </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="bg-muted h-52 rounded-2xl" />
+        <div className="bg-muted h-52 rounded-2xl" />
+        <div className="bg-muted h-52 rounded-2xl" />
+      </div>
+      <div className="bg-muted h-64 rounded-2xl" />
+      <div className="bg-muted h-20 rounded-2xl" />
+      <div className="bg-muted h-72 rounded-2xl" />
     </div>
   )
 }
@@ -223,13 +231,14 @@ export function AdminDashboardPage() {
   const [mlAlerts, setMlAlerts] = useState<IncidentRiskAlert[] | null>(null)
   const [mlStatus, setMlStatus] = useState<MLStatus | null>(null)
   const [isRetraining, setIsRetraining] = useState(false)
+  const [retrainError, setRetrainError] = useState('')
 
   const handleRetrain = async () => {
     setIsRetraining(true)
+    setRetrainError('')
     try {
       const res = await retrainModels()
       if (res && res.status === 'success') {
-        // Refresh alerts and status
         const [updatedAlerts, updatedStatus] = await Promise.all([
           getResidentAlerts(),
           getMLStatus()
@@ -237,10 +246,10 @@ export function AdminDashboardPage() {
         setMlAlerts(updatedAlerts)
         setMlStatus(updatedStatus)
       } else {
-        alert('Failed to retrain models.')
+        setRetrainError('Model retraining failed. Please try again.')
       }
-    } catch (err) {
-      alert('Error during model retraining.')
+    } catch {
+      setRetrainError('Could not connect to the ML service.')
     } finally {
       setIsRetraining(false)
     }
@@ -370,42 +379,14 @@ export function AdminDashboardPage() {
         donationsByType={fin.donationsByType}
         topCampaigns={fin.topCampaigns}
         recurringVsOneTime={fin.recurringVsOneTime}
-      />      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+      />      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-bloom">
         {isRetraining && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md transition-all duration-500 animate-in fade-in">
-            <div className="relative flex flex-col items-center gap-6 rounded-3xl border border-white/20 bg-card/40 p-10 text-center shadow-2xl backdrop-blur-xl max-w-sm overflow-hidden">
-              {/* Decorative background element */}
-              <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-              <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-              
-              <div className="relative">
-                <RefreshCw className="text-primary size-12 animate-spin transition-all duration-1000" />
-                <div className="absolute inset-0 size-12 rounded-full border-4 border-primary/20" />
-              </div>
-              
-              <div className="space-y-3">
-                <h3 className="font-heading text-2xl font-bold tracking-tight text-foreground">
-                  Calibrating Intelligence
-                </h3>
-                <div className="space-y-2">
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    Connecting to the live PostgreSQL cluster to process the latest resident and donor data.
-                  </p>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-border/50">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">
-                    Training 5 Predictive Engines
-                  </p>
-                  <p className="text-[10px] font-medium text-muted-foreground mt-1">
-                    ESTIMATED TIME: ~120 SECONDS
-                  </p>
-                </div>
-              </div>
+          <div className="absolute inset-0 z-50 flex items-center justify-center rounded-2xl bg-background/80">
+            <div className="flex items-center gap-3">
+              <RefreshCw className="text-primary size-5 animate-spin" />
+              <p className="text-sm font-semibold text-card-foreground">
+                Retraining models&hellip;
+              </p>
             </div>
           </div>
         )}
@@ -415,14 +396,14 @@ export function AdminDashboardPage() {
               <Brain className="text-primary size-5" />
             </div>
             <div>
-              <h3 className="font-heading text-base font-semibold text-card-foreground">
+              <h2 className="font-heading text-base font-semibold text-card-foreground">
                 Intelligence Governance
-              </h3>
-              <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
+              </h2>
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
                 Model Status: {mlStatus?.last_trained ? (
-                  <span className="text-green-600">Dynamic (Live Data)</span>
+                  <span className="text-primary">Dynamic (Live Data)</span>
                 ) : (
-                  <span className="text-amber-600">Static (Initialization)</span>
+                  <span className="text-[var(--chart-3)]">Static (Initialization)</span>
                 )}
               </p>
             </div>
@@ -430,7 +411,7 @@ export function AdminDashboardPage() {
 
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-tight">
+              <p className="text-muted-foreground text-xs font-bold uppercase tracking-tight">
                 Last Trained
               </p>
               <p className="text-card-foreground text-xs font-semibold">
@@ -447,23 +428,28 @@ export function AdminDashboardPage() {
             <button
               onClick={handleRetrain}
               disabled={isRetraining}
-              className="group relative flex items-center gap-2 overflow-hidden rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition-all hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(111,88,255,0.4)] disabled:opacity-50"
+              className="group flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
               <RefreshCw className={`size-3.5 ${isRetraining ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
               {isRetraining ? 'Processing...' : 'Retrain Models'}
             </button>
           </div>
         </div>
+        {retrainError && (
+          <p className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive" role="alert">
+            {retrainError}
+          </p>
+        )}
       </div>
 
       {mlAlerts && mlAlerts.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-bloom">
           <div className="mb-4 flex items-center gap-2">
             <Brain className="text-primary size-5" />
-            <h3 className="font-heading text-base font-semibold text-card-foreground">
+            <h2 className="font-heading text-base font-semibold text-card-foreground">
               ML Risk Alerts
-            </h3>
-            <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">
+            </h2>
+            <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">
               {mlAlerts.length} flagged
             </span>
           </div>
@@ -471,13 +457,13 @@ export function AdminDashboardPage() {
             Residents predicted to have elevated incident escalation risk by the ML model.
           </p>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm" aria-label="ML risk alerts">
               <thead>
                 <tr className="border-border border-b text-left">
-                  <th className="px-3 py-2 font-medium">Resident</th>
-                  <th className="px-3 py-2 font-medium">Current Risk</th>
-                  <th className="px-3 py-2 font-medium">ML Escalation Prob.</th>
-                  <th className="px-3 py-2 font-medium">ML Risk</th>
+                  <th scope="col" className="px-3 py-2 font-medium">Resident</th>
+                  <th scope="col" className="px-3 py-2 font-medium">Current Risk</th>
+                  <th scope="col" className="px-3 py-2 font-medium">ML Escalation Prob.</th>
+                  <th scope="col" className="px-3 py-2 font-medium">ML Risk</th>
                 </tr>
               </thead>
               <tbody>
@@ -494,10 +480,10 @@ export function AdminDashboardPage() {
                       <span
                         className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
                           a.risk_level === 'High'
-                            ? 'bg-red-100 text-red-800'
+                            ? 'bg-destructive/10 text-destructive'
                             : a.risk_level === 'Medium'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-green-100 text-green-800'
+                              ? 'bg-accent/10 text-accent'
+                              : 'bg-primary/10 text-primary'
                         }`}
                       >
                         {a.risk_level}
@@ -514,11 +500,11 @@ export function AdminDashboardPage() {
       <CaseloadPreviewTable rows={res.caseloadPreview ?? []} />
 
       {(soc.totalImpressions > 0 || soc.activeCampaigns.length > 0) && (
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-heading text-base font-semibold text-card-foreground">
+            <h2 className="font-heading text-base font-semibold text-card-foreground">
               Social media
-            </h3>
+            </h2>
             <Link
               to="/social/dashboard"
               className="text-primary text-xs font-semibold hover:underline"
@@ -528,7 +514,7 @@ export function AdminDashboardPage() {
           </div>
           <div className="flex flex-wrap gap-6">
             <div>
-              <p className="text-muted-foreground mb-0.5 text-[10px] font-bold uppercase tracking-wide">
+              <p className="text-muted-foreground mb-0.5 text-xs font-bold uppercase tracking-wide">
                 Impressions
               </p>
               <p className="font-heading text-card-foreground text-lg font-semibold tabular-nums">
@@ -536,7 +522,7 @@ export function AdminDashboardPage() {
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-0.5 text-[10px] font-bold uppercase tracking-wide">
+              <p className="text-muted-foreground mb-0.5 text-xs font-bold uppercase tracking-wide">
                 Reach
               </p>
               <p className="font-heading text-card-foreground text-lg font-semibold tabular-nums">
@@ -544,7 +530,7 @@ export function AdminDashboardPage() {
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground mb-0.5 text-[10px] font-bold uppercase tracking-wide">
+              <p className="text-muted-foreground mb-0.5 text-xs font-bold uppercase tracking-wide">
                 Avg engagement
               </p>
               <p className="font-heading text-card-foreground text-lg font-semibold tabular-nums">
@@ -553,11 +539,11 @@ export function AdminDashboardPage() {
             </div>
             {soc.topPost && (
               <div className="ml-auto text-right">
-                <p className="text-muted-foreground mb-0.5 text-[10px] font-bold uppercase tracking-wide">
+                <p className="text-muted-foreground mb-0.5 text-xs font-bold uppercase tracking-wide">
                   Top post
                 </p>
                 <p className="text-card-foreground text-xs font-semibold">{soc.topPost.contentTopic}</p>
-                <p className="text-muted-foreground text-[10px]">
+                <p className="text-muted-foreground text-xs">
                   {soc.topPost.platform} · {soc.topPost.impressions.toLocaleString()} impressions
                 </p>
               </div>
@@ -566,8 +552,8 @@ export function AdminDashboardPage() {
         </div>
       )}
 
-      <p className="text-muted-foreground pb-4 text-center text-[10px]">
-        Live data from SQLite via{' '}
+      <p className="text-muted-foreground pb-4 text-center text-xs">
+        Live data from PostgreSQL via{' '}
         <span className="font-semibold">/api/admin/dashboard</span>
       </p>
     </div>

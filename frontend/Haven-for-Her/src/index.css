@@ -41,6 +41,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --shadow-bloom: 0 4px 24px rgba(74, 44, 94, 0.03);
 }
 
 :root {

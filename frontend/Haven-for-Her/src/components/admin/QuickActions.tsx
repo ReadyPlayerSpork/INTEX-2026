@@ -2,6 +2,7 @@
  * Primary admin quick actions — routes to real pages (no alert stubs).
  */
 
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { UserPlus, HandHeart, ClipboardList, ShieldAlert } from 'lucide-react'
 
@@ -32,7 +33,7 @@ const ACTIONS = [
   },
 ] as const
 
-export function QuickActions() {
+export const QuickActions = memo(function QuickActions() {
   return (
     <div className="flex flex-wrap gap-2">
       {ACTIONS.map(({ label, icon: Icon, primary, to }) => (
@@ -54,4 +55,4 @@ export function QuickActions() {
       ))}
     </div>
   )
-}
+})

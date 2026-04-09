@@ -8,6 +8,7 @@
  *   ≥ 90 % → warm-red (destructive) — critical
  */
 
+import { memo } from 'react';
 import { Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -33,18 +34,18 @@ function labelClass(pct: number): string {
   return 'text-primary';
 }
 
-export function SafehouseOccupancy({ safehouses }: SafehouseOccupancyProps) {
+export const SafehouseOccupancy = memo(function SafehouseOccupancy({ safehouses }: SafehouseOccupancyProps) {
   const totalActive = safehouses.reduce((s, h) => s + h.activeCount, 0);
   const totalCapacity = safehouses.reduce((s, h) => s + h.capacity, 0);
 
   return (
-    <div className="rounded-2xl bg-card border border-border p-6 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+    <div className="rounded-2xl bg-card border border-border p-6 shadow-bloom">
       {/* Header */}
       <div className="mb-5 flex items-start justify-between">
         <div>
-          <h3 className="font-heading font-semibold text-base text-card-foreground">
+          <h2 className="font-heading font-semibold text-base text-card-foreground">
             Safehouse Occupancy
-          </h3>
+          </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {totalActive} residents across {safehouses.length} location
             {safehouses.length !== 1 ? 's' : ''} · {totalCapacity} total beds
@@ -83,7 +84,7 @@ export function SafehouseOccupancy({ safehouses }: SafehouseOccupancyProps) {
                 />
               </div>
 
-              <p className="text-[10px] text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {Math.round(pct * 100)}% capacity ·{' '}
                 <span className={pct >= 0.9 ? 'font-semibold text-destructive' : ''}>
                   {openBeds} open bed{openBeds !== 1 ? 's' : ''}
@@ -95,4 +96,4 @@ export function SafehouseOccupancy({ safehouses }: SafehouseOccupancyProps) {
       </div>
     </div>
   );
-}
+})

@@ -2,6 +2,7 @@
  * Risk distribution donut — conic gradient + legend (Bloom palette).
  */
 
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 
 interface RiskLevel {
@@ -16,14 +17,16 @@ interface RiskDonutChartProps {
 
 const ORDER = ['Low', 'Medium', 'High', 'Critical'] as const
 
+// Hard-coded because conic-gradient in inline styles can't reference CSS custom properties.
+// These must stay in sync with the Bloom palette in index.css (:root).
 const COLORS: Record<string, string> = {
-  Low: 'oklch(0.52 0.08 145)',
-  Medium: 'oklch(0.72 0.06 290)',
-  High: 'oklch(0.48 0.12 290)',
-  Critical: 'oklch(0.55 0.22 25)',
+  Low: 'oklch(0.52 0.08 145)',       // ~--primary
+  Medium: 'oklch(0.72 0.06 290)',    // lavender mid-tone
+  High: 'oklch(0.48 0.12 290)',      // ~--accent (plum)
+  Critical: 'oklch(0.55 0.22 25)',   // ~--destructive
 }
 
-export function RiskDonutChart({ riskDistribution, criticalCount }: RiskDonutChartProps) {
+export const RiskDonutChart = memo(function RiskDonutChart({ riskDistribution, criticalCount }: RiskDonutChartProps) {
   const map = Object.fromEntries(riskDistribution.map((r) => [r.level, r.count]))
   const ordered = ORDER.map((level) => ({ level, count: map[level] ?? 0 }))
   const total = ordered.reduce((s, r) => s + r.count, 0)
@@ -49,10 +52,10 @@ export function RiskDonutChart({ riskDistribution, criticalCount }: RiskDonutCha
           .join(', ')
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
-      <h3 className="font-heading mb-1 text-base font-semibold text-card-foreground">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+      <h2 className="font-heading mb-1 text-base font-semibold text-card-foreground">
         Active residents by risk
-      </h3>
+      </h2>
       {criticalCount > 0 && (
         <p className="text-destructive mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs font-semibold">
           {criticalCount} resident{criticalCount !== 1 ? 's' : ''} at CRITICAL level
@@ -69,7 +72,7 @@ export function RiskDonutChart({ riskDistribution, criticalCount }: RiskDonutCha
           aria-label={`Risk distribution, ${total} residents`}
         >
           <div className="bg-card m-[18%] flex size-[64%] flex-col items-center justify-center rounded-full shadow-sm">
-            <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-wide">
+            <span className="text-muted-foreground text-xs font-bold uppercase tracking-wide">
               Total
             </span>
             <span className="font-heading text-2xl font-bold tabular-nums text-accent">{total}</span>
@@ -99,4 +102,4 @@ export function RiskDonutChart({ riskDistribution, criticalCount }: RiskDonutCha
       </p>
     </div>
   )
-}
+})

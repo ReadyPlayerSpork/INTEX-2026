@@ -2,6 +2,8 @@
  * Last 6 months of monetary donation totals — SVG sparkline (no chart library).
  */
 
+import { memo } from 'react'
+
 interface MonthPoint {
   label: string
   year: number
@@ -16,7 +18,7 @@ interface DonationsTrendChartProps {
   oneTimePct: number
 }
 
-export function DonationsTrendChart({
+export const DonationsTrendChart = memo(function DonationsTrendChart({
   months,
   formatMoney,
   recurringPct,
@@ -39,17 +41,17 @@ export function DonationsTrendChart({
   const areaD = `${lineD} L ${pts[pts.length - 1]?.x ?? pad.l} ${pad.t + innerH} L ${pad.l} ${pad.t + innerH} Z`
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h3 className="font-heading text-base font-semibold text-card-foreground">
+          <h2 className="font-heading text-base font-semibold text-card-foreground">
             Donations overview
-          </h3>
+          </h2>
           <p className="text-muted-foreground text-xs">
             Monthly monetary donations (last 6 months)
           </p>
         </div>
-        <div className="text-right text-[11px]">
+        <div className="text-right text-xs">
           <span className="text-primary font-semibold">{recurringPct}%</span>
           <span className="text-muted-foreground"> recurring · </span>
           <span className="font-semibold text-accent">{oneTimePct}%</span>
@@ -63,6 +65,8 @@ export function DonationsTrendChart({
         role="img"
         aria-label="Donation totals by month"
       >
+        {/* Gradient stops are hard-coded because SVG stopColor can't reference CSS custom properties.
+            These values must match --primary in index.css (oklch(0.528 0.094 139)). */}
         <defs>
           <linearGradient id="donFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="oklch(0.52 0.08 145 / 0.35)" />
@@ -88,14 +92,14 @@ export function DonationsTrendChart({
             x={p.x}
             y={h - 6}
             textAnchor="middle"
-            className="fill-muted-foreground text-[9px] font-semibold"
+            className="fill-muted-foreground text-xs font-semibold"
           >
             {p.label}
           </text>
         ))}
       </svg>
 
-      <p className="text-muted-foreground mt-2 text-center text-[10px]">
+      <p className="text-muted-foreground mt-2 text-center text-xs">
         Peak this window:{' '}
         <span className="text-card-foreground font-semibold tabular-nums">
           {formatMoney(Math.max(...months.map((m) => m.total), 0))}
@@ -103,4 +107,4 @@ export function DonationsTrendChart({
       </p>
     </div>
   )
-}
+})
