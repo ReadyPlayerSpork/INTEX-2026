@@ -149,8 +149,8 @@ public class MetaAdsService
                 },
             };
 
-        // Ad sets use per–ad-set daily budget (no campaign budget). Meta requires this flag
-        // to be explicitly true or false — omitting it yields OAuthException 100 / subcode 4834011.
+        // Per–ad-set daily budget: Meta v24+ requires is_adset_budget_sharing_enabled on both
+        // campaign and ad set; value must be "True" or "False" (Graph rejects lowercase "true"/"false").
         var payload = new Dictionary<string, string>
         {
             ["campaign_id"] = campaignId,
@@ -159,7 +159,7 @@ public class MetaAdsService
             ["billing_event"] = "IMPRESSIONS",
             ["bid_strategy"] = "LOWEST_COST_WITHOUT_CAP",
             ["daily_budget"] = dailyBudgetCents.ToString(),  // in cents
-            ["is_adset_budget_sharing_enabled"] = "false",
+            ["is_adset_budget_sharing_enabled"] = "False",
             ["targeting"] = JsonSerializer.Serialize(targetingObj),
             ["status"] = "PAUSED",
             ["access_token"] = _config.AccessToken,
@@ -314,7 +314,7 @@ public class MetaAdsConfig
 /// <para><b>Hardcoded in <see cref="MetaAdsService"/> (not request fields)</b> — change in code if product needs different buying types:</para>
 /// <list type="bullet">
 /// <item><description>Campaign: <c>objective</c> OUTCOME_AWARENESS, <c>special_ad_categories</c> [], <c>status</c> PAUSED.</description></item>
-/// <item><description>Ad set: <c>optimization_goal</c> REACH, <c>billing_event</c> IMPRESSIONS, <c>bid_strategy</c> LOWEST_COST_WITHOUT_CAP, <c>daily_budget</c> from request, <c>is_adset_budget_sharing_enabled</c> false (required by Meta when not using campaign budget optimization), <c>status</c> PAUSED.</description></item>
+/// <item><description>Ad set: <c>optimization_goal</c> REACH, <c>billing_event</c> IMPRESSIONS, <c>bid_strategy</c> LOWEST_COST_WITHOUT_CAP, <c>daily_budget</c> from request, <c>is_adset_budget_sharing_enabled</c> <c>False</c> (Meta v24+; form value must be <c>True</c>/<c>False</c>, not lowercase), <c>status</c> PAUSED.</description></item>
 /// <item><description>Ad creative: built from <c>page_id</c> (config), image hash, copy, link, CTA.</description></item>
 /// <item><description>Ad: <c>status</c> PAUSED.</description></item>
 /// </list>
