@@ -43,6 +43,7 @@ from serve import (
     _donor_features,
     _incident_features,
     _resident_progress_features,
+    _safehouse_features,
     _social_media_features,
 )
 
@@ -151,7 +152,7 @@ def train_donor_churn() -> dict:
     print("="*60)
 
     df, X = _donor_features()
-    y = df["is_churned"].astype(int)
+    y = df["IsChurned"].astype(int)
     feature_names = list(X.columns)
 
     print(f"  Dataset: {len(X)} samples, {len(feature_names)} features")
@@ -211,7 +212,7 @@ def train_incident_risk() -> dict:
     print("="*60)
 
     df, X = _incident_features()
-    y = df["has_high_severity_incident"].astype(int)
+    y = df["HasHighSeverityIncident"].astype(int)
     feature_names = list(X.columns)
 
     print(f"  Dataset: {len(X)} samples, {len(feature_names)} features")
@@ -270,7 +271,7 @@ def train_resident_progress() -> dict:
     print("="*60)
 
     df, X = _resident_progress_features()
-    y = df["is_ready"].astype(int)
+    y = df["IsReady"].astype(int)
     feature_names = list(X.columns)
 
     print(f"  Dataset: {len(X)} samples, {len(feature_names)} features")
@@ -323,71 +324,13 @@ def train_safehouse_outcomes() -> dict:
     Model: RandomForestRegressor — matches safehouse_outcomes_pipeline.ipynb
     Split: 80/20 random
     Hyperparams: n_estimators=200, max_depth=10
-
-    Includes additional features (active_residents, ops/transport funding)
-    beyond the minimal 3-feature version for better predictive power.
     """
     print("\n" + "="*60)
     print("Training: Safehouse Outcomes Model")
     print("="*60)
 
-    # Replicate the notebook's feature engineering
-    allocations = pd.read_csv(os.path.join(CSV_DIR, "donation_allocations.csv"))
-    metrics = pd.read_csv(os.path.join(CSV_DIR, "safehouse_monthly_metrics.csv"))
-
-    allocations["allocation_date"] = pd.to_datetime(allocations["allocation_date"])
-    metrics["month_start"] = pd.to_datetime(metrics["month_start"])
-    metrics_clean = metrics.dropna(subset=["avg_education_progress", "avg_health_score"])
-
-    allocations["month_start"] = allocations["allocation_date"].dt.to_period("M").dt.to_timestamp()
-    funding_pivot = (
-        allocations
-        .groupby(["safehouse_id", "month_start", "program_area"])["amount_allocated"]
-        .sum()
-        .unstack(fill_value=0)
-        .reset_index()
-    )
-    funding_pivot = funding_pivot.rename(columns={
-        "Education": "edu_funding",
-        "Wellbeing": "wellbeing_funding",
-        "Operations": "ops_funding",
-        "Transport": "transport_funding",
-    })
-    for c in ["edu_funding", "wellbeing_funding", "ops_funding", "transport_funding"]:
-        if c not in funding_pivot.columns:
-            funding_pivot[c] = 0
-    funding_pivot["total_funding"] = funding_pivot[
-        ["edu_funding", "wellbeing_funding", "ops_funding", "transport_funding"]
-    ].sum(axis=1)
-
-    df = pd.merge(
-        metrics_clean, funding_pivot,
-        on=["safehouse_id", "month_start"], how="left"
-    ).fillna(0)
-    df = df.sort_values(["safehouse_id", "month_start"])
-
-    # Lagged features (1-month lag to capture time-to-impact)
-    for col in ["total_funding", "edu_funding", "wellbeing_funding", "ops_funding", "transport_funding"]:
-        df[f"lagged_{col}"] = df.groupby("safehouse_id")[col].shift(1)
-
-    df_final = df.dropna(subset=["lagged_total_funding"])
-
-    # Expanded feature set (matches notebook approach: RF with more features)
-    features = [
-        "lagged_total_funding",
-        "lagged_edu_funding",
-        "lagged_wellbeing_funding",
-        "lagged_ops_funding",
-        "lagged_transport_funding",
-        "active_residents",
-    ]
-    # Ensure all features exist
-    for f in features:
-        if f not in df_final.columns:
-            df_final[f] = 0
-
-    X = df_final[features].fillna(0)
-    y = df_final["avg_education_progress"]
+    df_final, X = _safehouse_features()
+    y = df_final["AvgEducationProgress"]
     feature_names = list(X.columns)
 
     print(f"  Dataset: {len(X)} samples, {len(feature_names)} features")
@@ -442,7 +385,7 @@ def train_social_media_impact() -> dict:
     print("="*60)
 
     df, X = _social_media_features()
-    y = df["is_donation_driver"].astype(int)
+    y = df["IsDonationDriver"].astype(int)
     feature_names = list(X.columns)
 
     print(f"  Dataset: {len(X)} samples, {len(feature_names)} features")
@@ -536,7 +479,27 @@ def train_all() -> dict:
     os.makedirs(REPORT_DIR, exist_ok=True)
     with open(summary_path, "w") as f:
         json.dump(results, f, indent=2, default=str)
+    
+    # Update production metadata.json for the status endpoint
+    metadata_path = os.path.join(MODEL_DIR, "metadata.json")
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    metadata = {
+        "last_trained": datetime.utcnow().isoformat(),
+        "model_summary": {
+            name: {
+                "status": "success" if "error" not in report else "error",
+                "metrics": {
+                    k: v for k, v in report.items() 
+                    if k in ["roc_auc", "cv_accuracy_mean", "r2_score", "cv_r2_mean"]
+                }
+            } for name, report in results.items()
+        }
+    }
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=2)
+
     print(f"\n  Full summary -> {summary_path}")
+    print(f"  Metadata updated -> {metadata_path}")
     print("  All models trained and saved successfully!")
     return results
 

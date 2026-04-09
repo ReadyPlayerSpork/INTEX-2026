@@ -368,7 +368,45 @@ export function AdminDashboardPage() {
       />
 
       {mlAlerts && mlAlerts.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(74,44,94,0.03)]">
+          {isRetraining && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md transition-all duration-500 animate-in fade-in">
+              <div className="relative flex flex-col items-center gap-6 rounded-3xl border border-white/20 bg-card/40 p-10 text-center shadow-2xl backdrop-blur-xl max-w-sm overflow-hidden">
+                {/* Decorative background element */}
+                <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+                <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+                
+                <div className="relative">
+                  <RefreshCw className="text-primary size-12 animate-spin transition-all duration-1000" />
+                  <div className="absolute inset-0 size-12 rounded-full border-4 border-primary/20" />
+                </div>
+                
+                <div className="space-y-3">
+                  <h3 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+                    Calibrating Intelligence
+                  </h3>
+                  <div className="space-y-2">
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      Connecting to the live PostgreSQL cluster to process the latest resident and donor data.
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
+                    </div>
+                  </div>
+                  <div className="pt-4 border-t border-border/50">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">
+                      Training 5 Predictive Engines
+                    </p>
+                    <p className="text-[10px] font-medium text-muted-foreground mt-1">
+                      ESTIMATED TIME: ~120 SECONDS
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="mb-4 flex items-center gap-2">
             <Brain className="text-primary size-5" />
             <h3 className="font-heading text-base font-semibold text-card-foreground">
