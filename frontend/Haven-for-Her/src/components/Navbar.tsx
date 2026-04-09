@@ -3,10 +3,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import {
-  filterVisibleAccountItems,
   navLinkClassName,
   PRIMARY_NAV,
 } from '@/components/nav-config'
+import {
+  flattenPortalNavSections,
+  getVisiblePortalSections,
+} from '@/components/portal-nav-sections'
 import { buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -61,7 +64,8 @@ export function Navbar() {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const accountItems = filterVisibleAccountItems(isAuthenticated, hasRole)
+  const portalSections = getVisiblePortalSections(isAuthenticated, hasRole)
+  const accountItems = flattenPortalNavSections(portalSections)
 
   useEffect(() => {
     startTransition(() => {
@@ -143,7 +147,7 @@ export function Navbar() {
             onMobileOpenChange={setMobileOpen}
             isAuthenticated={isAuthenticated}
             isLoading={isLoading}
-            accountItems={accountItems}
+            portalSections={portalSections}
             email={email}
             onLogout={handleLogout}
           />

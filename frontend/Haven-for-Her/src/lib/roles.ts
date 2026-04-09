@@ -8,7 +8,7 @@ const ROLE_LANDING: [string, string][] = [
   ['Counselor', '/counselor/dashboard'],
   ['SocialMedia', '/social/dashboard'],
   ['Donor', '/donor/dashboard'],
-  ['Survivor', '/survivor/resources'],
+  ['Survivor', '/resources'],
   ['Employee', '/volunteer'],
 ]
 

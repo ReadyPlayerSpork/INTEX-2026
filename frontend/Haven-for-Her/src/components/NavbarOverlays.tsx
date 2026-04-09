@@ -10,14 +10,15 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
-import { PRIMARY_NAV, type NavItem, sheetLinkClassName } from '@/components/nav-config'
+import { PRIMARY_NAV, sheetLinkClassName } from '@/components/nav-config'
+import type { PortalNavSection } from '@/components/portal-nav-sections'
 
 export interface NavbarOverlaysProps {
   mobileOpen: boolean
   onMobileOpenChange: (open: boolean) => void
   isAuthenticated: boolean
   isLoading: boolean
-  accountItems: NavItem[]
+  portalSections: PortalNavSection[]
   email: string | null | undefined
   onLogout: () => void | Promise<void>
 }
@@ -30,7 +31,7 @@ export function NavbarOverlays({
   onMobileOpenChange,
   isAuthenticated,
   isLoading,
-  accountItems,
+  portalSections,
   email,
   onLogout,
 }: NavbarOverlaysProps) {
@@ -82,16 +83,22 @@ export function NavbarOverlays({
 
             {isAuthenticated ? (
               <>
-                {accountItems.length > 0 && (
-                  <>
+                {portalSections.map((section) => (
+                  <div key={section.id}>
                     <Separator className="bg-border/60" />
-                    <section aria-labelledby="nav-portals-heading" className="flex flex-col gap-1">
-                      <h2 id="nav-portals-heading" className={sectionHeadingClass}>
-                        Portals
+                    <section
+                      aria-labelledby={`nav-portal-${section.id}-heading`}
+                      className="flex flex-col gap-1"
+                    >
+                      <h2
+                        id={`nav-portal-${section.id}-heading`}
+                        className={sectionHeadingClass}
+                      >
+                        {section.heading}
                       </h2>
-                      {accountItems.map((item) => (
+                      {section.items.map((item) => (
                         <Link
-                          key={item.to}
+                          key={`${section.id}-${item.to}-${item.label}`}
                           to={item.to}
                           className={sheetLinkClassName}
                           onClick={() => onMobileOpenChange(false)}
@@ -100,8 +107,8 @@ export function NavbarOverlays({
                         </Link>
                       ))}
                     </section>
-                  </>
-                )}
+                  </div>
+                ))}
 
                 <Separator className="bg-border/60" />
                 <section aria-labelledby="nav-account-heading" className="flex flex-col gap-1">

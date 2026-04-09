@@ -7,6 +7,12 @@ import { useAuth } from "@/hooks/useAuth"
 import { getGoogleSignInUrl } from "@/lib/auth"
 import { getLandingPath } from "@/lib/roles"
 
+/** Internal paths only — avoids open redirects. */
+function safeReturnPath(raw: string | null): string | null {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return null
+  return raw
+}
+
 export type LoginStep = "credentials" | "two-factor"
 
 export function useLoginForm() {
@@ -44,12 +50,18 @@ export function useLoginForm() {
     }
   }, [])
 
-  const googleSignInUrl = useMemo(() => getGoogleSignInUrl("/"), [])
+  const returnPath = searchParams.get("returnUrl")
+  const safeNext = safeReturnPath(returnPath)
+
+  const googleSignInUrl = useMemo(
+    () => getGoogleSignInUrl(safeNext ?? "/"),
+    [safeNext],
+  )
 
   const completeLogin = async () => {
     const session = await authApi.me()
     await refresh()
-    navigate(getLandingPath(session.roles))
+    navigate(safeNext ?? getLandingPath(session.roles))
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

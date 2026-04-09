@@ -56,17 +56,6 @@ const CounselingPage = lazy(() =>
     default: m.CounselingPage,
   })),
 )
-const FindHomePage = lazy(() =>
-  import('@/pages/survivor/FindHomePage').then((m) => ({
-    default: m.FindHomePage,
-  })),
-)
-const MyResourcesPage = lazy(() =>
-  import('@/pages/survivor/MyResourcesPage').then((m) => ({
-    default: m.MyResourcesPage,
-  })),
-)
-
 const CounselorDashboardPage = lazy(() =>
   import('@/pages/counselor/CounselorDashboardPage').then((m) => ({
     default: m.CounselorDashboardPage,
@@ -223,6 +212,14 @@ function App() {
             <Route path="/donate" element={<DonateRouter />} />
             <Route path="/volunteer" element={<VolunteerPage />} />
             <Route path="/resources" element={<ResourcesPage />} />
+            <Route
+              path="/survivor/resources"
+              element={<Navigate to="/resources" replace />}
+            />
+            <Route
+              path="/survivor/find-home"
+              element={<Navigate to="/resources#safe-homes" replace />}
+            />
 
             <Route element={<ProtectedRoute />}>
               <Route path="/account" element={<AccountPage />} />
@@ -238,8 +235,6 @@ function App() {
 
             <Route element={<ProtectedRoute allowedRoles={['Survivor']} />}>
               <Route path="/survivor/counseling" element={<CounselingPage />} />
-              <Route path="/survivor/find-home" element={<FindHomePage />} />
-              <Route path="/survivor/resources" element={<MyResourcesPage />} />
             </Route>
 
             <Route

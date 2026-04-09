@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { authApi, type ProfileResponse } from '@/api/authApi'
 import { ApiError } from '@/api/client'
+import { useAuth } from '@/hooks/useAuth'
 
 type TwoFaView = 'loading' | 'disabled' | 'setup' | 'enabled'
 
 export function AccountPage() {
+  const navigate = useNavigate()
+  const { logout } = useAuth()
   const [profile, setProfile] = useState<ProfileResponse | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
 
@@ -128,6 +132,11 @@ export function AccountPage() {
     }
   }
 
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
+
   if (profileLoading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -139,13 +148,23 @@ export function AccountPage() {
   return (
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto max-w-xl space-y-8">
-        <div>
-          <h1 className="font-heading text-3xl font-semibold text-accent">
-            Account Settings
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Manage your profile, contact information, and security.
-          </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="font-heading text-3xl font-semibold text-accent">
+              Account Settings
+            </h1>
+            <p className="text-muted-foreground mt-2 text-sm">
+              Manage your profile, contact information, and security.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0"
+            onClick={() => void handleLogout()}
+          >
+            Log out
+          </Button>
         </div>
 
         {/* ── Profile section ────────────────────────────── */}

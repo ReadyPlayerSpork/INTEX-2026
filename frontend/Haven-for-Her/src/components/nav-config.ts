@@ -13,26 +13,6 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: 'Impact', to: '/impact', roles: [] },
 ]
 
-/** Role-gated portal links shown in the mobile nav sheet. */
-export const ACCOUNT_NAV: NavItem[] = [
-  { label: 'Donor Dashboard', to: '/donor/dashboard', roles: ['Donor'] },
-  { label: 'My Resources', to: '/survivor/resources', roles: ['Survivor'] },
-  { label: 'Financial', to: '/financial/dashboard', roles: ['Financial', 'Admin'] },
-  { label: 'Counselor', to: '/counselor/dashboard', roles: ['Counselor', 'Admin'] },
-  { label: 'Social Media', to: '/social/dashboard', roles: ['SocialMedia', 'Admin'] },
-  { label: 'Admin', to: '/admin/dashboard', roles: ['Admin'] },
-]
-
-export function filterVisibleAccountItems(
-  isAuthenticated: boolean,
-  hasRole: (...roles: string[]) => boolean,
-): NavItem[] {
-  if (!isAuthenticated) return []
-  return ACCOUNT_NAV.filter(
-    (item) => item.roles.length === 0 || hasRole(...item.roles),
-  )
-}
-
 export const navLinkClassName =
   'text-muted-foreground hover:bg-secondary hover:text-foreground inline-flex min-h-11 min-w-0 items-center rounded-full px-3 py-2 text-sm font-medium motion-safe:transition-[background-color,color] motion-safe:duration-200 focus-visible:border-ring focus-visible:ring-ring/20 outline-none focus-visible:ring-4'
 
