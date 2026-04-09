@@ -6,7 +6,7 @@ const LINKS: PortalLink[] = [
   { label: 'Donation Records', to: '/financial/donations' },
   { label: 'Insights', to: '/financial/insights' },
   { label: 'Reports', to: '/financial/reports' },
-  { label: 'Settings', to: '/account/security' },
+  { label: 'Account', to: '/account' },
 ]
 
 export function FinancialPortalLayout() {

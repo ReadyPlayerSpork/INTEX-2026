@@ -10,7 +10,7 @@ const LINKS: PortalLink[] = [
   { label: 'Safehouses', to: '/admin/safehouses' },
   { label: 'Partners', to: '/admin/partners' },
   { label: 'Analytics', to: '/admin/analytics' },
-  { label: 'Settings', to: '/account/security' },
+  { label: 'Account', to: '/account' },
 ]
 
 export function AdminPortalLayout() {

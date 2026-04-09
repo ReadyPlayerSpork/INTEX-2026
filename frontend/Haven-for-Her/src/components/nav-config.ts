@@ -13,7 +13,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: 'Impact', to: '/impact', roles: [] },
 ]
 
-/** Shown only when signed in and the user has the required role(s). */
+/** Role-gated portal links shown in the mobile nav sheet. */
 export const ACCOUNT_NAV: NavItem[] = [
   { label: 'Donor Dashboard', to: '/donor/dashboard', roles: ['Donor'] },
   { label: 'My Resources', to: '/survivor/resources', roles: ['Survivor'] },
@@ -21,7 +21,6 @@ export const ACCOUNT_NAV: NavItem[] = [
   { label: 'Counselor', to: '/counselor/dashboard', roles: ['Counselor', 'Admin'] },
   { label: 'Social Media', to: '/social/dashboard', roles: ['SocialMedia', 'Admin'] },
   { label: 'Admin', to: '/admin/dashboard', roles: ['Admin'] },
-  { label: 'Security', to: '/account/security', roles: [] },
 ]
 
 export function filterVisibleAccountItems(

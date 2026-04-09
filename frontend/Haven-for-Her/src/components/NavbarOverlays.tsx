@@ -3,15 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -91,6 +82,27 @@ export function NavbarOverlays({
 
             {isAuthenticated ? (
               <>
+                {accountItems.length > 0 && (
+                  <>
+                    <Separator className="bg-border/60" />
+                    <section aria-labelledby="nav-portals-heading" className="flex flex-col gap-1">
+                      <h2 id="nav-portals-heading" className={sectionHeadingClass}>
+                        Portals
+                      </h2>
+                      {accountItems.map((item) => (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className={sheetLinkClassName}
+                          onClick={() => onMobileOpenChange(false)}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </section>
+                  </>
+                )}
+
                 <Separator className="bg-border/60" />
                 <section aria-labelledby="nav-account-heading" className="flex flex-col gap-1">
                   <h2 id="nav-account-heading" className={sectionHeadingClass}>
@@ -101,16 +113,13 @@ export function NavbarOverlays({
                       {email}
                     </p>
                   ) : null}
-                  {accountItems.map((item) => (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className={sheetLinkClassName}
-                      onClick={() => onMobileOpenChange(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+                  <Link
+                    to="/account"
+                    className={sheetLinkClassName}
+                    onClick={() => onMobileOpenChange(false)}
+                  >
+                    Account Settings
+                  </Link>
                   <Button
                     type="button"
                     variant="outline"
@@ -151,50 +160,17 @@ export function NavbarOverlays({
       </Sheet>
 
       {isLoading ? null : isAuthenticated ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            type="button"
-            className={cn(
-              buttonVariants({ variant: 'outline', size: 'sm' }),
-              'hidden min-h-10 gap-2 md:inline-flex',
-            )}
-            aria-label="Account menu"
-            aria-haspopup="menu"
-          >
-            <UserRound data-icon="inline-start" />
-            <span>Account</span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-56">
-            {email ? (
-              <>
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel className="max-w-56 truncate font-normal">
-                    {email}
-                  </DropdownMenuLabel>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-              </>
-            ) : null}
-            {accountItems.length > 0 ? (
-              <DropdownMenuGroup>
-                {accountItems.map((item) => (
-                  <DropdownMenuItem
-                    key={item.to}
-                    onClick={() => navigate(item.to)}
-                  >
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            ) : null}
-            {accountItems.length > 0 ? <DropdownMenuSeparator /> : null}
-            <DropdownMenuGroup>
-              <DropdownMenuItem variant="destructive" onClick={() => void onLogout()}>
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Link
+          to="/account"
+          className={cn(
+            buttonVariants({ variant: 'outline', size: 'sm' }),
+            'hidden min-h-10 gap-2 md:inline-flex',
+          )}
+          aria-label="Account settings"
+        >
+          <UserRound data-icon="inline-start" />
+          <span>Account</span>
+        </Link>
       ) : (
         <div className="hidden items-center gap-2 sm:flex">
           <Button variant="ghost" size="sm" className="min-h-10" onClick={() => navigate('/login')}>

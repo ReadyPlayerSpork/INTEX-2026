@@ -4,9 +4,6 @@ import { Card, CardContent } from '@/components/ui/card'
 
 interface ImpactStats {
   totalResidentsServed: number
-  activeResidents: number
-  totalDonations: number
-  totalDonationValuePhp: number
   activeSafehouses: number
   activePartners: number
   latestSnapshot: {
@@ -47,28 +44,23 @@ export function ImpactPage() {
   return (
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-10 max-w-3xl">
+        <div className="mb-12 max-w-3xl">
           <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-            Accountability and hope
+            Our mission
           </p>
           <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
-            Our impact
+            Protecting and restoring lives
           </h1>
-          <p className="text-muted-foreground mt-4 text-pretty leading-8">
-            We share aggregated impact data to reflect transparency while
-            protecting privacy. These numbers describe care delivered, safe
-            spaces sustained, and partnership momentum.
+          <p className="text-muted-foreground mt-4 text-pretty text-lg leading-8">
+            Haven for Her exists to provide safety, healing, and hope to
+            survivors of sexual assault. Through safe housing,
+            trauma-informed counseling, and community partnerships, we walk
+            alongside survivors on their path to restoration.
           </p>
         </div>
 
-        <div className="mb-12 grid grid-cols-2 gap-5 sm:grid-cols-3">
-          <Stat label="Total residents served" value={stats.totalResidentsServed} />
-          <Stat label="Currently active" value={stats.activeResidents} />
-          <Stat label="Total donations" value={stats.totalDonations} />
-          <Stat
-            label="Total donated (PHP)"
-            value={`PHP ${stats.totalDonationValuePhp.toLocaleString()}`}
-          />
+        <div className="mb-12 grid gap-5 sm:grid-cols-3">
+          <Stat label="Survivors served" value={stats.totalResidentsServed} />
           <Stat label="Active safe homes" value={stats.activeSafehouses} />
           <Stat label="Partner organizations" value={stats.activePartners} />
         </div>

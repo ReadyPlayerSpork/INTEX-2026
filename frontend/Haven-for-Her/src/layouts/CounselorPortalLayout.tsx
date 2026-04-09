@@ -5,7 +5,7 @@ const LINKS: PortalLink[] = [
   { label: 'Sessions', to: '/counselor/sessions' },
   { label: 'Visitations', to: '/counselor/visitations' },
   { label: 'Case Conferences', to: '/counselor/case-conferences' },
-  { label: 'Settings', to: '/account/security' },
+  { label: 'Account', to: '/account' },
 ]
 
 export function CounselorPortalLayout() {

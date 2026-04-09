@@ -39,9 +39,9 @@ const ResourcesPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 )
-const SecuritySettingsPage = lazy(() =>
-  import('@/pages/SecuritySettingsPage').then((m) => ({
-    default: m.SecuritySettingsPage,
+const AccountPage = lazy(() =>
+  import('@/pages/AccountPage').then((m) => ({
+    default: m.AccountPage,
   })),
 )
 
@@ -240,9 +240,10 @@ function App() {
             <Route path="/resources" element={<ResourcesPage />} />
 
             <Route element={<ProtectedRoute />}>
+              <Route path="/account" element={<AccountPage />} />
               <Route
                 path="/account/security"
-                element={<SecuritySettingsPage />}
+                element={<Navigate to="/account" replace />}
               />
             </Route>
 

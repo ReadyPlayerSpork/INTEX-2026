@@ -1,11 +1,11 @@
 /**
  * Shared portal shell used by Admin, Financial, Counselor, and SocialMedia layouts.
- * Provides a sidebar (desktop), mobile sheet nav, header with avatar, and <Outlet />.
+ * Provides a sidebar (desktop), mobile sheet nav, minimal header, and <Outlet />.
  */
 
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
-import { Bell, LayoutDashboard, Menu } from 'lucide-react'
+import { Link, NavLink, Outlet } from 'react-router-dom'
+import { LayoutDashboard, Menu, UserRound } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import {
@@ -38,7 +38,6 @@ const navActive = 'bg-primary/15 text-primary'
 
 export function PortalLayout({ title, subtitle, links, homeRoute }: PortalLayoutProps) {
   const { email } = useAuth()
-  const initial = email?.trim().charAt(0).toUpperCase() ?? 'U'
   const [mobileNav, setMobileNav] = useState(false)
   const home = homeRoute ?? links[0]?.to ?? '/'
 
@@ -106,22 +105,17 @@ export function PortalLayout({ title, subtitle, links, homeRoute }: PortalLayout
                 {subtitle}
               </span>
             </div>
-            <div className="hidden min-w-0 md:block" />
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                type="button"
-                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-10 items-center justify-center rounded-full border border-border/70 bg-background/80 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-safe:transition-colors"
-                aria-label="Notifications"
-              >
-                <Bell className="size-[18px]" />
-              </button>
-              <div
-                className="flex size-10 items-center justify-center rounded-full border border-border/70 bg-primary/10 font-heading text-sm font-bold text-primary"
-                title={email ?? subtitle}
-              >
-                {initial}
-              </div>
+            <div className="hidden min-w-0 items-center gap-2 md:flex">
+              <span className="font-heading text-sm font-semibold text-accent">{subtitle}</span>
             </div>
+            <Link
+              to="/account"
+              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/80 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-safe:transition-colors"
+              aria-label="Account settings"
+              title={email ?? 'Account'}
+            >
+              <UserRound className="size-[18px]" />
+            </Link>
           </div>
         </header>
 

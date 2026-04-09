@@ -152,6 +152,11 @@ public class MetaAdsService
                 },
             };
 
+        targetingObj["targeting_automation"] = new Dictionary<string, object>
+        {
+            ["advantage_audience"] = 0,
+        };
+
         var payload = new Dictionary<string, string>
         {
             ["campaign_id"] = campaignId,

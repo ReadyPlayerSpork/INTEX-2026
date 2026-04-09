@@ -203,9 +203,7 @@ using (var scope = app.Services.CreateScope())
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-    // Clear known networks/proxies to trust all proxies (required for many load balancers/Cloudflare)
-    KnownIPNetworks = { },
-    KnownProxies = { }
+    ForwardLimit = null,
 });
 
 if (app.Environment.IsDevelopment())

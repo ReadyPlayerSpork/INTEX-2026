@@ -19,6 +19,22 @@ export interface ExternalProvider {
   displayName: string
 }
 
+export interface ProfileResponse {
+  email: string | null
+  userName: string | null
+  phoneNumber: string | null
+  persona: string | null
+  twoFactorEnabled: boolean
+  roles: string[]
+  createdAt: string
+}
+
+export interface UpdateProfilePayload {
+  userName?: string
+  email?: string
+  phoneNumber?: string
+}
+
 export const authApi = {
   me(): Promise<SessionResponse> {
     return api.get<SessionResponse>('/api/auth/me')
@@ -42,6 +58,15 @@ export const authApi = {
 
   providers(): Promise<ExternalProvider[]> {
     return api.get<ExternalProvider[]>('/api/auth/providers')
+  },
+
+  // Profile management
+  getProfile(): Promise<ProfileResponse> {
+    return api.get<ProfileResponse>('/api/account/profile')
+  },
+
+  updateProfile(payload: UpdateProfilePayload): Promise<void> {
+    return api.put('/api/account/profile', payload)
   },
 
   // 2FA management
