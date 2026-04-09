@@ -150,7 +150,6 @@ All agent guidance files live at the **project root** for auto-discovery:
 | `CLAUDE.md` | Agent onboarding — commands, architecture, key files |
 | `.impeccable.md` | Design context — brand personality, audiences, design principles |
 | `STYLE_GUIDE.md` | Bloom theme — palette, typography, components, anti-patterns |
-| `BUILDPROMPT.md` | Feature roadmap with phased deliverables |
 
 ## Build Plan
-The project has a detailed roadmap in `BUILDPROMPT.md`. The backend auth skeleton is complete, and the frontend now has a basic scaffold plus dev proxy wiring. Phase 0 still covers the foundational work needed before feature-heavy pages are built.
+A detailed feature roadmap lives in `docs/BUILDPROMPT.md`. **Do NOT read this file into context unless the user explicitly asks for it** (e.g. "check the build plan", "look at the roadmap"). It is ~870 lines and significantly increases token usage when loaded unnecessarily.
