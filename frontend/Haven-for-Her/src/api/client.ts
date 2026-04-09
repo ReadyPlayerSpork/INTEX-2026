@@ -8,7 +8,13 @@
 /** Returns the API base URL (empty string in dev so Vite proxy handles it). */
 function getBaseUrl(): string {
   const env = import.meta.env.VITE_API_BASE_URL?.trim();
-  return env ? env.replace(/\/$/, '') : '';
+  const url = env ? env.replace(/\/$/, '') : '';
+
+  if (import.meta.env.DEV) {
+    console.log(`[API] Base URL resolved to: "${url || '(relative)'}"`);
+  }
+
+  return url;
 }
 
 class ApiError extends Error {
