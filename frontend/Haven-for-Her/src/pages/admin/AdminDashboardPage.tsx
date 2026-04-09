@@ -240,11 +240,11 @@ export function AdminDashboardPage() {
       const res = await retrainModels()
       if (res && res.status === 'success') {
         const [updatedAlerts, updatedStatus] = await Promise.all([
-          getResidentAlerts(),
-          getMLStatus()
+          getResidentAlerts().catch(() => [] as IncidentRiskAlert[]),
+          getMLStatus().catch(() => null),
         ])
         setMlAlerts(updatedAlerts)
-        setMlStatus(updatedStatus)
+        if (updatedStatus) setMlStatus(updatedStatus)
       } else {
         setRetrainError('Model retraining failed. Please try again.')
       }

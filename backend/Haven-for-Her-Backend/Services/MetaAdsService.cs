@@ -149,6 +149,8 @@ public class MetaAdsService
                 },
             };
 
+        // Ad sets use per–ad-set daily budget (no campaign budget). Meta requires this flag
+        // to be explicitly true or false — omitting it yields OAuthException 100 / subcode 4834011.
         var payload = new Dictionary<string, string>
         {
             ["campaign_id"] = campaignId,
@@ -157,6 +159,7 @@ public class MetaAdsService
             ["billing_event"] = "IMPRESSIONS",
             ["bid_strategy"] = "LOWEST_COST_WITHOUT_CAP",
             ["daily_budget"] = dailyBudgetCents.ToString(),  // in cents
+            ["is_adset_budget_sharing_enabled"] = "false",
             ["targeting"] = JsonSerializer.Serialize(targetingObj),
             ["status"] = "PAUSED",
             ["access_token"] = _config.AccessToken,

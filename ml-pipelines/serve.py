@@ -579,10 +579,15 @@ def incident_risk():
 
 @app.route("/api/ml/incident-risk/alerts", methods=["GET"])
 def incident_risk_alerts():
-    """Return residents with high escalation probability (>0.5)."""
+    """Return residents with high escalation probability (>0.5).
+
+    When the model is not trained yet, return 200 + [] so the admin dashboard
+    does not surface 503s in the browser console (proxies still forward 5xx).
+    Keys use snake_case to match the SPA (IncidentRiskAlert).
+    """
     model, features = _load_model("incident_risk")
     if model is None:
-        return jsonify({"error": "Model not trained yet."}), 503
+        return jsonify([])
 
     try:
         df, X = _incident_features()
@@ -594,14 +599,14 @@ def incident_risk_alerts():
             prob = float(probs[i])
             if prob >= 0.5:
                 alerts.append({
-                    "ResidentId": int(row["ResidentId"]),
-                    "FirstName": row.get("FirstName", ""),
-                    "LastName": row.get("LastName", ""),
-                    "EscalationProbability": round(prob, 4),
-                    "RiskLevel": _risk_level(prob),
-                    "CurrentRiskLevel": row.get("CurrentRiskLevel", ""),
+                    "resident_id": int(row["ResidentId"]),
+                    "first_name": str(row.get("FirstName", "")),
+                    "last_name": str(row.get("LastName", "")),
+                    "escalation_probability": round(prob, 4),
+                    "risk_level": _risk_level(prob),
+                    "current_risk_level": str(row.get("CurrentRiskLevel", "")),
                 })
-        alerts.sort(key=lambda x: x["EscalationProbability"], reverse=True)
+        alerts.sort(key=lambda x: x["escalation_probability"], reverse=True)
         return jsonify(alerts)
     except Exception as e:
         traceback.print_exc()
