@@ -149,9 +149,7 @@ export function RegisterPage() {
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold">
-                  Password (14+ characters)
-                </span>
+                <span className="text-sm font-semibold">Password</span>
                 <Input
                   type="password"
                   required
@@ -159,6 +157,40 @@ export function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <div className="mt-1">
+                  <div
+                    className={`flex items-center gap-2 text-sm transition-colors ${
+                      password.length >= 14
+                        ? 'text-green-600 dark:text-green-500 font-medium'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    <div
+                      className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${
+                        password.length >= 14
+                          ? 'border-transparent bg-green-600 dark:bg-green-500 text-white'
+                          : 'border-muted-foreground/50 bg-background'
+                      }`}
+                    >
+                      {password.length >= 14 && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="10"
+                          height="10"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      )}
+                    </div>
+                    At least 14 characters long
+                  </div>
+                </div>
               </label>
 
               <label className="flex flex-col gap-2">
