@@ -1,29 +1,8 @@
-import { useEffect, useState } from 'react'
-import { api } from '@/api/client'
+import { useImpactStats } from '@/features/public/home/useImpactStats'
 import { Card, CardContent } from '@/components/ui/card'
 
-interface ImpactStats {
-  totalResidentsServed: number
-  activeSafehouses: number
-  activePartners: number
-  latestSnapshot: {
-    headline: string
-    summaryText: string
-    publishedAt: string
-  } | null
-}
-
 export function ImpactPage() {
-  const [stats, setStats] = useState<ImpactStats | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    api
-      .get<ImpactStats>('/api/public/impact')
-      .then(setStats)
-      .catch((err) => console.error('Failed to load impact data', err))
-      .finally(() => setLoading(false))
-  }, [])
+  const { stats, isLoading: loading } = useImpactStats()
 
   if (loading) {
     return (
@@ -52,10 +31,7 @@ export function ImpactPage() {
             Protecting and restoring lives
           </h1>
           <p className="text-muted-foreground mt-4 text-pretty text-lg leading-8">
-            Haven for Her exists to provide safety, healing, and hope to
-            survivors of sexual assault. Through safe housing,
-            trauma-informed counseling, and community partnerships, we walk
-            alongside survivors on their path to restoration.
+            Here is a realistic look at our operations and outcomes. We track our effectiveness so partners and donors know exactly where resources go and how lives are changing.
           </p>
         </div>
 
