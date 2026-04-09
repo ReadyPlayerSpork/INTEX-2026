@@ -130,7 +130,8 @@ The project is deployed to a self-hosted **Dokploy** instance. External HTTPS is
 ### TLS / HTTPS Handling
 - **Cloudflare** terminates TLS at the edge and forwards plain HTTP to the Dokploy containers via the tunnel.
 - **`UseHttpsRedirection()` and `UseHsts()` are intentionally omitted** from the ASP.NET middleware pipeline — adding them behind Cloudflare causes redirect loops.
-- **`UseForwardedHeaders()`** uses `ForwardedHeadersOptions` with `X-Forwarded-For` and `X-Forwarded-Proto`; **`KnownIPNetworks` and `KnownProxies` are cleared** so headers from Docker/Cloudflare are not ignored (required for Google OAuth `redirect_uri` to use `https://` behind the tunnel).
+- **`UseForwardedHeaders()`** uses `ForwardedHeadersOptions` with `X-Forwarded-For`, `X-Forwarded-Proto`, and `X-Forwarded-Host`; **`KnownIPNetworks` and `KnownProxies` are cleared** so headers from Docker/Cloudflare are not ignored.
+- If OAuth still builds `redirect_uri=http://...` (last hop to the container is often plain HTTP), set **`PublicBaseUrl=https://<your-api-host>`** on the backend (Dokploy **Environment**). Middleware upgrades `http`→`https` for that host so Google accepts the callback.
 - Dokploy domain entries use `https: false` / `certificateType: none` since Cloudflare handles certs.
 
 ### Environment Variables

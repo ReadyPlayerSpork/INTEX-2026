@@ -14,6 +14,7 @@ const string DefaultFrontendUrl = "https://localhost:5173";
 var frontendUrls = (builder.Configuration["FrontendUrls"] ?? builder.Configuration["FrontendUrl"] ?? DefaultFrontendUrl)
     .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 Console.WriteLine($"CORS allowed origins: {string.Join(", ", frontendUrls)}");
+var configuredPublicBaseUrl = builder.Configuration["PublicBaseUrl"];
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
@@ -214,6 +215,28 @@ using (var scope = app.Services.CreateScope())
 
 // Must be early in the pipeline so Request.Scheme/Host reflect the public URL (see Configure<ForwardedHeadersOptions> above).
 app.UseForwardedHeaders();
+
+// Cloudflare Tunnel / Traefik often forward plain HTTP to the container; the last hop may set X-Forwarded-Proto=http
+// or omit it, so OAuth still builds redirect_uri with http://. Set PublicBaseUrl (e.g. https://api.example.com) in
+// production to upgrade matching requests to that scheme so Google OAuth accepts the callback.
+if (!string.IsNullOrWhiteSpace(configuredPublicBaseUrl)
+    && Uri.TryCreate(configuredPublicBaseUrl.Trim(), UriKind.Absolute, out var publicOriginUri))
+{
+    var expectedHost = publicOriginUri.Host;
+    app.Use(async (context, next) =>
+    {
+        if (string.Equals(context.Request.Host.Host, expectedHost, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(context.Request.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
+        {
+            context.Request.Scheme = publicOriginUri.Scheme;
+            context.Request.Host = publicOriginUri.IsDefaultPort
+                ? new HostString(publicOriginUri.Host)
+                : new HostString(publicOriginUri.Host, publicOriginUri.Port);
+        }
+
+        await next();
+    });
+}
 
 if (app.Environment.IsDevelopment())
 {
