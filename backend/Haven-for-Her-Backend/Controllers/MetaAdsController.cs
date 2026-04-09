@@ -55,11 +55,11 @@ public class MetaAdsController : ControllerBase
 
     /// <summary>
     /// Create a full paused ad campaign.
-    ///
-    /// The frontend sends an image (base64), ad copy, and audience targeting.
-    /// This endpoint creates: Campaign → Ad Set → Ad Creative → Ad, all PAUSED.
-    /// Returns IDs and an Ads Manager link to review before publishing.
     /// </summary>
+    /// <remarks>
+    /// Request body: see <see cref="CreateCampaignRequest"/> for every JSON field, env var, and hardcoded Graph parameter.
+    /// Flow: Campaign → Ad Set → Ad Creative → Ad (all PAUSED). Returns IDs and an Ads Manager URL.
+    /// </remarks>
     [HttpPost("campaigns")]
     public async Task<IActionResult> CreateCampaign([FromBody] CreateCampaignRequest request)
     {

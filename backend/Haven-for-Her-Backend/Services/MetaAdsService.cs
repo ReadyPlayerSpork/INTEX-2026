@@ -280,6 +280,45 @@ public class MetaAdsConfig
 
 // ── Request / Response DTOs ────────────────────────────────────────────────
 
+/// <summary>
+/// JSON body for <c>POST /api/meta-ads/campaigns</c> (camelCase in JSON).
+/// </summary>
+/// <remarks>
+/// <para><b>Server configuration (environment / appsettings)</b> — required for Meta to accept calls:</para>
+/// <list type="bullet">
+/// <item><description><c>META_SYSTEM_USER_TOKEN</c> — Graph API user or system user access token with <c>ads_management</c> (and related) permissions.</description></item>
+/// <item><description><c>META_AD_ACCOUNT_ID</c> — Ad account id digits only (no <c>act_</c> prefix in config).</description></item>
+/// <item><description><c>META_PAGE_ID</c> — Facebook Page id used in <c>object_story_spec</c> (required for link ads; use a Page with IG access if you use Instagram placements).</description></item>
+/// <item><description><c>META_GRAPH_API_VERSION</c> — optional; default <c>v20.0</c>.</description></item>
+/// <item><description><c>META_APP_ID</c> / <c>META_APP_SECRET</c> — optional; loaded on <see cref="MetaAdsConfig"/> but not used by the create-campaign flow (token exchange / future use).</description></item>
+/// </list>
+/// <para><b>Request body — required</b></para>
+/// <list type="bullet">
+/// <item><description><c>imageBase64</c> — Image bytes as base64; may include a <c>data:image/png;base64,</c> prefix (controller strips it). JPEG/WebP supported via filename inference from the prefix.</description></item>
+/// <item><description><c>primaryText</c> — Main ad body (<c>message</c> in <c>link_data</c>).</description></item>
+/// </list>
+/// <para><b>Request body — optional (defaults shown on properties)</b></para>
+/// <list type="bullet">
+/// <item><description><c>campaignName</c>, <c>headline</c>, <c>linkUrl</c>, <c>callToAction</c> — CTA must be a Meta-supported type (e.g. LEARN_MORE, DONATE_NOW, SIGN_UP).</description></item>
+/// <item><description><c>dailyBudgetCents</c> — Daily budget in <b>cents</b> (e.g. 500 = $5.00/day).</description></item>
+/// <item><description><c>targeting</c> — <see cref="AudienceTargeting"/>; omit for US 18–65 all genders.</description></item>
+/// <item><description><c>startTime</c> / <c>endTime</c> — Optional ad set schedule (UTC serialized to Meta).</description></item>
+/// </list>
+/// <para><b>Targeting nested object (<c>targeting</c>)</b></para>
+/// <list type="bullet">
+/// <item><description><c>countries</c> — string[] ISO 2-letter codes (default US).</description></item>
+/// <item><description><c>ageMin</c> / <c>ageMax</c> — optional.</description></item>
+/// <item><description><c>genders</c> — <c>null</c> or empty = all; <c>[1]</c> male, <c>[2]</c> female.</description></item>
+/// <item><description><c>interests</c> — <c>[{ "id", "name" }]</c> from Meta targeting search (<c>GET /api/meta-ads/targeting/search?q=</c>).</description></item>
+/// </list>
+/// <para><b>Hardcoded in <see cref="MetaAdsService"/> (not request fields)</b> — change in code if product needs different buying types:</para>
+/// <list type="bullet">
+/// <item><description>Campaign: <c>objective</c> OUTCOME_AWARENESS, <c>special_ad_categories</c> [], <c>status</c> PAUSED.</description></item>
+/// <item><description>Ad set: <c>optimization_goal</c> REACH, <c>billing_event</c> IMPRESSIONS, <c>bid_strategy</c> LOWEST_COST_WITHOUT_CAP, <c>daily_budget</c> from request, <c>is_adset_budget_sharing_enabled</c> false (required by Meta when not using campaign budget optimization), <c>status</c> PAUSED.</description></item>
+/// <item><description>Ad creative: built from <c>page_id</c> (config), image hash, copy, link, CTA.</description></item>
+/// <item><description>Ad: <c>status</c> PAUSED.</description></item>
+/// </list>
+/// </remarks>
 public class CreateCampaignRequest
 {
     public string CampaignName { get; set; } = "Haven for Her Campaign";
