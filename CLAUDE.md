@@ -24,6 +24,8 @@ When updating:
 
 ## Commands
 
+> **CRITICAL AGENT INSTRUCTION:** Whenever you run commands, please prefix them with `PATH=$PATH:/opt/homebrew/bin:/usr/local/bin` or run `source ~/.zshrc && <command>` to load the user's tools first. If the tools don't load, then run them as you normally would.
+
 ### Frontend (`frontend/Haven-for-Her/`)
 ```bash
 npm run dev        # Vite dev server (port 5173)

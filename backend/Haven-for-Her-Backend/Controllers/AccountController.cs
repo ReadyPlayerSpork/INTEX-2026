@@ -12,7 +12,7 @@ public class AccountController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager) : ControllerBase
 {
-    private static readonly HashSet<string> ValidPersonas = ["Donor", "Volunteer", "Survivor"];
+    private static readonly HashSet<string> ValidPersonas = ["Donor", "Volunteer", "Survivor", "General"];
     private static readonly HashSet<string> ValidSources =
         ["SocialMedia", "SearchEngine", "WordOfMouth", "Event", "Partner", "News", "Other"];
 
@@ -28,7 +28,7 @@ public class AccountController(
             return ValidationProblem();
 
         if (!ValidPersonas.Contains(request.Persona))
-            return BadRequest(new ErrorResponse("Invalid persona. Allowed: Donor, Volunteer, Survivor"));
+            return BadRequest(new ErrorResponse("Invalid persona. Allowed: Donor, Volunteer, Survivor, General"));
 
         if (!ValidSources.Contains(request.AcquisitionSource))
             return BadRequest(new ErrorResponse("Invalid acquisition source. Allowed: SocialMedia, SearchEngine, WordOfMouth, Event, Partner, News, Other"));

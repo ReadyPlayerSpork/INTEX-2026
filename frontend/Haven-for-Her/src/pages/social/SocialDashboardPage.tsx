@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Brain } from 'lucide-react'
 import { api } from '@/api/client'
 import { getSocialMediaRecommendations, type SocialMediaRecommendations } from '@/api/mlApi'
@@ -107,15 +106,6 @@ export function SocialDashboardPage() {
         </h1>
       </div>
 
-      {/* Quick nav */}
-      <div className="text-muted-foreground mb-6 flex flex-wrap gap-4 text-sm">
-        <Link to="/social/posts" className="hover:text-foreground underline">
-          All Posts
-        </Link>
-        <Link to="/social/post" className="hover:text-foreground underline">
-          Create Post
-        </Link>
-      </div>
 
       {mlIntelErr && (
         <p className="text-muted-foreground mb-6 text-sm" role="status">

@@ -34,7 +34,8 @@ export function ProtectedRoute({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={loginPath} replace />
+    const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+    return <Navigate to={`${loginPath}?returnUrl=${returnUrl}`} replace />
   }
 
   if (allowedRoles.length > 0 && !hasRole(...allowedRoles)) {

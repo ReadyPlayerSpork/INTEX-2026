@@ -8,7 +8,7 @@ import { getGoogleSignInUrl } from "@/lib/auth"
 import { getLandingPath } from "@/lib/roles"
 
 /** Internal paths only — avoids open redirects. */
-function safeReturnPath(raw: string | null): string | null {
+export function safeReturnPath(raw: string | null): string | null {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return null
   return raw
 }
