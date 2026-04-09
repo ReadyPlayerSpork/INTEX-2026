@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { RootLayout } from '@/layouts/RootLayout'
+import { PublicLayout } from '@/layouts/PublicLayout'
+import { PortalRootLayout } from '@/layouts/PortalRootLayout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { CookieConsent } from '@/components/CookieConsent'
 import { RoutePageFallback } from '@/components/RoutePageFallback'
@@ -203,7 +204,7 @@ function App() {
     <AuthProvider>
       <Suspense fallback={<RoutePageFallback />}>
         <Routes>
-          <Route element={<RootLayout />}>
+          <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -228,7 +229,9 @@ function App() {
                 element={<Navigate to="/account" replace />}
               />
             </Route>
+          </Route>
 
+          <Route element={<PortalRootLayout />}>
             <Route element={<ProtectedRoute allowedRoles={['Donor']} />}>
               <Route path="/donor/dashboard" element={<DonorDashboardPage />} />
             </Route>
@@ -236,6 +239,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['Survivor']} />}>
               <Route path="/survivor/counseling" element={<CounselingPage />} />
             </Route>
+          </Route>
 
             <Route
               path="/counselor"
@@ -300,6 +304,8 @@ function App() {
               </Route>
             </Route>
 
+
+          <Route element={<PublicLayout />}>
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

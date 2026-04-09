@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -52,21 +51,6 @@ export function FinancialDashboardPage() {
         </h1>
       </div>
 
-      {/* Quick nav */}
-      <div className="text-muted-foreground mb-6 flex flex-wrap gap-4 text-sm">
-        <Link to="/financial/donors" className="hover:text-foreground underline">
-          Donor Management
-        </Link>
-        <Link to="/financial/donations" className="hover:text-foreground underline">
-          Donation Records
-        </Link>
-        <Link to="/financial/insights" className="hover:text-foreground underline">
-          Retention Insights
-        </Link>
-        <Link to="/financial/reports" className="hover:text-foreground underline">
-          Export Reports
-        </Link>
-      </div>
 
       {/* Summary cards */}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">

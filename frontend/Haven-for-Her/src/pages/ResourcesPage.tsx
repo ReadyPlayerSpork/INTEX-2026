@@ -36,7 +36,7 @@ export function ResourcesPage() {
           </h1>
           <p className="text-muted-foreground mt-4 leading-8 text-pretty">
             This page is designed to help people find trustworthy support
-            quickly, whether they need emergency contact information or a view
+            quickly, whether you need emergency contact information or a view
             of currently active safe homes. Requesting counseling uses your
             account so we can follow up safely; browsing safe homes does not
             require signing in.

@@ -8,7 +8,6 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, TrendingUp, Brain, RefreshCw } from 'lucide-react'
 import { api } from '@/api/client'
 import { getResidentAlerts, retrainModels, getMLStatus, type IncidentRiskAlert, type MLStatus } from '@/api/mlApi'
-import { QuickActions } from '@/components/admin/QuickActions'
 import { SafehouseOccupancy } from '@/components/admin/SafehouseOccupancy'
 import { DonorHealth } from '@/components/admin/DonorHealth'
 import { FinancialSnapshot } from '@/components/admin/FinancialSnapshot'
@@ -305,7 +304,6 @@ export function AdminDashboardPage() {
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">Organizational overview</p>
         </div>
-        <QuickActions />
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

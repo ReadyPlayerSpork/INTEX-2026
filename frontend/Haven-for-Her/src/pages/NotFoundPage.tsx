@@ -1,9 +1,11 @@
-import { Link } from 'react-router-dom'
-import { buttonVariants } from '@/components/ui/button'
+import { Link, useNavigate } from 'react-router-dom'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 
 export function NotFoundPage() {
+  const navigate = useNavigate()
+
   return (
     <div className="flex min-h-[65vh] items-center justify-center px-5 py-16">
       <Card className="w-full max-w-xl border-primary/18 bg-primary/7 text-center">
@@ -18,12 +20,20 @@ export function NotFoundPage() {
             The page may have moved, or the link may be out of date. We can get
             you back to a safe starting point.
           </p>
-          <Link
-            to="/"
-            className={cn(buttonVariants({ variant: 'outline' }), 'mt-6 inline-flex no-underline')}
-          >
-            Go home
-          </Link>
+          <div className="mt-8 flex justify-center gap-4">
+            <Button
+              variant="default"
+              onClick={() => navigate(-1)}
+            >
+              Go back
+            </Button>
+            <Link
+              to="/"
+              className={cn(buttonVariants({ variant: 'outline' }), 'inline-flex no-underline')}
+            >
+              Go home
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

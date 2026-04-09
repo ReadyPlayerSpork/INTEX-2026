@@ -30,7 +30,7 @@ export function LoginPage() {
             Welcome back
           </p>
           <h1 className="font-heading text-balance text-[clamp(2.5rem,5vw,4.1rem)] font-semibold text-accent">
-            Sign in to continue supporting, healing, or coordinating care.
+            Sign in to continue healing those that need it.
           </h1>
           <p className="text-muted-foreground max-w-lg text-pretty leading-8">
             Your account gives you access to the parts of Haven for Her that are
@@ -89,6 +89,7 @@ export function LoginPage() {
                   {googleAvailable ? (
                     <a
                       href={googleSignInUrl}
+                      target="_self"
                       className="text-accent text-sm font-semibold underline underline-offset-4 transition-colors hover:text-primary"
                     >
                       Sign in with Google

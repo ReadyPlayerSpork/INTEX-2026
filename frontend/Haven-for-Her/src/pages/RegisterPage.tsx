@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { authApi } from '@/api/authApi'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
@@ -7,11 +7,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ApiError } from '@/api/client'
 import { getGoogleSignInUrl } from '@/lib/auth'
+import { safeReturnPath } from '@/features/public/login/useLoginForm'
 
 const PERSONAS = [
-  { value: 'Donor', label: 'Donor / Supporter' },
-  { value: 'Volunteer', label: 'Volunteer / Employee' },
-  { value: 'Survivor', label: 'Survivor seeking resources' },
+  { value: 'Survivor', label: 'Seeking Help' },
+  { value: 'Volunteer', label: 'a Volunteer' },
+  { value: 'Donor', label: 'a Supporter or Donor' },
+  { value: 'General', label: 'Just wanting to help' },
 ]
 
 const selectClassName =
@@ -40,7 +42,14 @@ export function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleAvailable, setGoogleAvailable] = useState(false)
-  const googleSignInUrl = useMemo(() => getGoogleSignInUrl('/'), [])
+  const [searchParams] = useSearchParams()
+  const returnPath = searchParams.get('returnUrl')
+  const safeNext = safeReturnPath(returnPath)
+
+  const googleSignInUrl = useMemo(
+    () => getGoogleSignInUrl(safeNext ?? '/'),
+    [safeNext]
+  )
 
   useEffect(() => {
     let active = true
@@ -113,7 +122,7 @@ export function RegisterPage() {
             Create an account
           </p>
           <h1 className="font-heading text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
-            Join Haven for Her with the role context that fits you best.
+            Join Haven for Her to support women in need.
           </h1>
           <p className="text-muted-foreground max-w-lg leading-8 text-pretty">
             Every registered account can grow with the relationship. We use the
@@ -206,7 +215,7 @@ export function RegisterPage() {
 
               <fieldset className="flex flex-col gap-3">
                 <legend className="text-sm font-semibold">
-                  Which best describes you?
+                  I am...
                 </legend>
                 <div className="grid gap-3">
                   {PERSONAS.map((p) => (
@@ -270,6 +279,7 @@ export function RegisterPage() {
               {googleAvailable ? (
                 <a
                   href={googleSignInUrl}
+                  target="_self"
                   className="text-accent text-sm font-semibold underline underline-offset-4 transition-colors hover:text-primary"
                 >
                   Sign up with Google
