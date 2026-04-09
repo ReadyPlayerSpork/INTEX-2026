@@ -124,7 +124,9 @@ public class MetaAdsController : ControllerBase
         catch (MetaApiException ex)
         {
             _logger.LogError(ex, "Meta Ads API error");
-            return StatusCode(502, new { error = "Meta API error", detail = ex.Message });
+            // Return 422 instead of 502 — reverse proxies (Nginx/Traefik) intercept 502
+            // responses and replace them with their own error pages, stripping CORS headers.
+            return UnprocessableEntity(new { error = "Meta API error", detail = ex.Message });
         }
     }
 
@@ -166,7 +168,7 @@ public class MetaAdsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to search Meta targeting interests");
-            return StatusCode(502, new { error = "Failed to search targeting interests." });
+            return UnprocessableEntity(new { error = "Failed to search targeting interests." });
         }
     }
 

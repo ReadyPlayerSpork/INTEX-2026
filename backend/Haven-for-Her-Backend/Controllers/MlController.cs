@@ -89,14 +89,13 @@ public class MlController(IHttpClientFactory httpClientFactory, ILogger<MlContro
         catch (TaskCanceledException)
         {
             logger.LogWarning("ML service request timed out: {Path}", path);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new { error = "ML service is unavailable or timed out." });
+            // Return 422 instead of 503 — reverse proxies intercept 5xx and strip CORS headers
+            return UnprocessableEntity(new { error = "ML service is unavailable or timed out." });
         }
         catch (HttpRequestException ex)
         {
             logger.LogWarning(ex, "ML service unreachable: {Path}", path);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new { error = "ML service is currently unavailable." });
+            return UnprocessableEntity(new { error = "ML service is currently unavailable." });
         }
     }
 
@@ -117,14 +116,13 @@ public class MlController(IHttpClientFactory httpClientFactory, ILogger<MlContro
         catch (TaskCanceledException)
         {
             logger.LogWarning("ML service request timed out: {Path}", path);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new { error = "ML service is unavailable or timed out." });
+            // Return 422 instead of 503 — reverse proxies intercept 5xx and strip CORS headers
+            return UnprocessableEntity(new { error = "ML service is unavailable or timed out." });
         }
         catch (HttpRequestException ex)
         {
             logger.LogWarning(ex, "ML service unreachable: {Path}", path);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new { error = "ML service is currently unavailable." });
+            return UnprocessableEntity(new { error = "ML service is currently unavailable." });
         }
     }
 
@@ -148,14 +146,13 @@ public class MlController(IHttpClientFactory httpClientFactory, ILogger<MlContro
         catch (TaskCanceledException)
         {
             logger.LogWarning("ML service request timed out: {Path}", path);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new { error = "ML service is unavailable or timed out." });
+            // Return 422 instead of 503 — reverse proxies intercept 5xx and strip CORS headers
+            return UnprocessableEntity(new { error = "ML service is unavailable or timed out." });
         }
         catch (HttpRequestException ex)
         {
             logger.LogWarning(ex, "ML service unreachable: {Path}", path);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new { error = "ML service is currently unavailable." });
+            return UnprocessableEntity(new { error = "ML service is currently unavailable." });
         }
     }
 }
