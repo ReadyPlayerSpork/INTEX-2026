@@ -1,11 +1,20 @@
 import { lazy, startTransition, Suspense, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ChevronDown } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import {
   filterVisibleAccountItems,
   navLinkClassName,
   PRIMARY_NAV,
 } from '@/components/nav-config'
+import { buttonVariants } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 import logoMarkUrl from '@/assets/LogoH4HTransparentBackground.svg'
 
 const NavbarOverlays = lazy(() =>
@@ -27,7 +36,7 @@ function NavbarOverlaysFallback({
       />
       {isLoading ? null : isAuthenticated ? (
         <div
-          className="hidden h-10 min-w-[6.5rem] rounded-full bg-secondary/30 md:block"
+          className="hidden h-10 min-w-[7.5rem] rounded-full bg-secondary/30 md:block"
           aria-hidden
         />
       ) : (
@@ -93,6 +102,33 @@ export function Navbar() {
             </Link>
           ))}
         </nav>
+
+        {!isLoading && isAuthenticated && accountItems.length > 0 ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              type="button"
+              className={cn(
+                buttonVariants({ variant: 'outline', size: 'sm' }),
+                'hidden min-h-10 gap-1 md:inline-flex',
+              )}
+              aria-label="Tools and portals"
+              aria-haspopup="menu"
+            >
+              Tools
+              <ChevronDown className="size-4 opacity-70" aria-hidden />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-48">
+              {accountItems.map((item) => (
+                <DropdownMenuItem
+                  key={item.to}
+                  onClick={() => navigate(item.to)}
+                >
+                  {item.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
 
         <Suspense
           fallback={

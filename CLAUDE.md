@@ -111,7 +111,7 @@ If a symlink breaks on clone (e.g. Windows), recreate: from `.claude/skills/`, p
 
 
 ### CORS / Port Configuration
-The backend CORS policy allows credentials from `FrontendUrls` / `FrontendUrl` config and defaults to `http://localhost:5173`. Vite is configured to use port **5173** and proxy `/api` to the backend at `https://localhost:7229`.
+The backend CORS policy allows credentials from `FrontendUrls` (comma-separated) or `FrontendUrl` and defaults to `https://localhost:5173`. **Production:** include the public SPA origin (e.g. `https://havenforher.example.com`) in `FrontendUrls` or credentialed browser requests from that origin will fail CORS. Vite is configured to use port **5173** and proxy `/api` to the backend at `https://localhost:7229`.
 
 ## Production Deployment (Dokploy + Cloudflare Tunnel)
 

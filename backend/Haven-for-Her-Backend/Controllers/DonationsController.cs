@@ -12,7 +12,8 @@ namespace Haven_for_Her_Backend.Controllers;
 [Route("api/donations")]
 public class DonationsController(
     HavenForHerBackendDbContext db,
-    UserManager<ApplicationUser> userManager) : ControllerBase
+    UserManager<ApplicationUser> userManager,
+    ILogger<DonationsController> logger) : ControllerBase
 {
     private static readonly HashSet<string> ValidDonationTypes =
         ["Monetary", "InKind", "Time", "Skills", "SocialMedia"];
@@ -50,17 +51,27 @@ public class DonationsController(
     [Authorize]
     public async Task<IActionResult> CreateDonation([FromBody] DonationRequest request)
     {
-        var donationType = ResolveDonationType(request.DonationType);
-        if (donationType is null)
-            return BadRequest(new ErrorResponse("Invalid donation type."));
+        try
+        {
+            var donationType = ResolveDonationType(request.DonationType);
+            if (donationType is null)
+                return BadRequest(new ErrorResponse("Invalid donation type."));
 
-        var user = await userManager.GetUserAsync(User);
-        if (user is null)
-            return Unauthorized();
+            var user = await userManager.GetUserAsync(User);
+            if (user is null)
+                return Unauthorized();
 
-        var supporter = await FindOrCreateSupporterForUser(user);
-        var donation = BuildDonation(request, donationType, supporter.SupporterId, "Website");
-        return await SaveDonation(donation, "Thank you for your donation!");
+            var supporter = await FindOrCreateSupporterForUser(user);
+            var donation = BuildDonation(request, donationType, supporter.SupporterId, "Website");
+            return await SaveDonation(donation, "Thank you for your donation!");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to create authenticated donation.");
+            return Problem(
+                detail: "Unable to save donation. Please try again or contact support.",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
     }
 
     /// <summary>
@@ -70,13 +81,23 @@ public class DonationsController(
     [AllowAnonymous]
     public async Task<IActionResult> CreateAnonymousDonation([FromBody] DonationRequest request)
     {
-        var donationType = ResolveDonationType(request.DonationType);
-        if (donationType is null)
-            return BadRequest(new ErrorResponse("Invalid donation type."));
+        try
+        {
+            var donationType = ResolveDonationType(request.DonationType);
+            if (donationType is null)
+                return BadRequest(new ErrorResponse("Invalid donation type."));
 
-        var supporter = await FindOrCreateAnonymousSupporter(request.DonorName, request.DonorEmail);
-        var donation = BuildDonation(request, donationType, supporter.SupporterId, "Website-Anonymous");
-        return await SaveDonation(donation, "Thank you for your generous donation!");
+            var supporter = await FindOrCreateAnonymousSupporter(request.DonorName, request.DonorEmail);
+            var donation = BuildDonation(request, donationType, supporter.SupporterId, "Website-Anonymous");
+            return await SaveDonation(donation, "Thank you for your generous donation!");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to create anonymous donation.");
+            return Problem(
+                detail: "Unable to save donation. Please try again or contact support.",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
     }
 
     private async Task<Supporter> FindOrCreateSupporterForUser(ApplicationUser user)
