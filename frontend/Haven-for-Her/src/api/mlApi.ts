@@ -3,14 +3,14 @@ import { api } from './client'
 // -- Donor Churn --
 
 export interface ChurnPrediction {
-  supporter_id: number
-  display_name: string
-  churn_probability: number
-  risk_level: 'Low' | 'Medium' | 'High'
+  supporterId: number
+  displayName: string
+  churnProbability: number
+  riskLevel: 'Low' | 'Medium' | 'High'
 }
 
 export interface ChurnPredictionDetail extends ChurnPrediction {
-  top_factors: Record<string, number>
+  topFactors: Record<string, number>
 }
 
 export async function getDonorChurn(supporterId: number): Promise<ChurnPredictionDetail> {
@@ -24,19 +24,19 @@ export async function getDonorChurnBatch(): Promise<ChurnPrediction[]> {
 // -- Incident Risk --
 
 export interface IncidentRiskPrediction {
-  resident_id: number
-  escalation_probability: number
-  risk_level: 'Low' | 'Medium' | 'High'
-  risk_factors: Record<string, number>
+  residentId: number
+  escalationProbability: number
+  riskLevel: 'Low' | 'Medium' | 'High'
+  riskFactors: Record<string, number>
 }
 
 export interface IncidentRiskAlert {
-  resident_id: number
-  first_name: string
-  last_name: string
-  escalation_probability: number
-  risk_level: 'Low' | 'Medium' | 'High'
-  current_risk_level: string
+  residentId: number
+  firstName: string
+  lastName: string
+  escalationProbability: number
+  riskLevel: 'Low' | 'Medium' | 'High'
+  currentRiskLevel: string
 }
 
 export async function getIncidentRisk(residentId: number): Promise<IncidentRiskPrediction> {
@@ -50,10 +50,10 @@ export async function getResidentAlerts(): Promise<IncidentRiskAlert[]> {
 // -- Resident Progress --
 
 export interface ResidentProgressPrediction {
-  resident_id: number
-  readiness_score: number
-  risk_level: 'Low' | 'Medium' | 'High'
-  top_factors: Record<string, number>
+  residentId: number
+  readinessScore: number
+  riskLevel: 'Low' | 'Medium' | 'High'
+  topFactors: Record<string, number>
 }
 
 export async function getResidentProgress(residentId: number): Promise<ResidentProgressPrediction> {
@@ -63,10 +63,10 @@ export async function getResidentProgress(residentId: number): Promise<ResidentP
 // -- Safehouse Outcomes --
 
 export interface SafehouseOutcome {
-  safehouse_id: number
-  safehouse_name: string
-  predicted_education_progress: number
-  actual_education_progress: number
+  safehouseId: number
+  safehouseName: string
+  predictedEducationProgress: number
+  actualEducationProgress: number
 }
 
 export async function getSafehouseOutcomes(): Promise<SafehouseOutcome[]> {
@@ -76,29 +76,29 @@ export async function getSafehouseOutcomes(): Promise<SafehouseOutcome[]> {
 // -- Social Media --
 
 export interface SocialMediaRecommendations {
-  best_post_hour: number
-  best_day_of_week: string
-  best_post_type_for_donations: string
-  best_media_type_for_engagement: string
-  recommended_cta: string
-  avg_engagement_rate: number
-  total_donation_referrals: number
+  bestPostHour: number
+  bestDayOfWeek: string
+  bestPostTypeForDonations: string
+  bestMediaTypeForEngagement: string
+  recommendedCta: string
+  avgEngagementRate: number
+  totalDonationReferrals: number
 }
 
 export interface SocialMediaPostData {
   platform: string
-  post_type: string
-  media_type: string
-  time_of_day: string
-  sentiment_tone: string
-  caption_length: number
-  num_hashtags: number
-  is_boosted: boolean
+  postType: string
+  mediaType: string
+  timeOfDay: string
+  sentimentTone: string
+  captionLength: number
+  numHashtags: number
+  isBoosted: boolean
 }
 
 export interface SocialMediaPrediction {
-  donation_driver_probability: number
-  predicted_donation_driver: boolean
+  donationDriverProbability: number
+  predictedDonationDriver: boolean
   recommendation: string
 }
 
@@ -118,12 +118,12 @@ export async function retrainModels(): Promise<{ status: string; message: string
 
 export interface MLStatus {
   status: string
-  last_trained: string
+  lastTrained: string
   models: Record<string, {
-    trained_at: string
-    roc_auc?: number
+    trainedAt: string
+    rocAuc?: number
     r2?: number
-    test_samples: number
+    testSamples: number
   }>
 }
 

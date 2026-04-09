@@ -79,7 +79,7 @@ export function InsightsPage() {
           {churnData ? (
             <>
               <p className="text-destructive text-3xl font-extrabold">
-                {churnData.filter((d) => d.risk_level === 'High').length}
+                {churnData.filter((d) => d.riskLevel === 'High').length}
               </p>
               <p className="text-muted-foreground mt-1 text-sm">
                 High churn risk (ML)
@@ -111,14 +111,14 @@ export function InsightsPage() {
               </thead>
               <tbody>
                 {churnData.slice(0, 15).map((d) => (
-                  <tr key={d.supporter_id} className="border-border border-b">
+                  <tr key={d.supporterId} className="border-border border-b">
                     <td className="px-3 py-2">
-                      {d.display_name || `#${d.supporter_id}`}
+                      {d.displayName || `#${d.supporterId}`}
                     </td>
                     <td className="px-3 py-2 tabular-nums">
-                      {(d.churn_probability * 100).toFixed(1)}%
+                      {(d.churnProbability * 100).toFixed(1)}%
                     </td>
-                    <td className="px-3 py-2">{churnBadge(d.risk_level)}</td>
+                    <td className="px-3 py-2">{churnBadge(d.riskLevel)}</td>
                   </tr>
                 ))}
               </tbody>

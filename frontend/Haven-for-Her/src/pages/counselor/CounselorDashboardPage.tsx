@@ -112,17 +112,17 @@ export function CounselorDashboardPage() {
               </thead>
               <tbody>
                 {mlAlerts.slice(0, 6).map((a) => (
-                  <tr key={a.resident_id} className="border-border border-b">
-                    <td className="px-3 py-2">{a.first_name} {a.last_name}</td>
-                    <td className="px-3 py-2">{a.current_risk_level}</td>
-                    <td className="px-3 py-2 tabular-nums">{(a.escalation_probability * 100).toFixed(1)}%</td>
+                  <tr key={a.residentId} className="border-border border-b">
+                    <td className="px-3 py-2">{a.firstName} {a.lastName}</td>
+                    <td className="px-3 py-2">{a.currentRiskLevel}</td>
+                    <td className="px-3 py-2 tabular-nums">{(a.escalationProbability * 100).toFixed(1)}%</td>
                     <td className="px-3 py-2">
                       <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        a.risk_level === 'High' ? 'bg-red-100 text-red-800'
-                          : a.risk_level === 'Medium' ? 'bg-yellow-100 text-yellow-800'
+                        a.riskLevel === 'High' ? 'bg-red-100 text-red-800'
+                          : a.riskLevel === 'Medium' ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
-                        {a.risk_level}
+                        {a.riskLevel}
                       </span>
                     </td>
                   </tr>
@@ -165,7 +165,7 @@ export function CounselorDashboardPage() {
                     <td className="px-3 py-2">{r.dateOfAdmission}</td>
                     <td className="px-3 py-2 tabular-nums">
                       {progressMap[r.residentId] ? (
-                        <span>{(progressMap[r.residentId].readiness_score * 100).toFixed(0)}%</span>
+                        <span>{(progressMap[r.residentId].readinessScore * 100).toFixed(0)}%</span>
                       ) : (
                         <span className="text-muted-foreground text-xs">--</span>
                       )}

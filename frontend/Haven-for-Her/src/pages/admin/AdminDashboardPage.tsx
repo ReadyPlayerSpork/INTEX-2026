@@ -400,7 +400,7 @@ export function AdminDashboardPage() {
                 Intelligence Governance
               </h2>
               <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-                Model Status: {mlStatus?.last_trained ? (
+                Model Status: {mlStatus?.lastTrained ? (
                   <span className="text-primary">Dynamic (Live Data)</span>
                 ) : (
                   <span className="text-[var(--chart-3)]">Static (Initialization)</span>
@@ -415,8 +415,8 @@ export function AdminDashboardPage() {
                 Last Trained
               </p>
               <p className="text-card-foreground text-xs font-semibold">
-                {mlStatus?.last_trained 
-                  ? new Date(mlStatus.last_trained).toLocaleString('en-US', { 
+                {mlStatus?.lastTrained 
+                  ? new Date(mlStatus.lastTrained).toLocaleString('en-US', { 
                       month: 'short', 
                       day: 'numeric', 
                       hour: 'numeric', 
@@ -468,25 +468,25 @@ export function AdminDashboardPage() {
               </thead>
               <tbody>
                 {mlAlerts.slice(0, 8).map((a) => (
-                  <tr key={a.resident_id} className="border-border border-b">
+                  <tr key={a.residentId} className="border-border border-b">
                     <td className="px-3 py-2">
-                      {a.first_name} {a.last_name}
+                      {a.firstName} {a.lastName}
                     </td>
-                    <td className="px-3 py-2">{a.current_risk_level}</td>
+                    <td className="px-3 py-2">{a.currentRiskLevel}</td>
                     <td className="px-3 py-2 tabular-nums">
-                      {(a.escalation_probability * 100).toFixed(1)}%
+                      {(a.escalationProbability * 100).toFixed(1)}%
                     </td>
                     <td className="px-3 py-2">
                       <span
                         className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          a.risk_level === 'High'
+                          a.riskLevel === 'High'
                             ? 'bg-destructive/10 text-destructive'
-                            : a.risk_level === 'Medium'
+                            : a.riskLevel === 'Medium'
                               ? 'bg-accent/10 text-accent'
                               : 'bg-primary/10 text-primary'
                         }`}
                       >
-                        {a.risk_level}
+                        {a.riskLevel}
                       </span>
                     </td>
                   </tr>
