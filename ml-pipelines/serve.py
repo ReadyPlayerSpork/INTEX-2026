@@ -139,6 +139,7 @@ def _donor_features() -> pd.DataFrame:
     if val_col in donations.columns:
         donations["TotalVal"] += donations[val_col].fillna(0)
 
+    snapshot_date = donations["DonationDate"].max()
     if pd.notna(snapshot_date):
         if hasattr(snapshot_date, "tzinfo") and snapshot_date.tzinfo is not None:
             snapshot_date = snapshot_date.replace(tzinfo=None)
@@ -311,36 +312,6 @@ def _resident_progress_features() -> pd.DataFrame:
     return df, X
 
 
-def _safehouse_features_legacy() -> pd.DataFrame:
-    """Legacy feature builder for safehouses."""
-    safehouses = _get_data("Safehouses", "safehouses.csv")
-    funding = _get_data("FundingAllocations", "funding_allocations.csv")
-    education = _get_data("EducationRecords", "education_records.csv")
-
-    # Aggregate funding by safehouse and period (month/year)
-    funding["AllocationDate"] = pd.to_datetime(funding["AllocationDate"])
-    funding["Month"] = funding["AllocationDate"].dt.month
-    funding["Year"] = funding["AllocationDate"].dt.year
-    funding_agg = funding.groupby(["SafehouseId", "Year", "Month"])["Amount"].sum().reset_index()
-
-    # Aggregate education by safehouse and period
-    education["RecordDate"] = pd.to_datetime(education["RecordDate"])
-    education["Month"] = education["RecordDate"].dt.month
-    education["Year"] = education["RecordDate"].dt.year
-    edu_agg = education.groupby(["SafehouseId", "Year", "Month"])["AttendanceRate"].mean().rename("AvgEducationProgress").reset_index()
-
-    # Merge foundations
-    df = pd.merge(funding_agg, edu_agg, on=["SafehouseId", "Year", "Month"], how="inner")
-    df = df.sort_values(["SafehouseId", "Year", "Month"])
-
-    # Create lag features (previous month's funding predicts current progress)
-    df["PrevMonthFunding"] = df.groupby("SafehouseId")["Amount"].shift(1)
-    df = df.dropna(subset=["PrevMonthFunding"])
-
-    model_features = ["SafehouseId", "PrevMonthFunding", "Month"]
-    X = df[model_features].copy()
-    X = pd.get_dummies(X, columns=["SafehouseId"], drop_first=True)
-    return df, X
 
 
 def _social_media_features() -> pd.DataFrame:
@@ -623,6 +594,7 @@ def resident_progress():
 
     try:
         df, X = _resident_progress_features()
+        X = _align_features(X, features)
         idx = df.index[df["ResidentId"] == resident_id]
         if len(idx) == 0:
             return jsonify({"error": f"Resident {resident_id} not found"}), 404
@@ -816,25 +788,6 @@ def retrain_models():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/ml/status", methods=["GET"])
-def get_ml_status():
-    """Returns the current status and performance of all models from metadata.json."""
-    try:
-        metadata_path = os.path.join(MODEL_DIR, "metadata.json")
-        if not os.path.exists(metadata_path):
-            return jsonify({
-                "status": "partial",
-                "message": "Model metadata not found. Models may have been initialized but not fully trained through the production pipeline.",
-                "last_trained": None,
-                "models": {}
-            })
-            
-        with open(metadata_path, 'r') as f:
-            metadata = json.load(f)
-            
-        return jsonify(to_camel(metadata))
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 
 # ---------------------------------------------------------------------------
