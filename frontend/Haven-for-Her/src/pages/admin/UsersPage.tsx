@@ -35,7 +35,6 @@ import { cn } from '@/lib/utils'
 /* ── Constants ──────────────────────────────────────────────────────────── */
 
 const ALL_ROLES = ['Admin', 'Financial', 'Counselor', 'SocialMedia', 'Employee', 'Donor', 'Survivor'] as const
-type Role = (typeof ALL_ROLES)[number]
 
 const ROLE_STYLE: Record<string, string> = {
   Admin:       'bg-accent/15 text-accent border-accent/30',
@@ -56,11 +55,6 @@ interface User {
   acquisitionSource: string | null
   roles: string[]
   createdAtUtc: string
-}
-
-interface PagedResult {
-  items: User[]
-  totalCount: number
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
@@ -358,7 +352,8 @@ function ManagePanel({ user, currentEmail, onClose, onUpdated, onDeleted }: Mana
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
 export function UsersPage() {
-  const { email: currentEmail = '' } = useAuth()
+  const { email: currentEmailOrNull } = useAuth()
+  const currentEmail = currentEmailOrNull ?? ''
 
   const [items, setItems] = useState<User[]>([])
   const [totalCount, setTotalCount] = useState(0)
