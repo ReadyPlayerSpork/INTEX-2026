@@ -41,7 +41,7 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
   const areaD = `${lineD} L ${pts[pts.length - 1]?.x ?? pad.l} ${pad.t + innerH} L ${pad.l} ${pad.t + innerH} Z`
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+    <div className="h-full rounded-2xl border border-border bg-card p-5 shadow-bloom">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="font-heading text-base font-semibold text-card-foreground">
