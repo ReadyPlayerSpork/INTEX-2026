@@ -1,16 +1,13 @@
 import { Link } from 'react-router-dom'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import {
-  DONATION_CURRENCIES,
-  donateSelectClassName,
   formatCurrencyAmount,
   getCurrencyExampleTiers,
 } from '@/features/public/donate/donationCurrencies'
 import { useAnonymousDonateForm } from '@/features/public/donate/useAnonymousDonateForm'
+import { SharedDonationForm } from '@/features/public/donate/SharedDonationForm'
 
 export function AnonymousDonatePage() {
   const {
@@ -112,93 +109,25 @@ export function AnonymousDonatePage() {
               survivors.
             </p>
 
-            {error && (
-              <div
-                role="alert"
-                className="bg-destructive/10 text-destructive mt-6 rounded-2xl border border-destructive/20 p-3 text-sm"
-              >
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold">Currency</span>
-                <select
-                  value={currencyCode}
-                  onChange={(e) => onCurrencyChange(e.target.value)}
-                  className={donateSelectClassName}
-                >
-                  {DONATION_CURRENCIES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold">
-                  Amount ({currencyCode})
-                </span>
-                <Input
-                  type="number"
-                  required
-                  min="1"
-                  step="0.01"
-                  value={amount}
-                  onChange={(e) => onAmountChange(e.target.value)}
-                  placeholder="0.00"
-                />
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-semibold">Campaign (optional)</span>
-                <Input
-                  type="text"
-                  value={campaign}
-                  onChange={(e) => onCampaignChange(e.target.value)}
-                  placeholder="e.g. Holiday Giving 2026"
-                />
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-muted-foreground text-sm">
-                  Your name (optional, for receipt)
-                </span>
-                <Input
-                  type="text"
-                  value={donorName}
-                  onChange={(e) => onDonorNameChange(e.target.value)}
-                />
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-muted-foreground text-sm">
-                  Your email (optional, for receipt)
-                </span>
-                <Input
-                  type="email"
-                  value={donorEmail}
-                  onChange={(e) => onDonorEmailChange(e.target.value)}
-                />
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-muted-foreground text-sm">
-                  Notes (optional)
-                </span>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => onNotesChange(e.target.value)}
-                  rows={3}
-                />
-              </label>
-
-              <Button type="submit" disabled={loading} className="mt-2">
-                {loading ? 'Processing...' : 'Donate now'}
-              </Button>
-            </form>
+            <SharedDonationForm
+              currencyCode={currencyCode}
+              onCurrencyChange={onCurrencyChange}
+              amount={amount}
+              onAmountChange={onAmountChange}
+              campaign={campaign}
+              onCampaignChange={onCampaignChange}
+              notes={notes}
+              onNotesChange={onNotesChange}
+              loading={loading}
+              error={error}
+              onSubmit={onSubmit}
+              showAnonymousDetails={true}
+              donorName={donorName}
+              onDonorNameChange={onDonorNameChange}
+              donorEmail={donorEmail}
+              onDonorEmailChange={onDonorEmailChange}
+              submitLabel="Donate now"
+            />
 
             <p className="text-muted-foreground mt-6 text-center text-xs">
               Have an account?{' '}

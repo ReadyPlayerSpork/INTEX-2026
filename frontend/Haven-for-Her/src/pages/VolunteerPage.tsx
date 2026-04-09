@@ -14,9 +14,7 @@ export function VolunteerPage() {
             There are many ways to show up with care.
           </h1>
           <p className="text-muted-foreground mt-4 max-w-2xl leading-8 text-pretty">
-            Join our community of dedicated volunteers making a real difference
-            in the lives of survivors. Whether you can give an hour or a
-            lifetime, there&apos;s a place for you here.
+            Review the current opportunities to contribute your time and skills. Find a role that matches your schedule and expertise below.
           </p>
         </div>
 

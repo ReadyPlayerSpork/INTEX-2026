@@ -30,9 +30,7 @@ export function HomePage() {
                 A softer, safer path forward for girls rebuilding their lives.
               </h1>
               <p className="text-muted-foreground max-w-2xl text-lg leading-8 text-pretty">
-                Haven for Her supports survivors of sexual abuse and trafficking
-                with trauma-informed care, safe housing, education, counseling,
-                and a community that believes healing should feel possible.
+                Haven for Her is a community of care dedicated to survivors of sexual abuse and trafficking. We provide the stability and resources needed for residents to rebuild their lives.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link
@@ -130,9 +128,7 @@ export function HomePage() {
                 Our mission
               </h2>
               <p className="text-muted-foreground mt-4 leading-8 text-pretty">
-                We create safe spaces where survivors can begin again with
-                trauma-informed counseling, education support, health services,
-                and reintegration planning rooted in dignity.
+                We provide the environment and resources necessary for survivors to regain their autonomy and secure a sustainable future.
               </p>
             </CardContent>
           </Card>

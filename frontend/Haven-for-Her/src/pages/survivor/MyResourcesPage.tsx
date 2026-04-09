@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { CrisisHotlines } from '@/features/resources/CrisisHotlines'
 
 export function MyResourcesPage() {
   return (
@@ -9,36 +10,28 @@ export function MyResourcesPage() {
         Haven for Her community.
       </p>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <ResourceCard
-          title="Request Counseling"
-          description="Apply for a counseling appointment with a trained counselor."
-          linkTo="/survivor/counseling"
-          linkLabel="Apply now"
-        />
-        <ResourceCard
-          title="Find a Safe Home"
-          description="Browse active safe homes near you, sorted by region."
-          linkTo="/survivor/find-home"
-          linkLabel="Search homes"
-        />
-        <ResourceCard
-          title="Crisis Hotlines"
-          description="Immediate help is available 24/7. Call the National Crisis Hotline at 1553."
-        />
-        <ResourceCard
-          title="Legal Aid"
-          description="Free legal assistance through the Public Attorney's Office for survivors of abuse."
-        />
-        <ResourceCard
-          title="Educational Programs"
-          description="Access tutoring, vocational training, and scholarship opportunities through our partner organizations."
-        />
-        <ResourceCard
-          title="Health Services"
-          description="Mental health support, medical referrals, and wellbeing programs available through our safe homes."
-        />
-      </div>
+      <section className="mb-12">
+        <h2 className="mb-4 text-2xl font-semibold">Survivor Services</h2>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <ResourceCard
+            title="Request Counseling"
+            description="Apply for a counseling appointment with a trained counselor."
+            linkTo="/survivor/counseling"
+            linkLabel="Apply now"
+          />
+          <ResourceCard
+            title="Find a Safe Home"
+            description="Browse active safe homes near you, sorted by region."
+            linkTo="/survivor/find-home"
+            linkLabel="Search homes"
+          />
+        </div>
+      </section>
+
+      <section className="mb-12">
+        <h2 className="mb-4 text-2xl font-semibold">Emergency & Legal Contacts</h2>
+        <CrisisHotlines />
+      </section>
     </div>
   )
 }

@@ -187,24 +187,9 @@ const CaseConferencesPage = lazy(() =>
   })),
 )
 
-const AdminPortalLayout = lazy(() =>
-  import('@/layouts/AdminPortalLayout').then((m) => ({
-    default: m.AdminPortalLayout,
-  })),
-)
-const FinancialPortalLayout = lazy(() =>
-  import('@/layouts/FinancialPortalLayout').then((m) => ({
-    default: m.FinancialPortalLayout,
-  })),
-)
-const CounselorPortalLayout = lazy(() =>
-  import('@/layouts/CounselorPortalLayout').then((m) => ({
-    default: m.CounselorPortalLayout,
-  })),
-)
-const SocialMediaPortalLayout = lazy(() =>
-  import('@/layouts/SocialMediaPortalLayout').then((m) => ({
-    default: m.SocialMediaPortalLayout,
+const RolePortalLayout = lazy(() =>
+  import('@/layouts/RolePortalLayout').then((m) => ({
+    default: m.RolePortalLayout,
   })),
 )
 
@@ -261,7 +246,7 @@ function App() {
               path="/counselor"
               element={<ProtectedRoute allowedRoles={['Counselor', 'Admin']} />}
             >
-              <Route element={<CounselorPortalLayout />}>
+              <Route element={<RolePortalLayout role="counselor" />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<CounselorDashboardPage />} />
                 <Route path="sessions" element={<SessionsPage />} />
@@ -275,7 +260,7 @@ function App() {
               path="/financial"
               element={<ProtectedRoute allowedRoles={['Financial', 'Admin']} />}
             >
-              <Route element={<FinancialPortalLayout />}>
+              <Route element={<RolePortalLayout role="financial" />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<FinancialDashboardPage />} />
                 <Route path="donors" element={<DonorManagementPage />} />
@@ -290,7 +275,7 @@ function App() {
               path="/social"
               element={<ProtectedRoute allowedRoles={['SocialMedia', 'Admin']} />}
             >
-              <Route element={<SocialMediaPortalLayout />}>
+              <Route element={<RolePortalLayout role="social" />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<SocialDashboardPage />} />
                 <Route path="posts" element={<PostsPage />} />
@@ -302,7 +287,7 @@ function App() {
               path="/admin"
               element={<ProtectedRoute allowedRoles={['Admin']} />}
             >
-              <Route element={<AdminPortalLayout />}>
+              <Route element={<RolePortalLayout role="admin" />}>
                 <Route
                   index
                   element={<Navigate to="dashboard" replace />}
