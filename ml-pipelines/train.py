@@ -54,6 +54,21 @@ RANDOM_STATE = 42
 REPORT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
 
 
+def _skip_classification(reason: str) -> dict:
+    """Return when training cannot run (degenerate target). train_all() treats this as a soft failure."""
+    print(f"\n  [SKIP] {reason}")
+    return {"error": reason, "skipped": True}
+
+
+def _stratify_arg(y: pd.Series) -> pd.Series | None:
+    """Use stratified split only when each class has at least 2 samples (sklearn requirement)."""
+    if y.nunique() < 2:
+        return None
+    if y.value_counts().min() < 2:
+        return None
+    return y
+
+
 def _save_report(name: str, report: dict) -> None:
     """Persist training metrics to a JSON file for auditing."""
     os.makedirs(REPORT_DIR, exist_ok=True)
@@ -159,9 +174,14 @@ def train_donor_churn() -> dict:
     print(f"  Target distribution: {dict(y.value_counts())}")
     print(f"  Churn rate: {y.mean()*100:.1f}%")
 
+    if y.nunique() < 2:
+        return _skip_classification(
+            "donor_churn: target IsChurned has only one class; need both churned and active donors in data."
+        )
+
     # Stratified train/test split (matches notebook: 75/25)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.25, stratify=y, random_state=RANDOM_STATE
+        X, y, test_size=0.25, stratify=_stratify_arg(y), random_state=RANDOM_STATE
     )
 
     # Model: Gradient Boosting (matches notebook hyperparameters)
@@ -177,8 +197,12 @@ def train_donor_churn() -> dict:
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]
 
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-    cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
+    try:
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+        cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
+    except ValueError as e:
+        print(f"  [WARN] Stratified CV skipped: {e}")
+        cv_scores = np.array([np.nan])
 
     report = _print_classification_results("Donor Churn", y_test, y_pred, y_prob, cv_scores)
     report["feature_importances"] = _print_feature_importances(feature_names, model.feature_importances_)
@@ -219,9 +243,14 @@ def train_incident_risk() -> dict:
     print(f"  Target distribution: {dict(y.value_counts())}")
     print(f"  High-severity rate: {y.mean()*100:.1f}%")
 
+    if y.nunique() < 2:
+        return _skip_classification(
+            "incident_risk: target HasHighSeverityIncident has only one class; need mixed labels."
+        )
+
     # Stratified train/test split (matches notebook: 75/25)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.25, stratify=y, random_state=RANDOM_STATE
+        X, y, test_size=0.25, stratify=_stratify_arg(y), random_state=RANDOM_STATE
     )
 
     # Model: Random Forest with balanced class weights (matches notebook)
@@ -237,8 +266,12 @@ def train_incident_risk() -> dict:
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]
 
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-    cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
+    try:
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+        cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
+    except ValueError as e:
+        print(f"  [WARN] Stratified CV skipped: {e}")
+        cv_scores = np.array([np.nan])
 
     report = _print_classification_results("Incident Risk", y_test, y_pred, y_prob, cv_scores)
     report["feature_importances"] = _print_feature_importances(feature_names, model.feature_importances_)
@@ -278,10 +311,19 @@ def train_resident_progress() -> dict:
     print(f"  Target distribution: {dict(y.value_counts())}")
     print(f"  Completion rate: {y.mean()*100:.1f}%")
 
-    # Train/test split (matches notebook: 80/20)
+    if y.nunique() < 2:
+        return _skip_classification(
+            "resident_progress: target IsReady has only one class; need both ready and not-ready examples."
+        )
+
+    # Train/test split (matches notebook: 80/20); stratify only when each class has ≥2 rows
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.20, stratify=y, random_state=RANDOM_STATE
+        X, y, test_size=0.20, stratify=_stratify_arg(y), random_state=RANDOM_STATE
     )
+    if y_train.nunique() < 2:
+        return _skip_classification(
+            "resident_progress: training fold has a single class after split; add more diverse labels."
+        )
 
     # Model: Gradient Boosting (matches notebook hyperparameters)
     model = GradientBoostingClassifier(
@@ -296,8 +338,12 @@ def train_resident_progress() -> dict:
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]
 
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-    cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
+    try:
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+        cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
+    except ValueError as e:
+        print(f"  [WARN] Stratified CV skipped: {e}")
+        cv_scores = np.array([np.nan])
 
     report = _print_classification_results("Resident Progress", y_test, y_pred, y_prob, cv_scores)
     report["feature_importances"] = _print_feature_importances(feature_names, model.feature_importances_)
@@ -392,9 +438,14 @@ def train_social_media_impact() -> dict:
     print(f"  Target distribution: {dict(y.value_counts())}")
     print(f"  Donation-driver rate: {y.mean()*100:.1f}%")
 
+    if y.nunique() < 2:
+        return _skip_classification(
+            "social_media_impact: target IsDonationDriver has only one class; need mixed labels."
+        )
+
     # Train/test split (matches notebook: 80/20)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.20, stratify=y, random_state=RANDOM_STATE
+        X, y, test_size=0.20, stratify=_stratify_arg(y), random_state=RANDOM_STATE
     )
 
     # Model: Random Forest (matches notebook hyperparameters)
@@ -409,8 +460,12 @@ def train_social_media_impact() -> dict:
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]
 
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-    cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
+    try:
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+        cv_scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
+    except ValueError as e:
+        print(f"  [WARN] Stratified CV skipped: {e}")
+        cv_scores = np.array([np.nan])
 
     report = _print_classification_results("Social Media Impact", y_test, y_pred, y_prob, cv_scores)
     report["feature_importances"] = _print_feature_importances(feature_names, model.feature_importances_)
@@ -463,7 +518,9 @@ def train_all() -> dict:
     print("  Training Summary")
     print("="*60)
     for name, report in results.items():
-        if "error" in report:
+        if report.get("skipped"):
+            print(f"  [SKIP] {name:30s} {report.get('error', '')}")
+        elif "error" in report:
             print(f"  [FAIL] {name:30s} {report['error']}")
         elif "roc_auc" in report:
             auc = report.get("roc_auc", "N/A")
@@ -487,20 +544,25 @@ def train_all() -> dict:
         "last_trained": datetime.utcnow().isoformat(),
         "model_summary": {
             name: {
-                "status": "success" if "error" not in report else "error",
+                "status": (
+                    "skipped"
+                    if report.get("skipped")
+                    else ("error" if "error" in report else "success")
+                ),
                 "metrics": {
-                    k: v for k, v in report.items() 
+                    k: v for k, v in report.items()
                     if k in ["roc_auc", "cv_accuracy_mean", "r2_score", "cv_r2_mean"]
-                }
-            } for name, report in results.items()
-        }
+                },
+            }
+            for name, report in results.items()
+        },
     }
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
     print(f"\n  Full summary -> {summary_path}")
     print(f"  Metadata updated -> {metadata_path}")
-    print("  All models trained and saved successfully!")
+    print("  Training run finished (check [SKIP]/[FAIL] lines above).")
     return results
 
 
