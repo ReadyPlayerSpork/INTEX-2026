@@ -34,6 +34,7 @@ public class HavenForHerBackendDbContext : DbContext
     public DbSet<SocialMediaPost> SocialMediaPosts { get; set; }
     public DbSet<SafehouseMonthlyMetric> SafehouseMonthlyMetrics { get; set; }
     public DbSet<PublicImpactSnapshot> PublicImpactSnapshots { get; set; }
+    public DbSet<MLRetrainSchedule> MLRetrainSchedules { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

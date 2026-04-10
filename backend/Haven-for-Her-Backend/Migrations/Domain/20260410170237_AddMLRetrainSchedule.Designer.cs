@@ -3,6 +3,7 @@ using System;
 using Haven_for_Her_Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Haven_for_Her_Backend.Migrations.Domain
 {
     [DbContext(typeof(HavenForHerBackendDbContext))]
-    partial class HavenForHerBackendDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260410170237_AddMLRetrainSchedule")]
+    partial class AddMLRetrainSchedule
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
