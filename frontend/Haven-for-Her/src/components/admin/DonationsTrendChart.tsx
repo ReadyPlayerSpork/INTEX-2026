@@ -1,10 +1,9 @@
 /**
  * Last 6 months of monetary donation totals — SVG sparkline.
  *
- * Layout: no flex-col tricks. Card sizes naturally to content.
- * Chart area is a fixed-height relative container; SVG stretches inside it
- * with preserveAspectRatio="none" (safe: only fill + line, no text/circles).
- * Dots and month labels are HTML elements so they stay crisp.
+ * Card is h-[360px] flex-col — same as NarrativeAlertsPanel — so both cards
+ * in the dashboard grid are guaranteed to be the same height without any
+ * pixel-matching guesswork. The chart area uses flex-1 to fill remaining space.
  */
 
 import { memo } from 'react'
@@ -42,7 +41,7 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
   const pts = months.map((m, i) => {
     const x = pad.l + (innerW * i) / Math.max(months.length - 1, 1)
     const y = pad.t + innerH - (innerH * m.total) / max
-    // % positions for HTML overlays — must mirror the SVG coordinate math
+    // % positions for HTML overlays — mirrors the SVG coordinate math exactly
     const xPct = (x / w) * 100
     const yPct = (y / h) * 100
     return { x, y, xPct, yPct, ...m }
@@ -54,9 +53,9 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
   const areaD = `${lineD} L ${(pts[pts.length - 1]?.x ?? pad.l).toFixed(2)} ${h} L ${pad.l} ${h} Z`
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+    <div className="h-[360px] flex flex-col rounded-2xl border border-border bg-card p-5 shadow-bloom">
       {/* Header */}
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2 shrink-0">
         <div>
           <h2 className="font-heading text-base font-semibold text-card-foreground">
             Donations overview
@@ -73,9 +72,9 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
         </div>
       </div>
 
-      {/* Chart — fixed height so the card never has dead space */}
-      <div className="relative h-52 w-full">
-        {/* SVG: fill + line only — stretches to any height without distortion */}
+      {/* Chart — flex-1 fills remaining card height */}
+      <div className="relative flex-1 min-h-0">
+        {/* SVG: fill + line only — stretches to fill parent with no distortion concerns */}
         <svg
           viewBox={`0 0 ${w} ${h}`}
           className="absolute inset-0 h-full w-full text-primary"
@@ -102,7 +101,7 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
           />
         </svg>
 
-        {/* Dots — HTML so they stay perfectly circular */}
+        {/* Dots — HTML so they stay perfectly circular regardless of card height */}
         {pts.map((p) => (
           <div
             key={`dot-${p.year}-${p.month}`}
@@ -113,8 +112,8 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
         ))}
       </div>
 
-      {/* Month labels — centered under each dot, never clipped */}
-      <div className="relative mt-2 h-5">
+      {/* Month labels — centered under each dot */}
+      <div className="relative mt-2 h-5 shrink-0">
         {pts.map((p) => (
           <span
             key={`lbl-${p.year}-${p.month}`}
@@ -127,9 +126,9 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
       </div>
 
       {/* Footer */}
-      <p className="text-muted-foreground mt-3 text-center text-xs">
+      <p className="mt-3 shrink-0 text-center text-xs text-muted-foreground">
         Peak this window:{' '}
-        <span className="text-card-foreground font-semibold tabular-nums">
+        <span className="font-semibold tabular-nums text-card-foreground">
           {formatMoney(Math.max(...months.map((m) => m.total), 0))}
         </span>
       </p>
