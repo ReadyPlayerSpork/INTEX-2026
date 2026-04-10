@@ -2,7 +2,7 @@ export interface ImpactStats {
   totalResidentsServed: number
   activeResidents: number
   totalDonations: number
-  totalDonationValuePhp: number
+  totalDonationValueUsd: number
   activeSafehouses: number
   activePartners: number
   latestSnapshot: {

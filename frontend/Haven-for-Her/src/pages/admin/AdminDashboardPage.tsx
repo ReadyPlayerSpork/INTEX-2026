@@ -15,6 +15,7 @@ import { DonationsTrendChart } from '@/components/admin/DonationsTrendChart'
 import { RiskDonutChart } from '@/components/admin/RiskDonutChart'
 import { NarrativeAlertsPanel } from '@/components/admin/NarrativeAlertsPanel'
 import { CaseloadPreviewTable, type CaseloadRow } from '@/components/admin/CaseloadPreviewTable'
+import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
 
 interface DonationByType {
   type: string
@@ -141,12 +142,8 @@ interface DashboardData {
   }
 }
 
-function php(amount: number): string {
-  return new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency: 'PHP',
-    maximumFractionDigits: 0,
-  }).format(amount)
+function usd(amount: number): string {
+  return formatCurrencyAmount('USD', amount)
 }
 
 function pctChange(p: number): string {
@@ -327,7 +324,7 @@ export function AdminDashboardPage() {
         />
         <SummaryCard
           label="Donations (month)"
-          value={php(qs.donationsThisMonth)}
+          value={usd(qs.donationsThisMonth)}
           sub={`${pctChange(fin.percentChange)} vs last month`}
           href="/financial/donations"
           icon={<TrendingUp className="text-primary size-4 shrink-0 opacity-80" />}
@@ -461,7 +458,7 @@ export function AdminDashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
         <DonationsTrendChart
           months={months}
-          formatMoney={php}
+          formatMoney={usd}
           recurringPct={recurringPct}
           oneTimePct={oneTimePct}
         />

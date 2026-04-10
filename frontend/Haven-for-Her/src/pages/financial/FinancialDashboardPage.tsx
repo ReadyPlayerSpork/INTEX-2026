@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/api/client'
 import { Card, CardContent } from '@/components/ui/card'
+import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
 
 interface FinancialDashboard {
-  totalMonetaryPhp: number
-  totalInKindValuePhp: number
+  totalMonetaryUsd: number
+  totalInKindValueUsd: number
   recurringDonations: number
   oneTimeDonations: number
   totalDonors: number
@@ -54,8 +55,14 @@ export function FinancialDashboardPage() {
 
       {/* Summary cards */}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <Stat label="Monetary (PHP)" value={`₱${data.totalMonetaryPhp.toLocaleString()}`} />
-        <Stat label="In-Kind Value" value={`₱${data.totalInKindValuePhp.toLocaleString()}`} />
+        <Stat
+          label="Monetary (USD)"
+          value={formatCurrencyAmount('USD', data.totalMonetaryUsd)}
+        />
+        <Stat
+          label="In-Kind (est. USD)"
+          value={formatCurrencyAmount('USD', data.totalInKindValueUsd)}
+        />
         <Stat label="Recurring" value={data.recurringDonations} />
         <Stat label="One-Time" value={data.oneTimeDonations} />
         <Stat label="Total Donors" value={data.totalDonors} />
@@ -73,7 +80,8 @@ export function FinancialDashboardPage() {
               >
                 <span className="text-sm font-medium">{t.type}</span>
                 <span className="text-muted-foreground text-sm">
-                  {t.count} donations · ₱{t.total.toLocaleString()}
+                  {t.count} donations ·{' '}
+                  {formatCurrencyAmount('USD', t.total)}
                 </span>
               </div>
             ))}
@@ -94,7 +102,8 @@ export function FinancialDashboardPage() {
                 >
                   <span className="text-sm font-medium">{c.campaign}</span>
                   <span className="text-muted-foreground text-sm">
-                    {c.count} donations · ₱{c.total.toLocaleString()}
+                    {c.count} donations ·{' '}
+                    {formatCurrencyAmount('USD', c.total)}
                   </span>
                 </div>
               ))}

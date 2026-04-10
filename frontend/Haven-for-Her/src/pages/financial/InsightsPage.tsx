@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '@/api/client'
 import { Card, CardContent } from '@/components/ui/card'
 import { getDonorChurnBatch, type ChurnPrediction } from '@/api/mlApi'
+import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
 
 interface Insights {
   activeDonors: number
@@ -140,7 +141,7 @@ export function InsightsPage() {
               <tr className="border-border border-b text-left">
                 <th className="px-3 py-2 font-medium">#</th>
                 <th className="px-3 py-2 font-medium">Supporter ID</th>
-                <th className="px-3 py-2 font-medium">Total (PHP)</th>
+                <th className="px-3 py-2 font-medium">Total (USD)</th>
                 <th className="px-3 py-2 font-medium">Donations</th>
               </tr>
             </thead>
@@ -149,7 +150,9 @@ export function InsightsPage() {
                 <tr key={d.supporterId} className="border-border border-b">
                   <td className="px-3 py-2">{i + 1}</td>
                   <td className="px-3 py-2">{d.supporterId}</td>
-                  <td className="px-3 py-2">₱{d.total.toLocaleString()}</td>
+                  <td className="px-3 py-2">
+                    {formatCurrencyAmount('USD', d.total)}
+                  </td>
                   <td className="px-3 py-2">{d.count}</td>
                 </tr>
               ))}

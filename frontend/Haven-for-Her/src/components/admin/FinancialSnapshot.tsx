@@ -12,6 +12,7 @@
 import { memo } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies';
 
 interface DonationByType {
   type: string;
@@ -34,12 +35,8 @@ interface FinancialSnapshotProps {
   recurringVsOneTime: { recurring: number; oneTime: number };
 }
 
-function php(amount: number): string {
-  return new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency: 'PHP',
-    maximumFractionDigits: 0,
-  }).format(amount);
+function usd(amount: number): string {
+  return formatCurrencyAmount('USD', amount);
 }
 
 function pct(value: number): string {
@@ -92,14 +89,14 @@ export const FinancialSnapshot = memo(function FinancialSnapshot({
             This Month
           </p>
           <p className="font-heading font-semibold text-2xl text-card-foreground tabular-nums">
-            {php(totalDonationsThisMonth)}
+            {usd(totalDonationsThisMonth)}
           </p>
         </div>
         <div className="pb-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-0.5">
             vs Last Month
           </p>
-          <p className="text-sm text-muted-foreground tabular-nums">{php(totalDonationsLastMonth)}</p>
+          <p className="text-sm text-muted-foreground tabular-nums">{usd(totalDonationsLastMonth)}</p>
         </div>
         <div className={`flex items-center gap-1 pb-1 ml-auto ${trendColor}`}>
           <TrendIcon size={14} />
@@ -133,7 +130,7 @@ export const FinancialSnapshot = memo(function FinancialSnapshot({
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-semibold text-card-foreground">{d.type}</span>
                     <span className="text-xs text-muted-foreground tabular-nums">
-                      {php(d.total)}{' '}
+                      {usd(d.total)}{' '}
                       <span className="text-xs">({d.count})</span>
                     </span>
                   </div>
@@ -166,7 +163,7 @@ export const FinancialSnapshot = memo(function FinancialSnapshot({
                   {c.campaign}
                 </span>
                 <span className="tabular-nums text-muted-foreground shrink-0">
-                  {php(c.total)}
+                  {usd(c.total)}
                 </span>
               </li>
             ))}

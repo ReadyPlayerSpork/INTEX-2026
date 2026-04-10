@@ -42,8 +42,8 @@ public class FinancialController(HavenForHerBackendDbContext db) : ControllerBas
 
         return Ok(new
         {
-            totalMonetaryPhp = totalMonetary,
-            totalInKindValuePhp = totalInKindValue,
+            totalMonetaryUsd = totalMonetary,
+            totalInKindValueUsd = totalInKindValue,
             recurringDonations = recurringCount,
             oneTimeDonations = oneTimeCount,
             totalDonors,
