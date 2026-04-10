@@ -133,7 +133,7 @@ builder.Services.AddRateLimiter(options =>
     options.AddFixedWindowLimiter("auth", o =>
     {
         o.Window = TimeSpan.FromMinutes(1);
-        o.PermitLimit = 10;
+        o.PermitLimit = 100;
         o.QueueLimit = 0;
     });
 });
