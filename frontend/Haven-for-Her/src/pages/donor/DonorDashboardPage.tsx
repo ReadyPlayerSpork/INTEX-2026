@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Heart } from 'lucide-react'
 import { api } from '@/api/client'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
+import { StatCard } from '@/components/shared/StatCard'
 import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
 
 interface GivingTotalRow {
@@ -70,14 +72,25 @@ export function DonorDashboardPage() {
       </div>
 
       <div className="mb-8 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-3">
-        <Stat label="Total donations" value={data.totalDonations} />
+        <StatCard label="Total donations" value={data.totalDonations} />
         <GivingTotalsCard rows={data.givingTotalsByCurrency} />
-        <Stat label="Recurring" value={data.recurringDonations} />
+        <StatCard label="Recurring" value={data.recurringDonations} />
       </div>
 
       <h2 className="font-heading mb-4 text-lg font-semibold text-accent">Recent Donations</h2>
       {data.recentDonations.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No donations yet.</p>
+        <div className="flex flex-col items-center gap-4 rounded-2xl bg-muted p-8 text-center">
+          <Heart className="text-muted-foreground size-12" />
+          <div>
+            <p className="font-heading text-lg font-semibold text-accent">No donations yet</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Your giving history will appear here once you make your first contribution.
+            </p>
+          </div>
+          <Link to="/donate" className={cn(buttonVariants(), 'no-underline')}>
+            Make your first gift
+          </Link>
+        </div>
       ) : (
         <Card className="overflow-hidden border-border/70 bg-card/95">
           <CardContent className="p-0">
@@ -85,16 +98,28 @@ export function DonorDashboardPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-border bg-secondary/50 border-b text-left">
-                <th className="px-3 py-2 font-medium">Date</th>
-                <th className="px-3 py-2 font-medium">Amount</th>
-                <th className="px-3 py-2 font-medium">Campaign</th>
-                <th className="px-3 py-2 font-medium">Recurring</th>
+                <th scope="col" className="px-3 py-2 font-medium">Date</th>
+                <th scope="col" className="px-3 py-2 font-medium">Amount</th>
+                <th scope="col" className="px-3 py-2 font-medium">Campaign</th>
+                <th scope="col" className="px-3 py-2 font-medium">Recurring</th>
               </tr>
             </thead>
             <tbody>
               {data.recentDonations.map((d) => (
                 <tr key={d.donationId} className="border-border/70 border-b last:border-b-0">
-                  <td className="px-3 py-2">{d.donationDate}</td>
+                  <td className="px-3 py-2">
+                    {(() => {
+                      try {
+                        return new Date(d.donationDate).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      } catch {
+                        return d.donationDate
+                      }
+                    })()}
+                  </td>
                   <td className="px-3 py-2">
                     {d.amount != null
                       ? formatCurrencyAmount(d.currencyCode || 'USD', d.amount)
@@ -114,16 +139,6 @@ export function DonorDashboardPage() {
   )
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <Card className="border-border/70 bg-card/95">
-      <CardContent className="flex flex-col items-center justify-center gap-2 p-6 text-center">
-        <p className="font-heading text-primary text-3xl font-semibold sm:text-4xl">{value}</p>
-        <p className="text-muted-foreground text-sm">{label}</p>
-      </CardContent>
-    </Card>
-  )
-}
 
 function GivingTotalsCard({ rows }: { rows: GivingTotalRow[] }) {
   if (rows.length === 0) {
