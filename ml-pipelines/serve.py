@@ -104,7 +104,9 @@ def _csv(filename: str) -> pd.DataFrame:
         path = os.path.join(CSV_DIR, filename)
         if not os.path.exists(path):
             raise FileNotFoundError(f"CSV not found: {path}")
-        _csv_cache[filename] = pd.read_csv(path)
+        df = pd.read_csv(path)
+        # Match PostgreSQL / fetch_data shape: snake_case headers -> PascalCase for feature code
+        _csv_cache[filename] = db_client.normalize_columns(df)
     return _csv_cache[filename].copy()
 
 
@@ -296,11 +298,15 @@ def _resident_progress_features() -> pd.DataFrame:
             df[col] = 0.0
             
     df[fill_cols] = df[fill_cols].fillna(0)
-    
-    # Target definition
-    df["IsReady"] = ((df["CurrentHealthScore"] >= 7) & 
-                     (df["CurrentAttendanceRate"] >= 80) & 
-                     (df["ProgressNotedPct"] >= 50)).astype(int)
+
+    # Target: attendance in CSV is 0–1 fraction; health scores are ~2.5–4.5 scale (not 0–10).
+    att = df["CurrentAttendanceRate"]
+    att_pct = att * 100 if att.max(skipna=True) <= 1.5 else att
+    df["IsReady"] = (
+        (df["CurrentHealthScore"] >= 3.5)
+        & (att_pct >= 80)
+        & (df["ProgressNotedPct"] >= 50)
+    ).astype(int)
 
     model_features = [
         "CaseCategory", "InitialRiskLevel", "Sex", "SessionCount", 

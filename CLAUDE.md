@@ -63,6 +63,12 @@ The backend uses **two separate DB contexts** (both PostgreSQL via Npgsql):
 
 Migrations are split into **two folders**: `Migrations/Domain/` and `Migrations/Identity/`.
 
+### Domain seed CSVs (US demo data)
+- **Path:** `backend/Haven-for-Her-Backend/docs/lighthouse_csv_v7/*.csv` — domain tables are **wiped and re-seeded** on every API startup via `CsvDataSeeder` (see `Program.cs`).
+- **Content:** United States–based sites and addresses; monetary rows use **`USD`** (legacy PHP amounts were converted in the generator at **58 PHP = 1 USD**). Supporters, donations, allocations, in-kind lines, and social posts are expanded ~**1.5×** for demos; regenerate with:
+  `python scripts/localize_us_expand_seed_csv.py` (repo root).
+- **ML:** `ml-pipelines/serve.py` reads the same CSVs. `_csv()` normalizes **snake_case** CSV headers to **PascalCase** so feature code matches PostgreSQL `fetch_data` when `DATABASE_URL` is unset.
+
 Auth is cookie-based: HttpOnly, SameSite=Lax, Secure, 7-day sliding expiration. `GET /api/auth/me` returns `{ isAuthenticated, userName, email, roles[] }`.
 
 The default seeded admin is `admin@havenforher.local` / `admin!haven4her` (overridable via `GenerateDefaultIdentityAdmin` config).
