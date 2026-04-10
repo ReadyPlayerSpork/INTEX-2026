@@ -94,7 +94,7 @@ Auth is cookie-based: HttpOnly, SameSite=Lax, Secure, 7-day sliding expiration.
 
 `GET /api/auth/me` returns `{ isAuthenticated, userName, email, roles[] }`.
 
-Default seeded admin: `admin@havenforher.local` / `admin!haven4her`
+Default seeded accounts are configured via environment variables — see [`docs/demo-credentials.md`](docs/demo-credentials.md) and `backend/.env.example`.
 
 Roles: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Employee`, `Donor`, `Survivor`
 

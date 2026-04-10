@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace Haven_for_Her_Backend.Data
 {
@@ -8,6 +9,7 @@ namespace Haven_for_Her_Backend.Data
         {
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(nameof(AuthIdentityGenerator));
 
             foreach (var roleName in AuthRoles.All)
             {
@@ -21,103 +23,77 @@ namespace Haven_for_Her_Backend.Data
                     }
                 }
             }
-        
-            var adminSection = configuration.GetSection("GenerateDefaultIdentityAdmin");
-            var adminEmail = adminSection["Email"] ?? "admin@havenforher.local";
-            var adminPassword = adminSection["Password"] ?? "admin!haven4her";
 
-            var adminUser = await userManager.FindByEmailAsync(adminEmail);
-            if (adminUser == null)
+            // ── Admin ───────────────────────────────────────────────────────────
+            await EnsureSeededAccountAsync(
+                userManager, logger, configuration,
+                sectionName: "GenerateDefaultIdentityAdmin",
+                roles: new[] { AuthRoles.Admin, AuthRoles.Donor },
+                label: "admin");
+
+            // ── Counselor (matches CSV data for SW-15 residents) ────────────────
+            await EnsureSeededAccountAsync(
+                userManager, logger, configuration,
+                sectionName: "GenerateDefaultIdentityCounselor",
+                roles: new[] { AuthRoles.Counselor },
+                label: "counselor");
+
+            // ── Donor (matches supporter email in domain CSV) ───────────────────
+            await EnsureSeededAccountAsync(
+                userManager, logger, configuration,
+                sectionName: "GenerateDefaultIdentityDonor",
+                roles: new[] { AuthRoles.Donor },
+                label: "donor");
+        }
+
+        private static async Task EnsureSeededAccountAsync(
+            UserManager<ApplicationUser> userManager,
+            ILogger logger,
+            IConfiguration configuration,
+            string sectionName,
+            string[] roles,
+            string label)
+        {
+            var section = configuration.GetSection(sectionName);
+            var email = section["Email"];
+            var password = section["Password"];
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                adminUser = new ApplicationUser
-                {
-                    UserName = adminEmail,
-                    Email = adminEmail,
-                    EmailConfirmed = true
-                };
-
-                var createAdminResult = await userManager.CreateAsync(adminUser, adminPassword);
-                if (!createAdminResult.Succeeded)
-                {
-                    throw new Exception($"Failed to create admin user: {string.Join(", ", createAdminResult.Errors.Select(e => e.Description))}");
-                }
+                logger.LogWarning(
+                    "Skipping {Label} account — set {Section}__Email and {Section}__Password in environment/.env",
+                    label, sectionName, sectionName);
+                return;
             }
-            if (!await userManager.IsInRoleAsync(adminUser, AuthRoles.Admin))
-            {
-                var addToRoleResult = await userManager.AddToRoleAsync(adminUser, AuthRoles.Admin);
-                if (!addToRoleResult.Succeeded)
-                {
-                    throw new Exception($"Failed to assign admin role to user: {string.Join(", ", addToRoleResult.Errors.Select(e => e.Description))}");
-                }
-            }
 
-            if (!await userManager.IsInRoleAsync(adminUser, AuthRoles.Donor))
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
             {
-                var addToRoleResult = await userManager.AddToRoleAsync(adminUser, AuthRoles.Donor);
-                if (!addToRoleResult.Succeeded)
+                user = new ApplicationUser
                 {
-                    throw new Exception($"Failed to assign donor role to user: {string.Join(", ", addToRoleResult.Errors.Select(e => e.Description))}");
-                }
-            }
-
-            // ── Seeded counselor (matches CSV data for SW-15 residents) ──────────
-            const string counselorEmail = "counselor@havenforher.local";
-            const string counselorPassword = "Counselor!haven4her";
-
-            var counselorUser = await userManager.FindByEmailAsync(counselorEmail);
-            if (counselorUser == null)
-            {
-                counselorUser = new ApplicationUser
-                {
-                    UserName = counselorEmail,
-                    Email = counselorEmail,
+                    UserName = email,
+                    Email = email,
                     EmailConfirmed = true,
                 };
 
-                var createResult = await userManager.CreateAsync(counselorUser, counselorPassword);
-                if (!createResult.Succeeded)
+                var result = await userManager.CreateAsync(user, password);
+                if (!result.Succeeded)
                 {
-                    throw new Exception($"Failed to create counselor user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+                    throw new Exception($"Failed to create {label} user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                 }
+
+                logger.LogInformation("Created seeded {Label} account ({Email})", label, email);
             }
 
-            if (!await userManager.IsInRoleAsync(counselorUser, AuthRoles.Counselor))
+            foreach (var role in roles)
             {
-                var addResult = await userManager.AddToRoleAsync(counselorUser, AuthRoles.Counselor);
-                if (!addResult.Succeeded)
+                if (!await userManager.IsInRoleAsync(user, role))
                 {
-                    throw new Exception($"Failed to assign Counselor role: {string.Join(", ", addResult.Errors.Select(e => e.Description))}");
-                }
-            }
-
-            // ── Seeded donor (matches supporter email donor@havenforher.local in domain CSV) ──
-            var donorSection = configuration.GetSection("GenerateDefaultIdentityDonor");
-            var donorEmail = donorSection["Email"] ?? "donor@havenforher.local";
-            var donorPassword = donorSection["Password"] ?? "Donor!haven4her";
-
-            var donorUser = await userManager.FindByEmailAsync(donorEmail);
-            if (donorUser == null)
-            {
-                donorUser = new ApplicationUser
-                {
-                    UserName = donorEmail,
-                    Email = donorEmail,
-                    EmailConfirmed = true,
-                };
-
-                var createDonor = await userManager.CreateAsync(donorUser, donorPassword);
-                if (!createDonor.Succeeded)
-                {
-                    throw new Exception($"Failed to create donor user: {string.Join(", ", createDonor.Errors.Select(e => e.Description))}");
-                }
-            }
-
-            if (!await userManager.IsInRoleAsync(donorUser, AuthRoles.Donor))
-            {
-                var addDonorRole = await userManager.AddToRoleAsync(donorUser, AuthRoles.Donor);
-                if (!addDonorRole.Succeeded)
-                {
-                    throw new Exception($"Failed to assign Donor role: {string.Join(", ", addDonorRole.Errors.Select(e => e.Description))}");
+                    var addResult = await userManager.AddToRoleAsync(user, role);
+                    if (!addResult.Succeeded)
+                    {
+                        throw new Exception($"Failed to assign {role} role to {label} user: {string.Join(", ", addResult.Errors.Select(e => e.Description))}");
+                    }
                 }
             }
         }
