@@ -3,12 +3,8 @@ import { buttonVariants } from '@/components/ui/button-variants'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useImpactStats } from '@/features/public/home/useImpactStats'
+import { formatAnonymizedCount } from '@/features/public/home/anonymizedCounts'
 import logoWordmarkUrl from '@/assets/LogoHavenForHerTransparentBackground.svg'
-
-const formatAnonymizedCount = (count: number) => {
-  if (count < 10) return count.toString()
-  return `${Math.floor(count / 10) * 10}+`
-}
 
 export function HomePage() {
   const { stats } = useImpactStats()
