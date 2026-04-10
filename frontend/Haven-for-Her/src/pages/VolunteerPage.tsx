@@ -1,21 +1,29 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
+import youngWomanSmiling from '@/assets/Young Woman Smiling.jpg'
 
 export function VolunteerPage() {
   return (
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 max-w-3xl">
-          <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-            Volunteer and events
-          </p>
-          <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
-            There are many ways to show up with care.
-          </h1>
-          <p className="text-muted-foreground mt-4 max-w-2xl leading-8 text-pretty">
-            Review the current opportunities to contribute your time and skills. Find a role that matches your schedule and expertise below.
-          </p>
+        <div className="mb-12 grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="max-w-3xl">
+            <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+              Volunteer and events
+            </p>
+            <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
+              There are many ways to show up with care.
+            </h1>
+            <p className="text-muted-foreground mt-4 max-w-2xl leading-8 text-pretty">
+              Review the current opportunities to contribute your time and skills. Find a role that matches your schedule and expertise below.
+            </p>
+          </div>
+          <img
+            src={youngWomanSmiling}
+            alt="Smiling young woman"
+            className="hidden lg:block rounded-3xl object-cover aspect-[4/3] w-full shadow-xl border border-border/50 brightness-105 contrast-105"
+          />
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

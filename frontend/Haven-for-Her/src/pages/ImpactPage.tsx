@@ -1,6 +1,7 @@
 import { useImpactStats } from '@/features/public/home/useImpactStats'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
+import womenGreenTop from "@/assets/Women's Green Top.jpg"
 
 function parseMetricPayload(
   json: string | null | undefined,
@@ -54,16 +55,23 @@ export function ImpactPage() {
   return (
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-12 max-w-3xl">
-          <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-            Our mission
-          </p>
-          <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
-            Protecting and restoring lives
-          </h1>
-          <p className="text-muted-foreground mt-4 text-pretty text-lg leading-8">
-            Here is a realistic look at our operations and outcomes. We track our effectiveness so partners and donors know exactly where resources go and how lives are changing.
-          </p>
+        <div className="mb-12 grid gap-10 lg:grid-cols-2 lg:items-center">
+          <div className="max-w-3xl">
+            <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+              Our mission
+            </p>
+            <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
+              Protecting and restoring lives
+            </h1>
+            <p className="text-muted-foreground mt-4 text-pretty text-lg leading-8">
+              Here is a realistic look at our operations and outcomes. We track our effectiveness so partners and donors know exactly where resources go and how lives are changing.
+            </p>
+          </div>
+          <img
+            src={womenGreenTop}
+            alt="Women in an embrace"
+            className="hidden lg:block rounded-3xl object-cover aspect-[4/3] w-full shadow-xl border border-border/50 brightness-105 contrast-105"
+          />
         </div>
 
         <div className="mb-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

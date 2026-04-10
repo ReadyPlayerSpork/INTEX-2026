@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useImpactStats } from '@/features/public/home/useImpactStats'
 import logoWordmarkUrl from '@/assets/LogoHavenForHerTransparentBackground.svg'
+import womanInGreenField from '@/assets/Woman in Green Field.jpg'
 
 const formatAnonymizedCount = (count: number) => {
   if (count < 10) return count.toString()
@@ -126,8 +127,14 @@ export function HomePage() {
       )}
 
       <section className="px-5 py-12 md:px-10 md:py-20" aria-label="Mission and ways to help">
-        <div className="mx-auto flex max-w-5xl flex-col gap-10 lg:gap-12">
-          <Card className="bg-card/95">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_1.2fr] lg:items-center lg:gap-16">
+          <img 
+            src={womanInGreenField} 
+            alt="Woman standing peacefully in a green field" 
+            className="rounded-3xl object-cover aspect-[4/3] md:aspect-square lg:aspect-[4/5] w-full shadow-xl border border-border/50 brightness-[1.02] contrast-105" 
+          />
+          <div className="flex flex-col gap-8 lg:gap-10">
+            <Card className="bg-card/95">
             <CardContent className="flex flex-col justify-between p-6 md:p-10">
               <div>
                 <h2 className="font-heading text-3xl font-semibold text-accent">
@@ -175,6 +182,7 @@ export function HomePage() {
               </div>
             </CardContent>
           </Card>
+          </div>
         </div>
       </section>
     </div>

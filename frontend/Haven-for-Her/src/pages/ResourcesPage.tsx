@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { CrisisHotlines } from '@/features/resources/CrisisHotlines'
 import { SafehouseList } from '@/features/resources/SafehouseList'
 import { useAuth } from '@/hooks/useAuth'
+import womanWearingGlasses from '@/assets/Woman Wearing Glasses.jpg'
 
 export function ResourcesPage() {
   const location = useLocation()
@@ -27,20 +28,27 @@ export function ResourcesPage() {
   return (
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 max-w-3xl">
-          <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-            Resources and support
-          </p>
-          <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
-            Immediate help and nearby safe options
-          </h1>
-          <p className="text-muted-foreground mt-4 leading-8 text-pretty">
-            This page is designed to help people find trustworthy support
-            quickly, whether you need emergency contact information or a view
-            of currently active safe homes. Requesting counseling uses your
-            account so we can follow up safely; browsing safe homes does not
-            require signing in.
-          </p>
+        <div className="mb-12 grid gap-10 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
+          <div className="max-w-3xl">
+            <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+              Resources and support
+            </p>
+            <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
+              Immediate help and nearby safe options
+            </h1>
+            <p className="text-muted-foreground mt-4 leading-8 text-pretty">
+              This page is designed to help people find trustworthy support
+              quickly, whether you need emergency contact information or a view
+              of currently active safe homes. Requesting counseling uses your
+              account so we can follow up safely; browsing safe homes does not
+              require signing in.
+            </p>
+          </div>
+          <img
+            src={womanWearingGlasses}
+            alt="Woman wearing glasses looking thoughtfully"
+            className="rounded-3xl object-cover aspect-auto w-full shadow-xl border border-border/50 brightness-[1.02] contrast-105"
+          />
         </div>
 
         <section className="mb-12">
@@ -54,32 +62,32 @@ export function ResourcesPage() {
             with you.
           </p>
           <div className="grid gap-6 sm:grid-cols-2">
-            <div className="bg-card border-border flex flex-col rounded-lg border p-6">
-              <h3 className="mb-2 font-semibold">Request counseling</h3>
-              <p className="text-muted-foreground flex-1 text-sm">
-                Apply for a counseling appointment with a trained counselor.
-                Sign in (or create an account) to submit a request securely.
-              </p>
-              <Link
-                to={counselingHref}
-                className="text-primary mt-3 text-sm font-medium underline"
-              >
-                {isSurvivor ? 'Apply now' : 'Sign in to apply'}
-              </Link>
-            </div>
-            <div className="bg-card border-border flex flex-col rounded-lg border p-6">
-              <h3 className="mb-2 font-semibold">Find a safe home</h3>
-              <p className="text-muted-foreground flex-1 text-sm">
-                Browse active safe homes by region. No account required.
-              </p>
-              <a
-                href="#safe-homes"
-                className="text-primary mt-3 text-sm font-medium underline"
-              >
-                View active safe homes
-              </a>
-            </div>
-          </div>
+                <div className="bg-card border-border flex flex-col rounded-xl border p-6 shadow-sm">
+                  <h3 className="mb-2 font-semibold">Request counseling</h3>
+                  <p className="text-muted-foreground flex-1 text-sm">
+                    Apply for a counseling appointment with a trained counselor.
+                    Sign in (or create an account) to submit a request securely.
+                  </p>
+                  <Link
+                    to={counselingHref}
+                    className="text-primary mt-3 text-sm font-medium underline hover:text-primary/80 transition-colors"
+                  >
+                    {isSurvivor ? 'Apply now' : 'Sign in to apply'}
+                  </Link>
+                </div>
+                <div className="bg-card border-border flex flex-col rounded-xl border p-6 shadow-sm">
+                  <h3 className="mb-2 font-semibold">Find a safe home</h3>
+                  <p className="text-muted-foreground flex-1 text-sm">
+                    Browse active safe homes by region. No account required.
+                  </p>
+                  <a
+                    href="#safe-homes"
+                    className="text-primary mt-3 text-sm font-medium underline hover:text-primary/80 transition-colors"
+                  >
+                    View active safe homes
+                  </a>
+                </div>
+              </div>
         </section>
 
         <section className="mb-12">
