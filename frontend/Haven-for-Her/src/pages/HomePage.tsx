@@ -5,6 +5,11 @@ import { cn } from '@/lib/utils'
 import { useImpactStats } from '@/features/public/home/useImpactStats'
 import logoWordmarkUrl from '@/assets/LogoHavenForHerTransparentBackground.svg'
 
+const formatAnonymizedCount = (count: number) => {
+  if (count < 10) return count.toString()
+  return `${Math.floor(count / 10) * 10}+`
+}
+
 export function HomePage() {
   const { stats } = useImpactStats()
 
@@ -76,7 +81,7 @@ export function HomePage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl border border-border/60 bg-card/85 p-5">
                   <p className="font-heading text-primary text-3xl font-semibold">
-                    {stats ? stats.activeResidents : '...'}
+                    {stats ? formatAnonymizedCount(stats.activeResidents) : '...'}
                   </p>
                   <p className="text-muted-foreground mt-1 text-sm">
                     girls currently supported
@@ -108,7 +113,7 @@ export function HomePage() {
             <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16">
               <div className="flex-1 space-y-8">
                 <p className="font-heading text-xl leading-relaxed sm:text-2xl sm:leading-relaxed text-muted-foreground text-pretty">
-                  We have served <strong className="text-primary font-bold">{stats.totalResidentsServed}</strong> survivors on their journey to healing, with <strong className="text-primary font-bold">{stats.activeResidents}</strong> girls currently residing across our <strong className="text-primary font-bold">{stats.activeSafehouses}</strong> active safe homes.
+                  We have served <strong className="text-primary font-bold">{stats.totalResidentsServed}</strong> survivors on their journey to healing, with <strong className="text-primary font-bold">{formatAnonymizedCount(stats.activeResidents)}</strong> girls currently residing across our <strong className="text-primary font-bold">{stats.activeSafehouses}</strong> active safe homes.
                 </p>
                 <div className="h-px w-24 bg-border/80"></div>
                 <p className="text-lg leading-8 text-muted-foreground text-pretty">
