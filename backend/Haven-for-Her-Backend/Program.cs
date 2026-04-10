@@ -138,6 +138,13 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+// ── Cloudflare Access JWT validation ──────────────────────────────────────
+var cfAccessOptions = builder.Configuration
+    .GetSection(CloudflareAccessOptions.SectionName)
+    .Get<CloudflareAccessOptions>() ?? new CloudflareAccessOptions();
+builder.Services.AddSingleton(cfAccessOptions);
+builder.Services.AddHttpClient(); // used by CloudflareAccessMiddleware to fetch JWKS
+
 builder.Services.AddHttpClient("MlService", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["MlService:BaseUrl"] ?? "http://localhost:5050");
@@ -237,6 +244,10 @@ if (!string.IsNullOrWhiteSpace(configuredPublicBaseUrl)
         await next();
     });
 }
+
+// Cloudflare Access JWT gate — rejects requests without a valid CF token in production.
+// Must run after ForwardedHeaders (needs correct scheme) but before auth/CORS.
+app.UseCloudflareAccessValidation();
 
 if (app.Environment.IsDevelopment())
 {
