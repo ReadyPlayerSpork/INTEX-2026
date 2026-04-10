@@ -457,7 +457,7 @@ export function AdminDashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+      <div className="grid gap-6 lg:grid-cols-2">
         <DonationsTrendChart
           months={months}
           formatMoney={usd}

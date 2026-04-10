@@ -155,8 +155,8 @@ export const NarrativeAlertsPanel = memo(function NarrativeAlertsPanel({
   }
 
   return (
-    <div className="h-full rounded-2xl border border-border bg-card p-5 shadow-bloom">
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <div className="h-[420px] flex flex-col rounded-2xl border border-border bg-card p-5 shadow-bloom">
+      <div className="mb-3 flex items-center justify-between gap-2 shrink-0">
         <h2 className="font-heading text-base font-semibold text-card-foreground">Active alerts</h2>
         <Link
           to="/admin/caseload"
@@ -165,7 +165,7 @@ export const NarrativeAlertsPanel = memo(function NarrativeAlertsPanel({
           View caseload →
         </Link>
       </div>
-      <ul className="space-y-2 max-h-[420px] overflow-y-auto pr-0.5">
+      <ul className="flex-1 min-h-0 space-y-2 overflow-y-auto pr-0.5">
         {picked.map((item, idx) => {
           if (item.k === 'e') {
             const d = item.d
