@@ -155,7 +155,7 @@ export const NarrativeAlertsPanel = memo(function NarrativeAlertsPanel({
   }
 
   return (
-    <div className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-bloom" style={{ height: '385px' }}>
+    <div className="flex flex-col rounded-2xl border border-border bg-card p-5 shadow-bloom" style={{ height: '364px' }}>
       <div className="mb-3 flex items-center justify-between gap-2 shrink-0">
         <h2 className="font-heading text-base font-semibold text-card-foreground">Active alerts</h2>
         <Link
