@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { reportsApi, type ResidentOutcomes, type ReintegrationData, type AccomplishmentReport, type SafehouseMetric } from '@/api/reportsApi'
 import { MetricCard } from '@/components/shared/MetricCard'
+import { BookOpen, Heart, Home, RefreshCw, TrendingUp, Users } from 'lucide-react'
 
 export function AnalyticsPage() {
   const [outcomes, setOutcomes] = useState<ResidentOutcomes | null>(null)
@@ -33,118 +34,227 @@ export function AnalyticsPage() {
   useEffect(() => { void fetchAll() }, [fetchAll])
 
   if (loading) {
-    return <div className="mx-auto max-w-7xl px-4 py-12"><p className="text-muted-foreground animate-pulse">Loading...</p></div>
+    return (
+      <div className="mx-auto max-w-6xl px-0 pb-8">
+        <div className="flex items-center gap-3 py-16">
+          <RefreshCw className="text-primary size-4 animate-spin" />
+          <p className="text-muted-foreground animate-pulse text-sm">Loading reports…</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-bold text-plum">Reports & Analytics</h1>
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-soft-purple">Report Year:</span>
+    <div className="mx-auto max-w-6xl space-y-8 px-0 pb-8">
+
+      {/* Page header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-muted-foreground text-xs font-bold uppercase tracking-[0.18em]">
+            Admin · Reports
+          </p>
+          <h1 className="font-heading text-accent mt-1 text-3xl font-semibold tracking-tight md:text-4xl">
+            Reports &amp; Analytics
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Annual accomplishments, resident outcomes, and safehouse performance
+          </p>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm shrink-0">
+          <span className="text-muted-foreground font-medium">Report year:</span>
           <input
             type="number"
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="border-input bg-background w-24 rounded-md border px-2 py-1 text-sm"
+            className="border-input bg-background focus:ring-primary w-24 rounded-lg border px-2 py-1.5 text-sm focus:outline-none focus:ring-2"
           />
         </label>
       </div>
 
-      {/* Annual Accomplishment Report */}
+      {/* ── Annual Accomplishment Report ───────────────────────────── */}
       {accomplishment && (
-        <section className="mb-8">
-          <h2 className="mb-4 font-heading text-xl font-semibold text-plum">
-            Annual Accomplishment Report ({accomplishment.year})
-          </h2>
+        <section className="space-y-5">
+          <div>
+            <p className="text-muted-foreground mb-1 text-xs font-bold uppercase tracking-[0.18em]">
+              Annual Report
+            </p>
+            <h2 className="font-heading text-card-foreground text-xl font-semibold">
+              {accomplishment.year} Accomplishment Report
+            </h2>
+          </div>
 
-          {/* Summary Metrics */}
-          <div className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+          {/* Beneficiary summary */}
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             <MetricCard label="Beneficiaries Served" value={accomplishment.beneficiaries.totalResidents} />
             <MetricCard label="New Admissions" value={accomplishment.beneficiaries.newAdmissions} />
             <MetricCard label="Discharges" value={accomplishment.beneficiaries.discharges} />
             <MetricCard label="Reintegrations Completed" value={accomplishment.beneficiaries.reintegrationCompleted} />
           </div>
 
-          {/* Services Provided */}
-          <div className="mb-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl bg-cream p-5">
-              <h3 className="mb-3 text-sm font-semibold uppercase text-soft-purple/70">Healing (Counseling)</h3>
-              <p className="font-heading text-3xl font-semibold text-plum">{accomplishment.services.counselingSessions}</p>
-              <p className="mt-1 text-sm text-soft-purple/70">sessions total</p>
-              <div className="mt-3 space-y-1 text-sm text-soft-purple">
-                <p>Individual: {accomplishment.services.individualSessions}</p>
-                <p>Group: {accomplishment.services.groupSessions}</p>
+          {/* Three service pillars */}
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Counseling */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
+                  <BookOpen className="text-primary size-4" />
+                </div>
+                <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  Healing (Counseling)
+                </h3>
+              </div>
+              <p className="font-heading text-accent text-3xl font-semibold tabular-nums">
+                {accomplishment.services.counselingSessions}
+              </p>
+              <p className="text-muted-foreground mt-0.5 text-sm">sessions total</p>
+              <div className="mt-4 space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Individual</span>
+                  <span className="text-card-foreground font-semibold tabular-nums">{accomplishment.services.individualSessions}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Group</span>
+                  <span className="text-card-foreground font-semibold tabular-nums">{accomplishment.services.groupSessions}</span>
+                </div>
               </div>
             </div>
-            <div className="rounded-2xl bg-cream p-5">
-              <h3 className="mb-3 text-sm font-semibold uppercase text-soft-purple/70">Caring (Visitations)</h3>
-              <p className="font-heading text-3xl font-semibold text-plum">{accomplishment.services.homeVisitations}</p>
-              <p className="mt-1 text-sm text-soft-purple/70">home visitations</p>
-              <div className="mt-3 space-y-1 text-sm text-soft-purple">
-                <p>Incidents: {accomplishment.services.incidents}</p>
-                <p>Resolved: {accomplishment.services.resolvedIncidents}</p>
+
+            {/* Visitations */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-full bg-accent/10">
+                  <Heart className="text-accent size-4" />
+                </div>
+                <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  Caring (Visitations)
+                </h3>
+              </div>
+              <p className="font-heading text-accent text-3xl font-semibold tabular-nums">
+                {accomplishment.services.homeVisitations}
+              </p>
+              <p className="text-muted-foreground mt-0.5 text-sm">home visitations</p>
+              <div className="mt-4 space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Incidents</span>
+                  <span className="text-card-foreground font-semibold tabular-nums">{accomplishment.services.incidents}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Resolved</span>
+                  <span className="text-primary font-semibold tabular-nums">{accomplishment.services.resolvedIncidents}</span>
+                </div>
               </div>
             </div>
-            <div className="rounded-2xl bg-cream p-5">
-              <h3 className="mb-3 text-sm font-semibold uppercase text-soft-purple/70">Teaching (Interventions)</h3>
-              <p className="font-heading text-3xl font-semibold text-plum">{accomplishment.services.interventions}</p>
-              <p className="mt-1 text-sm text-soft-purple/70">intervention plans</p>
+
+            {/* Interventions */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-full bg-[var(--chart-3)]/10">
+                  <Users className="size-4 text-[var(--chart-3)]" />
+                </div>
+                <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  Teaching (Interventions)
+                </h3>
+              </div>
+              <p className="font-heading text-accent text-3xl font-semibold tabular-nums">
+                {accomplishment.services.interventions}
+              </p>
+              <p className="text-muted-foreground mt-0.5 text-sm">intervention plans</p>
               {accomplishment.services.interventionsByCategory.length > 0 && (
-                <div className="mt-3 space-y-1 text-sm text-soft-purple">
+                <div className="mt-4 space-y-1.5 text-sm">
                   {accomplishment.services.interventionsByCategory.map((c) => (
-                    <p key={c.category}>{c.category}: {c.count}</p>
+                    <div key={c.category} className="flex justify-between">
+                      <span className="text-muted-foreground">{c.category}</span>
+                      <span className="text-card-foreground font-semibold tabular-nums">{c.count}</span>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Case Categories */}
-          {accomplishment.beneficiaries.byCaseCategory.length > 0 && (
-            <div className="mb-6 rounded-2xl bg-cream p-5">
-              <h3 className="mb-3 text-sm font-semibold uppercase text-soft-purple/70">Beneficiaries by Case Category</h3>
-              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-                {accomplishment.beneficiaries.byCaseCategory.map((c) => (
-                  <div key={c.category} className="flex justify-between text-sm">
-                    <span className="text-soft-purple">{c.category}</span>
-                    <span className="font-medium text-plum">{c.count}</span>
-                  </div>
-                ))}
+          {/* Case categories + donation summary */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {accomplishment.beneficiaries.byCaseCategory.length > 0 && (
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+                <h3 className="text-muted-foreground mb-4 text-xs font-bold uppercase tracking-wider">
+                  Beneficiaries by Case Category
+                </h3>
+                <div className="space-y-2">
+                  {accomplishment.beneficiaries.byCaseCategory.map((c) => (
+                    <div key={c.category} className="flex items-center justify-between text-sm">
+                      <span className="text-card-foreground">{c.category}</span>
+                      <span className="text-muted-foreground font-semibold tabular-nums">{c.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+              <div className="mb-4 flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
+                  <TrendingUp className="text-primary size-4" />
+                </div>
+                <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                  Donation Summary ({accomplishment.year})
+                </h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Total donations</span>
+                  <span className="text-card-foreground font-heading text-lg font-semibold tabular-nums">
+                    {accomplishment.donations.totalDonations}
+                  </span>
+                </div>
+                <div className="border-t border-border pt-3 flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">Monetary value</span>
+                  <span className="text-primary font-heading text-lg font-semibold tabular-nums">
+                    ${accomplishment.donations.totalMonetaryValue.toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
-          )}
-
-          {/* Donation Summary */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <MetricCard label="Total Donations" value={accomplishment.donations.totalDonations} />
-            <MetricCard label="Total Monetary Value" value={`PHP ${accomplishment.donations.totalMonetaryValue.toLocaleString()}`} />
           </div>
         </section>
       )}
 
-      {/* Resident Outcomes */}
+      {/* ── Resident Outcomes by Safehouse ────────────────────────── */}
       {outcomes && (
-        <section className="mb-8">
-          <h2 className="mb-4 font-heading text-xl font-semibold text-plum">Resident Outcomes by Safehouse</h2>
-          <div className="grid gap-6 md:grid-cols-2">
+        <section className="space-y-4">
+          <div>
+            <p className="text-muted-foreground mb-1 text-xs font-bold uppercase tracking-[0.18em]">
+              Resident Outcomes
+            </p>
+            <h2 className="font-heading text-card-foreground text-xl font-semibold">
+              Outcomes by Safehouse
+            </h2>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
             {/* Education */}
-            <div className="rounded-2xl bg-cream p-5">
-              <h3 className="mb-3 text-sm font-semibold uppercase text-soft-purple/70">Education Progress</h3>
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+              <h3 className="text-muted-foreground mb-4 text-xs font-bold uppercase tracking-wider">
+                Education Progress
+              </h3>
               {outcomes.educationBySafehouse.length === 0 ? (
-                <p className="text-sm text-soft-purple/60">No data available.</p>
+                <p className="text-muted-foreground text-sm">No data available.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b text-left"><th className="px-2 py-1">Safehouse</th><th className="px-2 py-1">Avg Progress</th><th className="px-2 py-1">Avg Attendance</th></tr>
+                      <tr className="border-b border-border text-left">
+                        <th className="text-muted-foreground pb-2 pr-3 text-xs font-bold uppercase tracking-wide">Safehouse</th>
+                        <th className="text-muted-foreground pb-2 pr-3 text-xs font-bold uppercase tracking-wide">Avg Progress</th>
+                        <th className="text-muted-foreground pb-2 text-xs font-bold uppercase tracking-wide">Avg Attendance</th>
+                      </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border">
                       {outcomes.educationBySafehouse.map((e) => (
-                        <tr key={e.safehouseId} className="border-b">
-                          <td className="px-2 py-1">{e.safehouseName}</td>
-                          <td className="px-2 py-1">{e.avgProgressPercent.toFixed(1)}%</td>
-                          <td className="px-2 py-1">{e.avgAttendanceRate.toFixed(1)}%</td>
+                        <tr key={e.safehouseId}>
+                          <td className="text-card-foreground py-2.5 pr-3 font-medium">{e.safehouseName}</td>
+                          <td className="text-muted-foreground py-2.5 pr-3 tabular-nums">{e.avgProgressPercent.toFixed(1)}%</td>
+                          <td className="text-muted-foreground py-2.5 tabular-nums">{e.avgAttendanceRate.toFixed(1)}%</td>
                         </tr>
                       ))}
                     </tbody>
@@ -154,23 +264,30 @@ export function AnalyticsPage() {
             </div>
 
             {/* Health */}
-            <div className="rounded-2xl bg-cream p-5">
-              <h3 className="mb-3 text-sm font-semibold uppercase text-soft-purple/70">Health & Wellbeing</h3>
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+              <h3 className="text-muted-foreground mb-4 text-xs font-bold uppercase tracking-wider">
+                Health &amp; Wellbeing
+              </h3>
               {outcomes.healthBySafehouse.length === 0 ? (
-                <p className="text-sm text-soft-purple/60">No data available.</p>
+                <p className="text-muted-foreground text-sm">No data available.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b text-left"><th className="px-2 py-1">Safehouse</th><th className="px-2 py-1">Health</th><th className="px-2 py-1">Nutrition</th><th className="px-2 py-1">Sleep</th></tr>
+                      <tr className="border-b border-border text-left">
+                        <th className="text-muted-foreground pb-2 pr-3 text-xs font-bold uppercase tracking-wide">Safehouse</th>
+                        <th className="text-muted-foreground pb-2 pr-3 text-xs font-bold uppercase tracking-wide">Health</th>
+                        <th className="text-muted-foreground pb-2 pr-3 text-xs font-bold uppercase tracking-wide">Nutrition</th>
+                        <th className="text-muted-foreground pb-2 text-xs font-bold uppercase tracking-wide">Sleep</th>
+                      </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border">
                       {outcomes.healthBySafehouse.map((h) => (
-                        <tr key={h.safehouseId} className="border-b">
-                          <td className="px-2 py-1">{h.safehouseName}</td>
-                          <td className="px-2 py-1">{h.avgGeneralHealthScore.toFixed(1)}</td>
-                          <td className="px-2 py-1">{h.avgNutritionScore.toFixed(1)}</td>
-                          <td className="px-2 py-1">{h.avgSleepQualityScore.toFixed(1)}</td>
+                        <tr key={h.safehouseId}>
+                          <td className="text-card-foreground py-2.5 pr-3 font-medium">{h.safehouseName}</td>
+                          <td className="text-muted-foreground py-2.5 pr-3 tabular-nums">{h.avgGeneralHealthScore.toFixed(1)}</td>
+                          <td className="text-muted-foreground py-2.5 pr-3 tabular-nums">{h.avgNutritionScore.toFixed(1)}</td>
+                          <td className="text-muted-foreground py-2.5 tabular-nums">{h.avgSleepQualityScore.toFixed(1)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -182,64 +299,95 @@ export function AnalyticsPage() {
         </section>
       )}
 
-      {/* Safehouse Comparison */}
+      {/* ── Safehouse Performance Table ───────────────────────────── */}
       {safehouseMetrics.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-4 font-heading text-xl font-semibold text-plum">Safehouse Performance (Last 6 Months)</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-border border-b text-left">
-                  <th className="px-3 py-2 font-medium">Safehouse</th>
-                  <th className="px-3 py-2 font-medium">Month</th>
-                  <th className="px-3 py-2 font-medium">Residents</th>
-                  <th className="px-3 py-2 font-medium">Edu Progress</th>
-                  <th className="px-3 py-2 font-medium">Health Score</th>
-                  <th className="px-3 py-2 font-medium">Sessions</th>
-                  <th className="px-3 py-2 font-medium">Visits</th>
-                  <th className="px-3 py-2 font-medium">Incidents</th>
-                </tr>
-              </thead>
-              <tbody>
-                {safehouseMetrics.map((m) => (
-                  <tr key={m.metricId} className="border-border border-b">
-                    <td className="px-3 py-2">{m.safehouseName}</td>
-                    <td className="px-3 py-2">{m.monthStart}</td>
-                    <td className="px-3 py-2">{m.activeResidents}</td>
-                    <td className="px-3 py-2">{m.avgEducationProgress.toFixed(1)}%</td>
-                    <td className="px-3 py-2">{m.avgHealthScore.toFixed(1)}</td>
-                    <td className="px-3 py-2">{m.processRecordingCount}</td>
-                    <td className="px-3 py-2">{m.homeVisitationCount}</td>
-                    <td className="px-3 py-2">{m.incidentCount}</td>
+        <section className="space-y-4">
+          <div>
+            <p className="text-muted-foreground mb-1 text-xs font-bold uppercase tracking-[0.18em]">
+              Safehouse Performance
+            </p>
+            <h2 className="font-heading text-card-foreground text-xl font-semibold">
+              Month-by-Month (Last 6 Months)
+            </h2>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    {['Safehouse', 'Month', 'Residents', 'Edu Progress', 'Health Score', 'Sessions', 'Visits', 'Incidents'].map((h) => (
+                      <th key={h} className="text-muted-foreground pb-3 pr-4 text-xs font-bold uppercase tracking-wide last:pr-0">
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {safehouseMetrics.map((m) => (
+                    <tr key={m.metricId} className="motion-safe:transition-colors motion-safe:hover:bg-muted/40">
+                      <td className="text-card-foreground py-2.5 pr-4 font-medium">
+                        <span className="flex items-center gap-1.5">
+                          <Home className="text-muted-foreground size-3 shrink-0" />
+                          {m.safehouseName}
+                        </span>
+                      </td>
+                      <td className="text-muted-foreground py-2.5 pr-4 tabular-nums">{m.monthStart}</td>
+                      <td className="text-card-foreground py-2.5 pr-4 tabular-nums font-semibold">{m.activeResidents}</td>
+                      <td className="text-muted-foreground py-2.5 pr-4 tabular-nums">{m.avgEducationProgress.toFixed(1)}%</td>
+                      <td className="text-muted-foreground py-2.5 pr-4 tabular-nums">{m.avgHealthScore.toFixed(1)}</td>
+                      <td className="text-muted-foreground py-2.5 pr-4 tabular-nums">{m.processRecordingCount}</td>
+                      <td className="text-muted-foreground py-2.5 pr-4 tabular-nums">{m.homeVisitationCount}</td>
+                      <td className={`py-2.5 tabular-nums font-semibold ${m.incidentCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        {m.incidentCount}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       )}
 
-      {/* Reintegration */}
+      {/* ── Reintegration Success Rates ───────────────────────────── */}
       {reintegration && (
-        <section className="mb-8">
-          <h2 className="mb-4 font-heading text-xl font-semibold text-plum">Reintegration Success Rates</h2>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl bg-cream p-5">
-              <h3 className="mb-3 text-sm font-semibold uppercase text-soft-purple/70">By Type</h3>
+        <section className="space-y-4">
+          <div>
+            <p className="text-muted-foreground mb-1 text-xs font-bold uppercase tracking-[0.18em]">
+              Reintegration
+            </p>
+            <h2 className="font-heading text-card-foreground text-xl font-semibold">
+              Reintegration Success Rates
+            </h2>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* By Type — progress bars */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+              <h3 className="text-muted-foreground mb-4 text-xs font-bold uppercase tracking-wider">
+                By Type
+              </h3>
               {reintegration.byType.length === 0 ? (
-                <p className="text-sm text-soft-purple/60">No data available.</p>
+                <p className="text-muted-foreground text-sm">No data available.</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {reintegration.byType.map((t) => {
-                    const successRate = t.total > 0 ? ((t.successful / t.total) * 100).toFixed(1) : '0'
+                    const pct = t.total > 0 ? (t.successful / t.total) * 100 : 0
                     return (
                       <div key={t.reintegrationType}>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-soft-purple">{t.reintegrationType}</span>
-                          <span className="font-medium text-plum">{successRate}% ({t.successful}/{t.total})</span>
+                        <div className="mb-1.5 flex items-center justify-between text-sm">
+                          <span className="text-card-foreground font-medium">{t.reintegrationType}</span>
+                          <span className="text-muted-foreground tabular-nums">
+                            {pct.toFixed(1)}%
+                            <span className="ml-1 text-xs">({t.successful}/{t.total})</span>
+                          </span>
                         </div>
-                        <div className="mt-1 h-2 rounded-full bg-blush">
-                          <div className="h-full rounded-full bg-sage transition-all duration-300" style={{ width: `${successRate}%` }} />
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary motion-safe:transition-all motion-safe:duration-700"
+                            style={{ width: `${pct}%` }}
+                          />
                         </div>
                       </div>
                     )
@@ -248,16 +396,19 @@ export function AnalyticsPage() {
               )}
             </div>
 
-            <div className="rounded-2xl bg-cream p-5">
-              <h3 className="mb-3 text-sm font-semibold uppercase text-soft-purple/70">By Status</h3>
+            {/* By Status */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+              <h3 className="text-muted-foreground mb-4 text-xs font-bold uppercase tracking-wider">
+                By Status
+              </h3>
               {reintegration.byStatus.length === 0 ? (
-                <p className="text-sm text-soft-purple/60">No data available.</p>
+                <p className="text-muted-foreground text-sm">No data available.</p>
               ) : (
-                <div className="space-y-2">
+                <div className="divide-y divide-border">
                   {reintegration.byStatus.map((s) => (
-                    <div key={s.status} className="flex justify-between text-sm">
-                      <span className="text-soft-purple">{s.status}</span>
-                      <span className="font-medium text-plum">{s.count}</span>
+                    <div key={s.status} className="flex items-center justify-between py-2.5 text-sm">
+                      <span className="text-card-foreground font-medium">{s.status}</span>
+                      <span className="text-muted-foreground font-semibold tabular-nums">{s.count}</span>
                     </div>
                   ))}
                 </div>
