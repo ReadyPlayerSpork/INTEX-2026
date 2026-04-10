@@ -120,42 +120,53 @@ export function HomePage() {
         </section>
       )}
 
-      <section className="px-5 py-16 md:px-10 md:py-24">
+      <section className="px-5 py-16 md:px-10 md:py-24" aria-label="Mission and ways to help">
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <Card className="bg-card/95">
-            <CardContent className="p-8">
-              <h2 className="font-heading text-3xl font-semibold text-accent">
-                Our mission
-              </h2>
-              <p className="text-muted-foreground mt-4 leading-8 text-pretty">
-                We provide the environment and resources necessary for survivors to regain their autonomy and secure a sustainable future.
-              </p>
+            <CardContent className="flex flex-col justify-between p-6 md:p-8">
+              <div>
+                <h2 className="font-heading text-3xl font-semibold text-accent">
+                  Our mission
+                </h2>
+                <p className="text-muted-foreground mt-4 leading-8 text-pretty">
+                  We provide the environment and resources necessary for survivors to regain their autonomy and secure a sustainable future.
+                </p>
+              </div>
+              <Link
+                to="/impact"
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'lg' }),
+                  'mt-6 w-fit no-underline',
+                )}
+              >
+                See our impact
+              </Link>
             </CardContent>
           </Card>
           <Card className="border-primary/20 bg-primary/7">
-            <CardContent className="p-8">
+            <CardContent className="p-6 md:p-8">
               <h2 className="font-heading text-3xl font-semibold text-accent">
                 How you can help
               </h2>
               <div className="mt-5 grid gap-4 md:grid-cols-3">
-                <div>
-                  <p className="text-accent font-semibold">Give</p>
+                <Link to="/donate" className="group no-underline">
+                  <h3 className="text-accent font-semibold group-hover:text-primary transition-colors duration-150">Give</h3>
                   <p className="text-muted-foreground mt-2 text-sm leading-6">
                     Fund meals, counseling sessions, and day-to-day care.
                   </p>
-                </div>
-                <div>
-                  <p className="text-accent font-semibold">Volunteer</p>
+                </Link>
+                <Link to="/volunteer" className="group no-underline">
+                  <h3 className="text-accent font-semibold group-hover:text-primary transition-colors duration-150">Volunteer</h3>
                   <p className="text-muted-foreground mt-2 text-sm leading-6">
                     Share time, practical support, or professional skills.
                   </p>
-                </div>
-                <div>
-                  <p className="text-accent font-semibold">Advocate</p>
+                </Link>
+                <Link to="/impact" className="group no-underline">
+                  <h3 className="text-accent font-semibold group-hover:text-primary transition-colors duration-150">Advocate</h3>
                   <p className="text-muted-foreground mt-2 text-sm leading-6">
                     Help more families discover safe and credible resources.
                   </p>
-                </div>
+                </Link>
               </div>
             </CardContent>
           </Card>
