@@ -130,6 +130,15 @@ public class CounselorController(
     [HttpPost("sessions")]
     public async Task<IActionResult> CreateSession([FromBody] ProcessRecording recording)
     {
+        // DB columns are non-nullable text; frontend may send null for optional fields.
+        recording.EmotionalStateObserved ??= string.Empty;
+        recording.EmotionalStateEnd ??= string.Empty;
+        recording.SessionNarrative ??= string.Empty;
+        recording.InterventionsApplied ??= string.Empty;
+        recording.FollowUpActions ??= string.Empty;
+
+        ModelState.Clear();
+        TryValidateModel(recording);
         if (!ModelState.IsValid) return ValidationProblem();
 
         var email = (await userManager.GetUserAsync(User))?.Email ?? "";
@@ -137,11 +146,11 @@ public class CounselorController(
         // Verify the resident is assigned to this counselor
         var resident = await db.Residents.FindAsync(recording.ResidentId);
         if (resident is null) return NotFound(new { message = "Resident not found." });
-        if (resident.AssignedSocialWorker != email)
+        if (!string.Equals(resident.AssignedSocialWorker, email, StringComparison.OrdinalIgnoreCase))
             return Forbid();
 
         recording.RecordingId = 0; // ensure new
-        recording.SocialWorker = email;
+        recording.SocialWorker = resident.AssignedSocialWorker ?? email;
 
         db.ProcessRecordings.Add(recording);
         await db.SaveChangesAsync();
@@ -214,11 +223,11 @@ public class CounselorController(
 
         var resident = await db.Residents.FindAsync(visitation.ResidentId);
         if (resident is null) return NotFound(new { message = "Resident not found." });
-        if (resident.AssignedSocialWorker != email)
+        if (!string.Equals(resident.AssignedSocialWorker, email, StringComparison.OrdinalIgnoreCase))
             return Forbid();
 
         visitation.VisitationId = 0;
-        visitation.SocialWorker = email;
+        visitation.SocialWorker = resident.AssignedSocialWorker ?? email;
 
         db.HomeVisitations.Add(visitation);
         await db.SaveChangesAsync();

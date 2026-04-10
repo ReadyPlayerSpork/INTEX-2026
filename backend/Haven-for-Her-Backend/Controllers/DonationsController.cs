@@ -47,18 +47,25 @@ public class DonationsController(
         return null;
     }
 
-    private static Donation BuildDonation(DonationRequest request, string donationType, int supporterId, string channelSource) => new()
+    private static Donation BuildDonation(DonationRequest request, string donationType, int supporterId, string channelSource)
     {
-        SupporterId = supporterId,
-        DonationType = donationType,
-        DonationDate = DateOnly.FromDateTime(DateTime.UtcNow),
-        Amount = request.Amount,
-        CurrencyCode = NormalizeCurrencyCode(request.CurrencyCode),
-        CampaignName = TrimToNull(request.CampaignName),
-        Notes = TrimToNull(request.Notes),
-        ChannelSource = channelSource,
-        IsRecurring = request.IsRecurring,
-    };
+        var amount = request.Amount;
+        return new Donation
+        {
+            SupporterId = supporterId,
+            DonationType = donationType,
+            DonationDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            Amount = amount,
+            CurrencyCode = NormalizeCurrencyCode(request.CurrencyCode),
+            CampaignName = TrimToNull(request.CampaignName),
+            Notes = TrimToNull(request.Notes),
+            ChannelSource = channelSource,
+            IsRecurring = request.IsRecurring,
+            // Align with seeded rows / reporting; avoids edge cases where Monetary gifts omit optional fields.
+            EstimatedValue = donationType == "Monetary" ? amount : null,
+            ImpactUnit = donationType == "Monetary" ? "dollars" : null,
+        };
+    }
 
     private async Task<IActionResult> SaveDonation(Donation donation, string thankYouMessage)
     {
@@ -132,20 +139,30 @@ public class DonationsController(
 
     private async Task<Supporter> FindOrCreateSupporterForUser(ApplicationUser user)
     {
-        var email = user.Email ?? "";
+        var email = (user.Email ?? "").Trim();
+        if (string.IsNullOrEmpty(email))
+        {
+            // Google/external accounts can lack an email claim; still need a unique-ish row for FK.
+            email = $"user-{user.Id}@account.havenforher.local";
+        }
+
         var existing = await db.Supporters.FirstOrDefaultAsync(s => s.Email == email);
         if (existing is not null)
             return existing;
 
+        var display = (user.UserName ?? user.Email ?? email).Trim();
+        if (string.IsNullOrEmpty(display))
+            display = "Donor";
+
         var supporter = new Supporter
         {
             SupporterType = "Individual",
-            DisplayName = user.UserName ?? email,
+            DisplayName = display,
             Email = email,
             Phone = "",
             RelationshipType = "Local",
             Region = "Unknown",
-            Country = "PH",
+            Country = "US",
             Status = "Active",
             AcquisitionChannel = "Website",
             FirstDonationDate = DateOnly.FromDateTime(DateTime.UtcNow),
@@ -174,7 +191,7 @@ public class DonationsController(
             Phone = "",
             RelationshipType = "Local",
             Region = "Unknown",
-            Country = "PH",
+            Country = "US",
             Status = "Active",
             AcquisitionChannel = "Website-Anonymous",
             FirstDonationDate = DateOnly.FromDateTime(DateTime.UtcNow),

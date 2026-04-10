@@ -32,6 +32,18 @@ export function RecordDonationModal({ supporterId, onSubmit, onClose }: RecordDo
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
+    
+    // Append extra info to notes to ensure it's saved without schema changes
+    let finalNotes = form.notes || ''
+    const extra: string[] = []
+    if (form.donationType === 'InKind' && (form as any).itemCategory) extra.push(`Category: ${(form as any).itemCategory}`)
+    if ((form.donationType === 'Time' || form.donationType === 'Skills') && (form as any).hours) extra.push(`Hours: ${(form as any).hours}`)
+    if (form.donationType === 'SocialMedia' && (form as any).platform) extra.push(`Platform: ${(form as any).platform}`)
+    
+    if (extra.length > 0) {
+      finalNotes = finalNotes ? `${finalNotes}\n[Details: ${extra.join(', ')}]` : `[Details: ${extra.join(', ')}]`
+    }
+
     try {
       await onSubmit({
         supporterId: Number(form.supporterId),
@@ -43,7 +55,7 @@ export function RecordDonationModal({ supporterId, onSubmit, onClose }: RecordDo
         estimatedValue: form.estimatedValue ? Number(form.estimatedValue) : null,
         isRecurring: form.isRecurring as boolean,
         campaignName: form.campaignName || null,
-        notes: form.notes || null,
+        notes: finalNotes || null,
       })
     } finally {
       setSubmitting(false)

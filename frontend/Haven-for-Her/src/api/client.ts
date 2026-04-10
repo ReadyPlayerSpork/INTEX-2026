@@ -6,7 +6,7 @@
  */
 
 /** Returns the API base URL (empty string in dev so Vite proxy handles it). */
-function getBaseUrl(): string {
+export function getApiBaseUrl(): string {
   const env = import.meta.env.VITE_API_BASE_URL?.trim();
   const url = env ? env.replace(/\/$/, '') : '';
 
@@ -36,7 +36,7 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${getBaseUrl()}${path}`, {
+  const res = await fetch(`${getApiBaseUrl()}${path}`, {
     credentials: 'include',
     ...init,
     headers: {
@@ -85,5 +85,38 @@ const api = {
     return request<T>(path, { method: 'DELETE' });
   },
 };
+
+/**
+ * Download a file from the API with cookies (cross-subdomain production).
+ * Use instead of window.open('/api/...') which hits the frontend host and404s.
+ */
+export async function downloadFromApi(pathWithQuery: string, filename: string): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}${pathWithQuery}`, {
+    credentials: 'include',
+  })
+  if (!res.ok) {
+    let detail = res.statusText
+    try {
+      const j = (await res.json()) as { title?: string; detail?: string }
+      detail = j.detail ?? j.title ?? detail
+    } catch {
+      /* ignore */
+    }
+    throw new ApiError(res.status, detail)
+  }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  try {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.rel = 'noopener'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
 
 export { api, ApiError };

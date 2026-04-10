@@ -1,5 +1,16 @@
-import { useImpactStats } from '@/features/public/home/useImpactStats'
+import { useImpactStats, useImpactTrends } from '@/features/public/home/useImpactStats'
 import { formatAnonymizedCount } from '@/features/public/home/anonymizedCounts'
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
 import womenGreenTop from "@/assets/Women's Green Top.jpg"
@@ -46,10 +57,10 @@ const METRIC_LABELS: Record<string, string> = {
 }
 
 export function ImpactPage() {
-  const { stats, isLoading: loading } = useImpactStats()
-  const { trends } = useImpactTrends()
+  const { stats, isLoading: loadingStats } = useImpactStats()
+  const { trends, isLoading: loadingTrends } = useImpactTrends()
 
-  if (loading) {
+  if (loadingStats || loadingTrends) {
     return (
       <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-24">
         <p className="text-muted-foreground animate-pulse">Loading impact data...</p>
@@ -192,6 +203,90 @@ export function ImpactPage() {
               </CardContent>
             </Card>
           )}
+
+        {trends && trends.length > 0 && (
+          <Card className="border-border/70 bg-card/95 mb-10">
+            <CardContent className="p-8">
+              <h2 className="font-heading text-2xl font-semibold text-accent mb-6">
+                Donations vs. Resident Outcomes
+              </h2>
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={trends}
+                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      orientation="left"
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      domain={[0, 100]}
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v) => `${v}%`}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                      itemStyle={{ color: 'hsl(var(--foreground))' }}
+                      formatter={(value: any, name: any) => {
+                        const val = Number(value || 0)
+                        const nameStr = String(name || '')
+                        if (nameStr === 'Total Donations') return [`$${val.toLocaleString()}`, nameStr]
+                        if (nameStr === 'Avg Education Progress') return [`${val.toFixed(1)}%`, nameStr]
+                        if (nameStr === 'Avg Health Score (x20)') return [`${(val / 20).toFixed(1)} / 5`, 'Avg Health Score']
+                        return [val, nameStr]
+                      }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                    <Bar
+                      yAxisId="left"
+                      dataKey="totalDonations"
+                      name="Total Donations"
+                      fill="hsl(var(--primary))"
+                      radius={[4, 4, 0, 0]}
+                      barSize={40}
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="avgEducationProgress"
+                      name="Avg Education Progress"
+                      stroke="hsl(var(--accent))"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: 'hsl(var(--accent))' }}
+                      activeDot={{ r: 6 }}
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey={(d: any) => d.avgHealthScore * 20}
+                      name="Avg Health Score (x20)"
+                      stroke="hsl(var(--destructive))"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: 'hsl(var(--destructive))' }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {stats.latestSnapshot && (
           <Card className="border-primary/18 bg-primary/7 mb-10">

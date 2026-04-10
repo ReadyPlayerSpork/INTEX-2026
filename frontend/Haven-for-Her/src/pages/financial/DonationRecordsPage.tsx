@@ -8,6 +8,7 @@ import { useServerTable } from '@/hooks/useServerTable'
 import { financialApi } from '@/api/financialApi'
 import { RecordDonationModal } from '@/components/financial/RecordDonationModal'
 import { EditDonationModal } from './components/EditDonationModal'
+import { AllocateDonationModal } from './components/AllocateDonationModal'
 
 interface DonationRecord {
   donationId: number
@@ -22,26 +23,6 @@ interface DonationRecord {
   isRecurring: boolean
 }
 
-const columns: ColumnDef<DonationRecord>[] = [
-  { key: 'donationId', header: 'ID', sortable: true },
-  { key: 'donationDate', header: 'Date', sortable: true },
-  { key: 'donationType', header: 'Type', sortable: true },
-  {
-    key: 'amount',
-    header: 'Amount',
-    sortable: true,
-    render: (row) =>
-      row.amount != null
-        ? `${row.currencyCode} ${row.amount.toLocaleString()}`
-        : row.estimatedValue != null
-          ? `~${row.currencyCode} ${row.estimatedValue.toLocaleString()}`
-          : '-',
-  },
-  { key: 'campaignName', header: 'Campaign', sortable: true, render: (row) => row.campaignName ?? '-' },
-  { key: 'channelSource', header: 'Channel', render: (row) => row.channelSource ?? '-' },
-  { key: 'isRecurring', header: 'Recurring', render: (row) => (row.isRecurring ? 'Yes' : 'No') },
-]
-
 export function DonationRecordsPage() {
   const { hasRole } = useAuth()
   const isAdmin = hasRole('Admin')
@@ -49,6 +30,36 @@ export function DonationRecordsPage() {
   const [campaignFilter, setCampaignFilter] = useState('')
   const [showDonation, setShowDonation] = useState(false)
   const [editDonation, setEditDonation] = useState<DonationRecord | null>(null)
+  const [allocateDonation, setAllocateDonation] = useState<DonationRecord | null>(null)
+
+  const columns: ColumnDef<DonationRecord>[] = useMemo(() => [
+    { key: 'donationId', header: 'ID', sortable: true },
+    { key: 'donationDate', header: 'Date', sortable: true },
+    { key: 'donationType', header: 'Type', sortable: true },
+    {
+      key: 'amount',
+      header: 'Amount',
+      sortable: true,
+      render: (row) =>
+        row.amount != null
+          ? `${row.currencyCode} ${row.amount.toLocaleString()}`
+          : row.estimatedValue != null
+            ? `~${row.currencyCode} ${row.estimatedValue.toLocaleString()}`
+            : '-',
+    },
+    { key: 'campaignName', header: 'Campaign', sortable: true, render: (row) => row.campaignName ?? '-' },
+    { key: 'channelSource', header: 'Channel', render: (row) => row.channelSource ?? '-' },
+    {
+      key: 'actions',
+      header: 'Allocation',
+      render: (row) => 
+        row.donationType === 'Monetary' && row.amount ? (
+          <Button variant="ghost" size="sm" className="text-primary h-8" onClick={() => setAllocateDonation(row)}>
+            Allocate
+          </Button>
+        ) : null
+    }
+  ], [])
 
   const filters = useMemo(
     () => ({ type: typeFilter, campaign: campaignFilter }),
@@ -137,6 +148,16 @@ export function DonationRecordsPage() {
             table.refresh()
           }}
           onClose={() => setShowDonation(false)}
+        />
+      )}
+
+      {allocateDonation && (
+        <AllocateDonationModal
+          donationId={allocateDonation.donationId}
+          donationAmount={allocateDonation.amount ?? 0}
+          currencyCode={allocateDonation.currencyCode}
+          onClose={() => setAllocateDonation(null)}
+          onSaved={table.refresh}
         />
       )}
     </div>

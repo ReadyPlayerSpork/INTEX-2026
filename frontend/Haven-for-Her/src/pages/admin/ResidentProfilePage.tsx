@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { BookOpen, Heart } from 'lucide-react'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { caseloadApi, type CreateResidentRequest } from '@/api/caseloadApi'
@@ -78,13 +79,14 @@ interface ResidentProfile {
   incidentReports: unknown[]
 }
 
-type TabName = 'profile' | 'recordings' | 'visitations' | 'interventions' | 'incidents'
+type TabName = 'profile' | 'recordings' | 'visitations' | 'interventions' | 'incidents' | 'conferences'
 const TABS: { key: TabName; label: string }[] = [
   { key: 'profile', label: 'Profile' },
   { key: 'recordings', label: 'Sessions' },
   { key: 'visitations', label: 'Visitations' },
   { key: 'interventions', label: 'Interventions' },
   { key: 'incidents', label: 'Incidents' },
+  { key: 'conferences', label: 'Conferences' },
 ]
 
 const TAB_CONFIG: Record<string, { columns: string[]; idField: string }> = {
@@ -97,12 +99,16 @@ const TAB_CONFIG: Record<string, { columns: string[]; idField: string }> = {
     idField: 'visitationId',
   },
   interventions: {
-    columns: ['interventionCategory', 'description', 'servicesProvided', 'targetDate', 'status'],
+    columns: ['planCategory', 'planDescription', 'servicesProvided', 'targetDate', 'status'],
     idField: 'planId',
   },
   incidents: {
     columns: ['incidentDate', 'incidentType', 'severity', 'resolved', 'reportedBy'],
     idField: 'incidentId',
+  },
+  conferences: {
+    columns: ['caseConferenceDate', 'planCategory', 'planDescription', 'status'],
+    idField: 'planId',
   },
 }
 
@@ -197,7 +203,13 @@ function ResidentProfileContent({ id }: { id: string }) {
       </div>
 
       {activeTab === 'profile' && <ProfileTab resident={resident} />}
-      {activeTab !== 'profile' && TAB_CONFIG[activeTab] && (
+      {activeTab === 'recordings' && (
+        <ProcessRecordingTimeline residentId={resident.residentId} />
+      )}
+      {activeTab === 'conferences' && (
+        <CaseConferencesTab residentId={resident.residentId} />
+      )}
+      {activeTab !== 'profile' && activeTab !== 'recordings' && activeTab !== 'conferences' && TAB_CONFIG[activeTab] && (
         <RelatedRecordsTab
           residentId={resident.residentId}
           endpoint={activeTab}
@@ -304,11 +316,6 @@ function ProfileTab({ resident }: { resident: ResidentProfile }) {
   )
 }
 
-      )}
-    </div>
-  )
-}
-
 /* ---- Healing Journey Timeline (Process Recordings) ---- */
 
 function ProcessRecordingTimeline({ residentId }: { residentId: number }) {
@@ -326,7 +333,7 @@ function ProcessRecordingTimeline({ residentId }: { residentId: number }) {
 
   return (
     <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:bg-gradient-to-b before:from-primary/20 before:via-primary/20 before:to-transparent md:before:mx-auto md:before:translate-x-0">
-      {records.sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime()).map((rec, i) => (
+      {records.sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime()).map((rec) => (
         <div key={rec.recordingId} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
           {/* Dot */}
           <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-primary text-primary-foreground shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
