@@ -3,7 +3,7 @@ import { Brain } from 'lucide-react'
 import { api } from '@/api/client'
 import { getSafehouseOutcomes, type SafehouseOutcome } from '@/api/mlApi'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DataTable, type ColumnDef } from '@/components/DataTable'
@@ -183,9 +183,31 @@ export function SafehousesPage() {
               <Brain className="text-primary size-5 shrink-0" aria-hidden />
               ML education outcomes
             </CardTitle>
-            <CardDescription>
-              Predicted vs observed average education progress per safehouse (regression model on funding and lag features).
-            </CardDescription>
+            <div className="text-muted-foreground space-y-2 text-sm leading-relaxed">
+              <p>
+                Compares the funding-based model estimate to <strong className="text-foreground">reported</strong>{' '}
+                monthly metrics per safehouse. Values are average <strong className="text-foreground">education progress (%)</strong> on a
+                0–100 scale (milestones toward individualized education goals—similar to{' '}
+                <code className="text-foreground/90 rounded bg-muted px-1 py-0.5 text-xs">progress_percent</code> on
+                education records and <code className="text-foreground/90 rounded bg-muted px-1 py-0.5 text-xs">avg_education_progress</code>{' '}
+                on monthly safehouse metrics). This is not a letter grade.
+              </p>
+              <ul className="text-muted-foreground list-disc space-y-1 pl-5">
+                <li>
+                  <strong className="text-foreground">Predicted</strong> — regression from the safehouse outcomes model using{' '}
+                  <em>lagged</em> funding (by program area) and active resident counts.
+                </li>
+                <li>
+                  <strong className="text-foreground">Actual</strong> — average from the latest month with meaningful reported progress
+                  (non-zero education and wellbeing in metrics); placeholder months are skipped when possible.
+                </li>
+                <li>
+                  <strong className="text-foreground">Delta</strong> — Predicted minus Actual. Positive means the model expected{' '}
+                  <em>higher</em> progress than was reported (gap vs expectation or data lag); negative means the site outperformed what
+                  funding-only features alone would suggest.
+                </li>
+              </ul>
+            </div>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="overflow-x-auto">
@@ -193,9 +215,9 @@ export function SafehousesPage() {
                 <thead>
                   <tr className="border-border border-b text-left">
                     <th className="px-3 py-2 font-medium">Safehouse</th>
-                    <th className="px-3 py-2 font-medium tabular-nums">Predicted</th>
-                    <th className="px-3 py-2 font-medium tabular-nums">Actual</th>
-                    <th className="px-3 py-2 font-medium tabular-nums">Delta</th>
+                    <th className="px-3 py-2 font-medium tabular-nums">Predicted (%)</th>
+                    <th className="px-3 py-2 font-medium tabular-nums">Actual (%)</th>
+                    <th className="px-3 py-2 font-medium tabular-nums">Delta (pred − actual)</th>
                   </tr>
                 </thead>
                 <tbody>

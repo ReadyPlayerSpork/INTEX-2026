@@ -84,6 +84,8 @@ public static class CsvDataSeeder
 
             var donations = ReadCsv<Donation>(csvDirectory, "donations.csv");
             db.Donations.AddRange(donations);
+            var recentDonations = BuildRecentDonations(supporters);
+            db.Donations.AddRange(recentDonations);
 
             var partnerAssignments = ReadCsv<PartnerAssignment>(csvDirectory, "partner_assignments.csv");
             db.PartnerAssignments.AddRange(partnerAssignments);
@@ -137,6 +139,43 @@ public static class CsvDataSeeder
         }
 
         logger.LogInformation("CSV seed complete.");
+    }
+
+    /// <summary>
+    /// Adds monetary donations dated within the last 30 days (UTC) so dashboards and donor views show recent activity after each re-seed.
+    /// </summary>
+    private static List<Donation> BuildRecentDonations(IReadOnlyList<Supporter> supporters)
+    {
+        if (supporters.Count == 0) return [];
+
+        var supporterIds = supporters.Select(s => s.SupporterId).ToArray();
+        var rng = new Random(20260410);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+        var channels = new[] { "Website", "Campaign", "Direct", "Event", "PartnerReferral", "SocialMedia" };
+        var campaigns = new[] { "Spring Renewal", "Safe Homes Fund", "Community Circle", "Year-End Hope", "GivingTuesday" };
+        var list = new List<Donation>(16);
+
+        for (var i = 0; i < 16; i++)
+        {
+            var daysAgo = rng.Next(0, 30);
+            var amount = Math.Round((decimal)rng.NextDouble() * 220m + 25m, 2);
+            list.Add(new Donation
+            {
+                SupporterId = supporterIds[rng.Next(supporterIds.Length)],
+                DonationType = "Monetary",
+                DonationDate = today.AddDays(-daysAgo),
+                ChannelSource = channels[rng.Next(channels.Length)],
+                CurrencyCode = "USD",
+                Amount = amount,
+                EstimatedValue = amount,
+                ImpactUnit = "dollars",
+                IsRecurring = rng.Next(4) == 0,
+                CampaignName = campaigns[rng.Next(campaigns.Length)],
+                Notes = "CSV seed — synthetic recent gift (within last 30 days, UTC)",
+            });
+        }
+
+        return list;
     }
 
     // ─── CSV reading ────────────────────────────────────────────────
