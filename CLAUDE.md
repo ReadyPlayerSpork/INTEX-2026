@@ -95,7 +95,7 @@ Roles currently defined: `Admin`, `Financial`, `Counselor`, `SocialMedia`, `Empl
 - `Controllers/AuthController.cs` — `/api/auth/me`, external login, logout
 - `Controllers/DonationsController.cs` — `POST /api/donations` (auth) and `POST /api/donations/anonymous`; `DonationRequest.CurrencyCode` defaults to **`USD`** when omitted; `DonationType` may be omitted (defaults to **Monetary**). Other types must be sent explicitly when used. `isRecurring` (default **false**) stores donor intent only—**no automated billing** in this API.
 - `Controllers/DonorController.cs` — `GET /api/donor/dashboard` returns `givingTotalsByCurrency` (`{ currencyCode, total }[]` for donations with an amount, sorted by currency, no FX conversion).
-- `Controllers/PublicController.cs` — `GET /api/public/impact` includes `totalDonationValueUsd` (sum of **Monetary** donations with an amount; aligns with USD seed data).
+- `Controllers/PublicController.cs` — `GET /api/public/impact` returns aggregate counts, **`liveProgramOutcomes`** (avg general health score and education progress from latest records per **Active** resident), **`donationImpact`** (illustrative USD per resident-week from trailing-12-month monetary USD, with a sample `$15` coverage percent), and **`latestSnapshot`** with **`displaySummaryText`** (prefers live DB copy over static CSV summary). Published snapshots are limited to `published_at <= UTC today`; placeholder CSV rows with zero metrics are seeded `is_published=false`.
 - `Controllers/FinancialController.cs` — `GET /api/financial/dashboard` returns `totalMonetaryUsd` and `totalInKindValueUsd` (aggregate `Amount` / `EstimatedValue` from donations).
 
 ### Frontend Structure
