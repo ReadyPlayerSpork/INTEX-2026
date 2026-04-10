@@ -592,6 +592,9 @@ def donor_churn_batch():
     try:
         df, X = _donor_features()
         X = _align_features(X, features)
+        if len(X) == 0:
+            return jsonify(to_camel([]))
+
         probs = model.predict_proba(X)[:, 1]
 
         results = []
@@ -663,6 +666,9 @@ def incident_risk_alerts():
     try:
         df, X = _incident_features()
         X = _align_features(X, features)
+        if len(X) == 0:
+            return jsonify(to_camel([]))
+
         probs = model.predict_proba(X)[:, 1]
 
         alerts = []
