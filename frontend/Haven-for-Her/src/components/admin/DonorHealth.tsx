@@ -50,7 +50,7 @@ export const DonorHealth = memo(function DonorHealth({ active, lapsed, churned }
   ];
 
   return (
-    <div className="rounded-2xl bg-card border border-border p-6 shadow-bloom">
+    <div className="h-[300px] flex flex-col rounded-2xl bg-card border border-border p-6 shadow-bloom">
       {/* Header */}
       <div className="mb-4 flex items-start justify-between">
         <div>

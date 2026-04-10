@@ -52,7 +52,7 @@ export const RiskDonutChart = memo(function RiskDonutChart({ riskDistribution, c
           .join(', ')
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
+    <div className="h-[300px] flex flex-col rounded-2xl border border-border bg-card p-5 shadow-bloom">
       <h2 className="font-heading mb-1 text-base font-semibold text-card-foreground">
         Active residents by risk
       </h2>

@@ -39,9 +39,9 @@ export const SafehouseOccupancy = memo(function SafehouseOccupancy({ safehouses 
   const totalCapacity = safehouses.reduce((s, h) => s + h.capacity, 0);
 
   return (
-    <div className="rounded-2xl bg-card border border-border p-6 shadow-bloom">
+    <div className="h-[300px] flex flex-col rounded-2xl bg-card border border-border p-6 shadow-bloom">
       {/* Header */}
-      <div className="mb-5 flex items-start justify-between">
+      <div className="mb-5 flex items-start justify-between shrink-0">
         <div>
           <h2 className="font-heading font-semibold text-base text-card-foreground">
             Safehouse Occupancy
@@ -60,7 +60,7 @@ export const SafehouseOccupancy = memo(function SafehouseOccupancy({ safehouses 
       </div>
 
       {/* Progress bars — scrollable so the card stays a fixed height */}
-      <div className="space-y-5 max-h-[340px] overflow-y-auto pr-0.5">
+      <div className="flex-1 min-h-0 space-y-5 overflow-y-auto pr-0.5">
         {safehouses.map((s) => {
           const pct = s.capacity > 0 ? s.activeCount / s.capacity : 0;
           const openBeds = s.capacity - s.activeCount;

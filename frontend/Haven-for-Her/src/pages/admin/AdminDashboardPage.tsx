@@ -474,7 +474,7 @@ export function AdminDashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 lg:items-start">
         <SafehouseOccupancy safehouses={res.bySafehouse} />
         <RiskDonutChart
           riskDistribution={res.riskDistribution}
