@@ -402,18 +402,58 @@ def _social_media_features() -> pd.DataFrame:
     return df, X
 
 
+def _month_period_start(series: pd.Series) -> pd.Series:
+    """Normalize to first instant of calendar month (naive) so merges match Postgres vs CSV."""
+    s = pd.to_datetime(series, errors="coerce")
+    try:
+        if s.dt.tz is not None:
+            s = s.dt.tz_convert("UTC").dt.tz_localize(None)
+    except (TypeError, AttributeError):
+        pass
+    return s.dt.to_period("M").dt.to_timestamp()
+
+
+def _safehouse_row_education_actual(row: pd.Series) -> float:
+    """Read monthly education progress from a feature row; tolerate driver/casing quirks."""
+    for key in (
+        "AvgEducationProgress",
+        "avg_education_progress",
+        "AverageEducationProgress",
+    ):
+        if key not in row.index:
+            continue
+        v = row[key]
+        if isinstance(v, pd.Series):
+            v = v.iloc[-1]
+        if pd.isna(v):
+            continue
+        num = pd.to_numeric(v, errors="coerce")
+        if pd.isna(num):
+            continue
+        return float(num)
+    return 0.0
+
+
 def _safehouse_features() -> (pd.DataFrame, pd.DataFrame):
     """Build the feature matrix for safehouse outcomes (regression)."""
     allocations = _get_data("DonationAllocations", "donation_allocations.csv")
     metrics = _get_data("SafehouseMonthlyMetrics", "safehouse_monthly_metrics.csv")
     safehouses_df = _get_data("Safehouses", "safehouses.csv")
 
-    allocations["AllocationDate"] = pd.to_datetime(allocations["AllocationDate"])
-    metrics["MonthStart"] = pd.to_datetime(metrics["MonthStart"])
+    allocations["AllocationDate"] = pd.to_datetime(allocations["AllocationDate"], errors="coerce")
+    try:
+        if allocations["AllocationDate"].dt.tz is not None:
+            allocations["AllocationDate"] = (
+                allocations["AllocationDate"].dt.tz_convert("UTC").dt.tz_localize(None)
+            )
+    except (TypeError, AttributeError):
+        pass
+    metrics["MonthStart"] = _month_period_start(metrics["MonthStart"])
     metrics_clean = metrics.dropna(subset=["AvgEducationProgress", "AvgHealthScore"])
 
     allocations["MonthStart"] = allocations["AllocationDate"].dt.to_period("M").dt.to_timestamp()
     funding_pivot = allocations.groupby(["SafehouseId", "MonthStart", "ProgramArea"])["AmountAllocated"].sum().unstack(fill_value=0).reset_index()
+    funding_pivot["MonthStart"] = _month_period_start(funding_pivot["MonthStart"])
     funding_pivot = funding_pivot.rename(columns={
         "Education": "EduFunding", "Wellbeing": "WellbeingFunding",
         "Operations": "OpsFunding", "Transport": "TransportFunding",
@@ -426,8 +466,14 @@ def _safehouse_features() -> (pd.DataFrame, pd.DataFrame):
             
     funding_pivot["TotalFunding"] = funding_pivot[funding_cols].sum(axis=1)
 
-    df = pd.merge(metrics_clean, funding_pivot, on=["SafehouseId", "MonthStart"], how="left").fillna(0)
+    df = pd.merge(metrics_clean, funding_pivot, on=["SafehouseId", "MonthStart"], how="left")
+    # Only fill funding gaps — never zero out reported clinical/metric columns
+    for c in funding_cols + ["TotalFunding"]:
+        if c in df.columns:
+            df[c] = df[c].fillna(0)
     df = pd.merge(df, safehouses_df[["SafehouseId", "Name", "Region"]], on="SafehouseId", how="left")
+    if df.columns.duplicated().any():
+        df = df.loc[:, ~df.columns.duplicated(keep="first")]
     df = df.sort_values(["SafehouseId", "MonthStart"])
     
     # Calculate lags
@@ -699,7 +745,7 @@ def safehouse_outcomes():
             feat_row = _align_features(feat_row, features)
             pred_raw = float(model.predict(feat_row)[0])
             pred = max(0.0, min(100.0, pred_raw))
-            actual = float(pred_row.get("AvgEducationProgress", 0))
+            actual = _safehouse_row_education_actual(pred_row)
             ms = pred_row.get("MonthStart")
             try:
                 month_iso = "" if pd.isna(ms) else pd.Timestamp(ms).date().isoformat()
