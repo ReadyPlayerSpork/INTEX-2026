@@ -60,7 +60,7 @@ export function ImpactPage() {
   const { stats, isLoading: loadingStats } = useImpactStats()
   const { trends, isLoading: loadingTrends } = useImpactTrends()
 
-  if (loadingStats || loadingTrends) {
+  if (loadingStats) {
     return (
       <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-24">
         <p className="text-muted-foreground animate-pulse">Loading impact data...</p>
@@ -204,7 +204,36 @@ export function ImpactPage() {
             </Card>
           )}
 
-        {trends && trends.length > 0 && (
+        {loadingTrends ? (
+          <Card className="border-border/70 bg-card/95 mb-10">
+            <CardContent className="p-8">
+              <h2 className="font-heading text-2xl font-semibold text-accent mb-6">
+                Donations vs. Resident Outcomes
+              </h2>
+              <p className="text-muted-foreground animate-pulse text-sm">Loading trend data…</p>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {!loadingTrends && trends.length === 0 ? (
+          <Card className="border-border/70 bg-card/95 mb-10">
+            <CardContent className="p-8">
+              <h2 className="font-heading text-2xl font-semibold text-accent mb-6">
+                Donations vs. Resident Outcomes
+              </h2>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Outcome trends could not be loaded. This usually means the browser could not reach the
+                API—for example, if the production build is missing{' '}
+                <span className="font-mono text-xs">VITE_API_BASE_URL</span> pointing at your backend,
+                or the API is not yet deployed with{' '}
+                <span className="font-mono text-xs">GET /api/public/impact-trends</span>. Wait for the
+                deploy to finish, confirm env vars, then hard-refresh.
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {!loadingTrends && trends.length > 0 ? (
           <Card className="border-border/70 bg-card/95 mb-10">
             <CardContent className="p-8">
               <h2 className="font-heading text-2xl font-semibold text-accent mb-6">
@@ -217,8 +246,8 @@ export function ImpactPage() {
                     margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="month" 
+                    <XAxis
+                      dataKey="month"
                       tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                       axisLine={false}
                       tickLine={false}
@@ -241,14 +270,19 @@ export function ImpactPage() {
                       tickFormatter={(v) => `${v}%`}
                     />
                     <Tooltip
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        borderColor: 'hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
                       itemStyle={{ color: 'hsl(var(--foreground))' }}
                       formatter={(value: any, name: any) => {
                         const val = Number(value || 0)
                         const nameStr = String(name || '')
                         if (nameStr === 'Total Donations') return [`$${val.toLocaleString()}`, nameStr]
                         if (nameStr === 'Avg Education Progress') return [`${val.toFixed(1)}%`, nameStr]
-                        if (nameStr === 'Avg Health Score (x20)') return [`${(val / 20).toFixed(1)} / 5`, 'Avg Health Score']
+                        if (nameStr === 'Avg Health Score (x20)')
+                          return [`${(val / 20).toFixed(1)} / 5`, 'Avg Health Score']
                         return [val, nameStr]
                       }}
                     />
@@ -286,7 +320,7 @@ export function ImpactPage() {
               </div>
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {stats.latestSnapshot && (
           <Card className="border-primary/18 bg-primary/7 mb-10">

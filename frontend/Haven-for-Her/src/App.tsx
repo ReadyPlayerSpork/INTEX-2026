@@ -258,6 +258,8 @@ function App() {
                 <Route path="sessions/:id" element={<SessionDetailPage />} />
                 <Route path="visitations" element={<VisitationsPage />} />
                 <Route path="case-conferences" element={<CaseConferencesPage />} />
+                <Route path="caseload" element={<CaseloadPage />} />
+                <Route path="caseload/:id" element={<ResidentProfilePage />} />
                 <Route
                   path="residents/:residentId/timeline"
                   element={<ResidentTimelinePage />}

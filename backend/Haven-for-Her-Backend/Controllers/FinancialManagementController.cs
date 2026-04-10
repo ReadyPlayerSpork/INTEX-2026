@@ -155,7 +155,7 @@ public async Task<IActionResult> CreateAllocation(int id, [FromBody] DonationAll
 }
 
 [HttpDelete("allocations/{id:int}")]
-[Authorize(Roles = AuthRoles.Admin)]
+[Authorize(Roles = $"{AuthRoles.Financial},{AuthRoles.Admin}")]
 public async Task<IActionResult> DeleteAllocation(int id)
 {
     var allocation = await db.DonationAllocations.FindAsync(id);
@@ -216,6 +216,7 @@ public async Task<IActionResult> CreateInKindItem(int id, [FromBody] InKindDonat
     /// </summary>
     [HttpGet("allocations")]
     public async Task<IActionResult> GetAllocations(
+        [FromQuery] int? donationId,
         [FromQuery] int? safehouseId,
         [FromQuery] string? programArea,
         [FromQuery] DateOnly? from,
@@ -228,6 +229,8 @@ public async Task<IActionResult> CreateInKindItem(int id, [FromBody] InKindDonat
             .Include(a => a.Donation)
             .AsQueryable();
 
+        if (donationId.HasValue)
+            query = query.Where(a => a.DonationId == donationId.Value);
         if (safehouseId.HasValue)
             query = query.Where(a => a.SafehouseId == safehouseId.Value);
         if (!string.IsNullOrWhiteSpace(programArea))
@@ -260,6 +263,7 @@ public async Task<IActionResult> CreateInKindItem(int id, [FromBody] InKindDonat
 
         // Summary by safehouse
         var bySafehouse = await db.DonationAllocations
+            .Where(a => !donationId.HasValue || a.DonationId == donationId.Value)
             .Where(a => !safehouseId.HasValue || a.SafehouseId == safehouseId.Value)
             .Where(a => !from.HasValue || a.AllocationDate >= from.Value)
             .Where(a => !to.HasValue || a.AllocationDate <= to.Value)
@@ -270,6 +274,7 @@ public async Task<IActionResult> CreateInKindItem(int id, [FromBody] InKindDonat
 
         // Summary by program area
         var byProgramArea = await db.DonationAllocations
+            .Where(a => !donationId.HasValue || a.DonationId == donationId.Value)
             .Where(a => !safehouseId.HasValue || a.SafehouseId == safehouseId.Value)
             .Where(a => !from.HasValue || a.AllocationDate >= from.Value)
             .Where(a => !to.HasValue || a.AllocationDate <= to.Value)

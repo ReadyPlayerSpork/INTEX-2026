@@ -37,6 +37,7 @@ export const PORTAL_NAV_SECTIONS: PortalNavSection[] = [
     roles: ['Counselor', 'Admin'],
     items: [
       { label: 'Dashboard', to: '/counselor/dashboard' },
+      { label: 'Caseload', to: '/counselor/caseload' },
       { label: 'Sessions', to: '/counselor/sessions' },
       { label: 'Visitations', to: '/counselor/visitations' },
       { label: 'Case Conferences', to: '/counselor/case-conferences' },

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { api } from '@/api/client'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -39,13 +40,14 @@ function getRiskBadgeClassName(riskLevel: string | null): string {
   }
 }
 
-const columns: ColumnDef<CaseloadItem>[] = [
+function buildColumns(caseloadBase: string): ColumnDef<CaseloadItem>[] {
+  return [
   {
     key: 'caseControlNo',
     header: 'Case Control No',
     sortable: true,
     render: (row) => (
-      <Link to={`/admin/caseload/${row.residentId}`} className="text-primary underline">
+      <Link to={`${caseloadBase}/${row.residentId}`} className="text-primary underline">
         {row.caseControlNo}
       </Link>
     ),
@@ -71,8 +73,15 @@ const columns: ColumnDef<CaseloadItem>[] = [
   },
   { key: 'dateOfAdmission', header: 'Admission Date', sortable: true },
 ]
+}
 
 export function CaseloadPage() {
+  const { pathname } = useLocation()
+  const { hasRole } = useAuth()
+  const isAdmin = hasRole('Admin')
+  const caseloadBase = pathname.startsWith('/counselor') ? '/counselor/caseload' : '/admin/caseload'
+  const columns = useMemo(() => buildColumns(caseloadBase), [caseloadBase])
+
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [riskFilter, setRiskFilter] = useState('')
@@ -83,8 +92,17 @@ export function CaseloadPage() {
   const [editInitial, setEditInitial] = useState<Partial<CreateResidentRequest> | null>(null)
 
   useEffect(() => {
-    caseloadApi.getSafehouses().then((res) => setSafehouses(res.items)).catch(() => {})
-  }, [])
+    if (isAdmin) {
+      caseloadApi.getSafehouses().then((res) => setSafehouses(res.items)).catch(() => {})
+    } else {
+      api
+        .get<{ safehouseId: number; name: string }[]>('/api/public/safehouses')
+        .then((rows) =>
+          setSafehouses(rows.map((s) => ({ safehouseId: s.safehouseId, name: s.name }))),
+        )
+        .catch(() => {})
+    }
+  }, [isAdmin])
 
   const filters = useMemo(
     () => ({
@@ -108,7 +126,9 @@ export function CaseloadPage() {
     <div className="mx-auto max-w-7xl px-4 py-12">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Caseload Management</h1>
-        <Button onClick={() => setShowCreate(true)}>New Resident</Button>
+        {isAdmin ? (
+          <Button onClick={() => setShowCreate(true)}>New Resident</Button>
+        ) : null}
       </div>
 
       <div className="mb-4 flex flex-wrap gap-3">
@@ -175,21 +195,29 @@ export function CaseloadPage() {
         totalCount={table.totalCount}
         onPageChange={table.setPage}
         loading={table.loading}
-        onEdit={async (row) => {
-          const full = await api.get<CreateResidentRequest>(`/api/caseload/${row.residentId}`)
-          setEditInitial(full)
-          setEditTarget(row)
-        }}
-        onDelete={async (row) => {
-          await caseloadApi.deleteResident(row.residentId)
-          table.refresh()
-        }}
-        getCascadeInfo={(row) => caseloadApi.getCascadeInfo(row.residentId)}
+        onEdit={
+          isAdmin
+            ? async (row) => {
+                const full = await api.get<CreateResidentRequest>(`/api/caseload/${row.residentId}`)
+                setEditInitial(full)
+                setEditTarget(row)
+              }
+            : undefined
+        }
+        onDelete={
+          isAdmin
+            ? async (row) => {
+                await caseloadApi.deleteResident(row.residentId)
+                table.refresh()
+              }
+            : undefined
+        }
+        getCascadeInfo={isAdmin ? (row) => caseloadApi.getCascadeInfo(row.residentId) : undefined}
         deleteEntityLabel="resident"
         getDeleteName={(row) => `${row.caseControlNo} (${row.internalCode})`}
       />
 
-      {showCreate && (
+      {isAdmin && showCreate && (
         <ResidentFormModal
           onSubmit={async (data: CreateResidentRequest) => {
             await caseloadApi.createResident(data)
@@ -200,7 +228,7 @@ export function CaseloadPage() {
         />
       )}
 
-      {editTarget && (
+      {isAdmin && editTarget && (
         <ResidentFormModal
           initial={editInitial}
           onSubmit={async (data: CreateResidentRequest) => {

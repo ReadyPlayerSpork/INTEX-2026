@@ -53,14 +53,28 @@ export function AllocateDonationModal({
   })
 
   useEffect(() => {
+    let cancelled = false
+    setLoading(true)
     Promise.all([
       api.get<Safehouse[]>('/api/public/safehouses'),
-      api.get<any>(`/api/financial/management/allocations?donationId=${donationId}`)
-    ]).then(([sh, allocs]) => {
-      setSafehouses(sh)
-      setExistingAllocations(allocs.items || [])
-      setLoading(false)
-    })
+      api.get<{ items?: Allocation[] }>(
+        `/api/financial/management/allocations?donationId=${donationId}&pageSize=500`,
+      ),
+    ])
+      .then(([sh, allocs]) => {
+        if (cancelled) return
+        setSafehouses(sh)
+        setExistingAllocations(allocs.items ?? [])
+      })
+      .catch(() => {
+        if (!cancelled) setExistingAllocations([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [donationId])
 
   const totalAllocated = existingAllocations.reduce((sum, a) => sum + a.amountAllocated, 0)

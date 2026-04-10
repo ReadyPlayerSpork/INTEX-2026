@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { BookOpen, Heart } from 'lucide-react'
 import { api } from '@/api/client'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { caseloadApi, type CreateResidentRequest } from '@/api/caseloadApi'
 import { ResidentFormModal } from '@/components/admin/ResidentFormModal'
@@ -127,6 +128,8 @@ export function ResidentProfilePage() {
 }
 
 function ResidentProfileContent({ id }: { id: string }) {
+  const { hasRole } = useAuth()
+  const isAdmin = hasRole('Admin')
   const [resident, setResident] = useState<ResidentProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabName>('profile')
@@ -182,7 +185,9 @@ function ResidentProfileContent({ id }: { id: string }) {
         <p className="text-muted-foreground text-sm">
           {resident.caseControlNo} | {resident.safehouse?.name ?? 'Unknown Safehouse'} | {resident.caseStatus}
         </p>
-        <Button size="sm" onClick={() => setShowEdit(true)}>Edit Resident</Button>
+        {isAdmin ? (
+          <Button size="sm" onClick={() => setShowEdit(true)}>Edit Resident</Button>
+        ) : null}
       </div>
 
       {/* Tabs */}
@@ -218,7 +223,7 @@ function ResidentProfileContent({ id }: { id: string }) {
         />
       )}
 
-      {showEdit && (
+      {isAdmin && showEdit && (
         <ResidentFormModal
           initial={{
             caseControlNo: resident.caseControlNo,
