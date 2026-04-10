@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react"
 
-import { ApiError, api } from "@/api/client"
-
+import { donationApi, getDonationErrorMessage } from "@/api/donationApi"
 import {
   type DonationCurrencyCode,
   isDonationCurrencyCode,
@@ -25,21 +24,17 @@ export function useAnonymousDonateForm() {
     setLoading(true)
 
     try {
-      await api.post("/api/donations/anonymous", {
-        amount: parseFloat(amount),
+      await donationApi.submitAnonymousDonation({
+        amount,
         currencyCode,
-        campaignName: campaign || null,
-        donorName: donorName || null,
-        donorEmail: donorEmail || null,
-        notes: notes || null,
+        campaignName: campaign,
+        donorName,
+        donorEmail,
+        notes,
       })
       setSuccess(true)
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message)
-      } else {
-        setError("An unexpected error occurred.")
-      }
+      setError(getDonationErrorMessage(err))
     } finally {
       setLoading(false)
     }

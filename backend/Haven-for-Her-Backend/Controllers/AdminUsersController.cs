@@ -19,6 +19,9 @@ public class AdminUsersController(
     [HttpGet]
     public async Task<IActionResult> ListUsers(
         [FromQuery] string? search,
+        [FromQuery] string? role,
+        [FromQuery] string? sort,
+        [FromQuery] string? direction,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25)
     {
@@ -30,10 +33,30 @@ public class AdminUsersController(
             query = query.Where(u => u.Email != null && u.Email.ToLower().Contains(term));
         }
 
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            if (!AuthRoles.All.Contains(role))
+                return BadRequest(new ErrorResponse($"Invalid role '{role}'."));
+
+            var usersInRole = await userManager.GetUsersInRoleAsync(role);
+            var roleUserIds = usersInRole.Select(u => u.Id).ToList();
+            query = query.Where(u => roleUserIds.Contains(u.Id));
+        }
+
+        var desc = string.Equals(direction, "desc", StringComparison.OrdinalIgnoreCase);
+        query = sort?.Trim().ToLowerInvariant() switch
+        {
+            "createdatutc" or "created" =>
+                desc ? query.OrderByDescending(u => u.CreatedAtUtc).ThenBy(u => u.Email) : query.OrderBy(u => u.CreatedAtUtc).ThenBy(u => u.Email),
+            "email" or null or "" =>
+                desc ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
+            _ =>
+                desc ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
+        };
+
         var totalCount = await query.CountAsync();
 
         var users = await query
-            .OrderBy(u => u.Email)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

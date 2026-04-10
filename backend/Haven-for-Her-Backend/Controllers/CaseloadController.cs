@@ -14,6 +14,7 @@ public class CaseloadController(
     HavenForHerBackendDbContext db) : ControllerBase
 {
     private const int CascadePreviewLimit = 5;
+    private const int UnknownRiskRank = -1;
 
     /// <summary>
     /// Paginated list of all residents with search and filters.
@@ -57,7 +58,23 @@ public class CaseloadController(
             "internalcode" => desc ? query.OrderByDescending(r => r.InternalCode) : query.OrderBy(r => r.InternalCode),
             "safehousename" => desc ? query.OrderByDescending(r => r.Safehouse.Name) : query.OrderBy(r => r.Safehouse.Name),
             "casestatus" => desc ? query.OrderByDescending(r => r.CaseStatus) : query.OrderBy(r => r.CaseStatus),
-            "currentrisklevel" => desc ? query.OrderByDescending(r => r.CurrentRiskLevel) : query.OrderBy(r => r.CurrentRiskLevel),
+            "currentrisklevel" => desc
+                ? query
+                    .OrderByDescending(r =>
+                        r.CurrentRiskLevel == "Critical" ? 3 :
+                        r.CurrentRiskLevel == "High" ? 2 :
+                        r.CurrentRiskLevel == "Medium" ? 1 :
+                        r.CurrentRiskLevel == "Low" ? 0 :
+                        UnknownRiskRank)
+                    .ThenBy(r => r.CaseControlNo)
+                : query
+                    .OrderBy(r =>
+                        r.CurrentRiskLevel == "Critical" ? 3 :
+                        r.CurrentRiskLevel == "High" ? 2 :
+                        r.CurrentRiskLevel == "Medium" ? 1 :
+                        r.CurrentRiskLevel == "Low" ? 0 :
+                        UnknownRiskRank)
+                    .ThenBy(r => r.CaseControlNo),
             "assignedsocialworker" => desc ? query.OrderByDescending(r => r.AssignedSocialWorker) : query.OrderBy(r => r.AssignedSocialWorker),
             "dateofadmission" => desc ? query.OrderByDescending(r => r.DateOfAdmission) : query.OrderBy(r => r.DateOfAdmission),
             _ => query.OrderByDescending(r => r.DateOfAdmission),

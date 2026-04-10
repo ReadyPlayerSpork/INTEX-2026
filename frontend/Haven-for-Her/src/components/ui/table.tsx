@@ -1,18 +1,40 @@
 import * as React from "react"
+import { ChevronsLeftRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+function Table({
+  className,
+  showScrollHint = true,
+  ...props
+}: React.ComponentProps<"table"> & { showScrollHint?: boolean }) {
   return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
-      <table
-        data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
+    <div className="w-full space-y-1.5">
+      <div
+        data-slot="table-container"
+        className={cn(
+          "relative w-full overflow-x-auto scroll-smooth rounded-xl border border-border/60",
+          "shadow-[inset_-14px_0_14px_-14px_rgba(74,44,94,0.07)]"
+        )}
+        tabIndex={0}
+        role="region"
+        aria-label="Table — scroll horizontally if columns extend past the screen"
+      >
+        <table
+          data-slot="table"
+          className={cn("w-full caption-bottom text-sm", className)}
+          {...props}
+        />
+      </div>
+      {showScrollHint ? (
+        <p className="text-muted-foreground flex items-center gap-1.5 text-xs leading-snug">
+          <ChevronsLeftRight
+            className="text-primary/80 size-3.5 shrink-0"
+            aria-hidden
+          />
+          <span>Swipe or scroll sideways to see all columns.</span>
+        </p>
+      ) : null}
     </div>
   )
 }

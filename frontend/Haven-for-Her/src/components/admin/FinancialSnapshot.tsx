@@ -72,7 +72,9 @@ export const FinancialSnapshot = memo(function FinancialSnapshot({
           <h2 className="font-heading font-semibold text-base text-card-foreground">
             Financial Snapshot
           </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Donations overview · this month</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Donations overview · monetary gifts, last 30 days
+          </p>
         </div>
         <Link
           to="/financial/dashboard"
@@ -86,7 +88,7 @@ export const FinancialSnapshot = memo(function FinancialSnapshot({
       <div className="flex items-end gap-4 mb-5">
         <div>
           <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-0.5">
-            This Month
+            Last 30 days
           </p>
           <p className="font-heading font-semibold text-2xl text-card-foreground tabular-nums">
             {usd(totalDonationsThisMonth)}
@@ -94,7 +96,7 @@ export const FinancialSnapshot = memo(function FinancialSnapshot({
         </div>
         <div className="pb-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-0.5">
-            vs Last Month
+            Prior 30 days
           </p>
           <p className="text-sm text-muted-foreground tabular-nums">{usd(totalDonationsLastMonth)}</p>
         </div>
@@ -108,11 +110,11 @@ export const FinancialSnapshot = memo(function FinancialSnapshot({
       <div className="flex gap-2 mb-5">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-xs font-semibold text-primary">
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-          {recurringVsOneTime.recurring} recurring
+          {recurringVsOneTime.recurring} recurring (monetary)
         </span>
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-xs font-semibold text-muted-foreground">
           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-          {recurringVsOneTime.oneTime} one-time
+          {recurringVsOneTime.oneTime} one-time (monetary)
         </span>
       </div>
 

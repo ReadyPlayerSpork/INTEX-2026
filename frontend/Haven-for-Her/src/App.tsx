@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { PortalRootLayout } from '@/layouts/PortalRootLayout'
+import { GuestOnlyRoute } from '@/components/GuestOnlyRoute'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { CookieConsent } from '@/components/CookieConsent'
 import { RoutePageFallback } from '@/components/RoutePageFallback'
@@ -118,9 +119,6 @@ const AdminDashboardPage = lazy(() =>
     default: m.AdminDashboardPage,
   })),
 )
-const RolesPage = lazy(() =>
-  import('@/pages/admin/RolesPage').then((m) => ({ default: m.RolesPage })),
-)
 const UsersPage = lazy(() =>
   import('@/pages/admin/UsersPage').then((m) => ({ default: m.UsersPage })),
 )
@@ -211,7 +209,9 @@ function App() {
         <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route element={<GuestOnlyRoute redirectPath="/account" />}>
+              <Route path="/login" element={<LoginPage />} />
+            </Route>
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/impact" element={<ImpactPage />} />
@@ -302,7 +302,6 @@ function App() {
                   element={<Navigate to="dashboard" replace />}
                 />
                 <Route path="dashboard" element={<AdminDashboardPage />} />
-                <Route path="roles" element={<RolesPage />} />
                 <Route path="users" element={<UsersPage />} />
                 <Route path="caseload" element={<CaseloadPage />} />
                 <Route path="caseload/:id" element={<ResidentProfilePage />} />

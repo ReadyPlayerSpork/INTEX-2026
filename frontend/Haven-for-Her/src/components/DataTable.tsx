@@ -12,6 +12,7 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
+  AlertDialogClose,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -82,6 +83,9 @@ export interface DataTableProps<T> {
 
   /** Message shown when there are no items */
   emptyMessage?: string
+
+  /** When true, shows a short hint that wide tables scroll sideways */
+  showHorizontalScrollHint?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -107,6 +111,7 @@ export function DataTable<T>({
   rowActions,
   rowClassName,
   emptyMessage = 'No records found.',
+  showHorizontalScrollHint = true,
 }: DataTableProps<T>) {
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null)
@@ -230,7 +235,7 @@ export function DataTable<T>({
 
   return (
     <>
-      <Table>
+      <Table showScrollHint={showHorizontalScrollHint}>
         <TableHeader>
           <TableRow>
             {columns.map((col) => (
@@ -307,15 +312,16 @@ export function DataTable<T>({
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) handleDeleteCancel() }}>
-        <AlertDialogContent className="max-h-[85vh] overflow-hidden p-0 sm:max-w-2xl">
-          <div className="flex min-h-0 flex-col">
-            <AlertDialogHeader className="shrink-0 px-6 pt-6 pb-4">
+        <AlertDialogContent className="flex !max-h-[min(90vh,56rem)] !w-[calc(100vw-2rem)] !max-w-2xl flex-col !gap-0 overflow-hidden p-0 sm:!w-full">
+          <AlertDialogClose />
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <AlertDialogHeader className="relative shrink-0 px-6 pt-6 pr-14 pb-4">
               <AlertDialogTitle>Delete {deleteEntityLabel}?</AlertDialogTitle>
             </AlertDialogHeader>
 
             <Separator />
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            <div className="max-h-[min(65vh,32rem)] min-h-0 min-w-0 shrink overflow-y-auto overflow-x-auto overscroll-contain px-6 py-4">
               <AlertDialogDescription className="flex flex-col gap-3 text-left">
                 <p>
                   {getDeleteName && deleteTarget ? (
