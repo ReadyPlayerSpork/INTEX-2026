@@ -2,6 +2,7 @@ using Haven_for_Her_Backend.Data;
 using Haven_for_Her_Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Haven_for_Her_Backend.Controllers;
 
