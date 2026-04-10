@@ -1,5 +1,6 @@
 import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
+import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -169,10 +170,39 @@ function AlertDialogCancel({
   )
 }
 
+/** Icon dismiss control for dialogs that need an explicit corner close (e.g. long scrollable content). */
+function AlertDialogClose({
+  className,
+  ...props
+}: AlertDialogPrimitive.Close.Props) {
+  return (
+    <AlertDialogPrimitive.Close
+      data-slot="alert-dialog-close-icon"
+      className={cn(
+        "absolute right-3 top-3 z-20 rounded-full opacity-90 ring-offset-background transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        className
+      )}
+      render={
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Close dialog"
+        >
+          <X className="size-4" />
+        </Button>
+      }
+      {...props}
+    />
+  )
+}
+
 export {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
+  AlertDialogClose,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
