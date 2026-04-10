@@ -10,6 +10,12 @@ function getBaseUrl(): string {
   const env = import.meta.env.VITE_API_BASE_URL?.trim();
   const url = env ? env.replace(/\/$/, '') : '';
 
+  if (!url && !import.meta.env.DEV) {
+    console.warn(
+      '[API] VITE_API_BASE_URL is not configured. Relative /api requests require the deployed frontend host to proxy requests to the backend API.',
+    );
+  }
+
   if (import.meta.env.DEV) {
     console.log(`[API] Base URL resolved to: "${url || '(relative)'}"`);
   }

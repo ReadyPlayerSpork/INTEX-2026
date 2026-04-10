@@ -21,16 +21,15 @@
  *   DELETE /api/admin/users/{id}               — delete
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react'
 import { adminApi } from '@/api/adminApi'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
-import { buttonVariants } from '@/components/ui/button-variants'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 /* ── Constants ──────────────────────────────────────────────────────────── */
@@ -46,6 +45,11 @@ const ROLE_STYLE: Record<string, string> = {
   Donor:       'bg-primary/10 text-primary border-primary/20',
   Survivor:    'bg-destructive/10 text-destructive border-destructive/20',
 }
+
+const USER_SORT_OPTIONS = [
+  { value: 'email', label: 'Email' },
+  { value: 'createdAtUtc', label: 'Created date' },
+] as const
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
@@ -362,24 +366,40 @@ export function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState('')
+  const [sortKey, setSortKey] = useState<(typeof USER_SORT_OPTIONS)[number]['value']>('email')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const pageSize = 25
 
-  // Close expanded panel when page or search changes
-  const prevRef = useRef({ page, search })
+  // Close expanded panel when table state changes
+  const prevRef = useRef({ page, search, roleFilter, sortKey, sortDirection })
   useEffect(() => {
-    if (prevRef.current.page !== page || prevRef.current.search !== search) {
+    if (
+      prevRef.current.page !== page ||
+      prevRef.current.search !== search ||
+      prevRef.current.roleFilter !== roleFilter ||
+      prevRef.current.sortKey !== sortKey ||
+      prevRef.current.sortDirection !== sortDirection
+    ) {
       setExpandedId(null)
-      prevRef.current = { page, search }
+      prevRef.current = { page, search, roleFilter, sortKey, sortDirection }
     }
-  }, [page, search])
+  }, [page, search, roleFilter, sortKey, sortDirection])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const res = await adminApi.listUsers({ page, pageSize, search: search || undefined })
+      const res = await adminApi.listUsers({
+        page,
+        pageSize,
+        search: search || undefined,
+        role: roleFilter || undefined,
+        sort: sortKey,
+        direction: sortDirection,
+      })
       setItems(res.items)
       setTotalCount(res.totalCount)
     } catch (err) {
@@ -387,20 +407,27 @@ export function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search])
+  }, [page, search, roleFilter, sortKey, sortDirection])
 
   useEffect(() => { void fetchData() }, [fetchData])
 
   const totalPages = Math.ceil(totalCount / pageSize)
 
-  function handleCreated(user: User) {
+  function handleCreated() {
     setShowCreate(false)
-    // Prepend to list and bump count (avoids a full refetch)
-    setItems((prev) => [user, ...prev])
-    setTotalCount((c) => c + 1)
+    setExpandedId(null)
+    if (page !== 1) {
+      setPage(1)
+      return
+    }
+    void fetchData()
   }
 
   function handleUpdated(updated: User) {
+    if (roleFilter) {
+      void fetchData()
+      return
+    }
     setItems((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
   }
 
@@ -420,27 +447,19 @@ export function UsersPage() {
           </p>
           <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">Users</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => { setShowCreate((s) => !s); setExpandedId(null) }}
-            className={cn(
-              'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-              showCreate
-                ? 'bg-muted text-card-foreground border border-border'
-                : 'bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground',
-            )}
-          >
-            {showCreate ? <X size={14} /> : <Plus size={14} />}
-            {showCreate ? 'Cancel' : 'New User'}
-          </button>
-          <Link
-            to="/admin/roles"
-            className={cn(buttonVariants({ variant: 'outline' }), 'no-underline rounded-full')}
-          >
-            Manage Roles
-          </Link>
-        </div>
+        <button
+          onClick={() => { setShowCreate((s) => !s); setExpandedId(null) }}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            showCreate
+              ? 'border border-border bg-muted text-card-foreground'
+              : 'bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground',
+          )}
+        >
+          {showCreate ? <X size={14} /> : <Plus size={14} />}
+          {showCreate ? 'Cancel' : 'New User'}
+        </button>
       </div>
 
       {/* Create form */}
@@ -453,8 +472,8 @@ export function UsersPage() {
 
       {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
 
-      {/* Search */}
-      <div className="mb-4">
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <Input
           type="text"
           placeholder="Search by email…"
@@ -462,6 +481,59 @@ export function UsersPage() {
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           className="w-full max-w-sm rounded-full"
         />
+        <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value ?? ''); setPage(1) }}>
+          <SelectTrigger className="min-w-44">
+            <SelectValue placeholder="All roles" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="">All roles</SelectItem>
+              {ALL_ROLES.map((role) => (
+                <SelectItem key={role} value={role}>
+                  {role}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Select value={sortKey} onValueChange={(value) => { setSortKey((value as (typeof USER_SORT_OPTIONS)[number]['value']) ?? 'email'); setPage(1) }}>
+          <SelectTrigger className="min-w-44">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {USER_SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Select value={sortDirection} onValueChange={(value) => { setSortDirection((value as 'asc' | 'desc') ?? 'asc'); setPage(1) }}>
+          <SelectTrigger className="min-w-44">
+            <SelectValue placeholder="Direction" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="asc">Ascending</SelectItem>
+              <SelectItem value="desc">Descending</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setSearch('')
+            setRoleFilter('')
+            setSortKey('email')
+            setSortDirection('asc')
+            setPage(1)
+          }}
+        >
+          Reset
+        </Button>
       </div>
 
       {/* Table */}
@@ -505,9 +577,8 @@ export function UsersPage() {
                     {items.map((u) => {
                       const isExpanded = expandedId === u.id
                       return (
-                        <>
+                        <Fragment key={u.id}>
                           <tr
-                            key={u.id}
                             className={cn(
                               'border-b border-border/70 transition-colors',
                               isExpanded ? 'bg-secondary/30' : 'hover:bg-secondary/40',
@@ -568,7 +639,6 @@ export function UsersPage() {
 
                           {isExpanded && (
                             <ManagePanel
-                              key={`manage-${u.id}`}
                               user={u}
                               currentEmail={currentEmail}
                               onClose={() => setExpandedId(null)}
@@ -576,7 +646,7 @@ export function UsersPage() {
                               onDeleted={handleDeleted}
                             />
                           )}
-                        </>
+                        </Fragment>
                       )
                     })}
                   </tbody>

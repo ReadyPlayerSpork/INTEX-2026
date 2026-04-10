@@ -14,11 +14,17 @@ export const adminApi = {
   /** List users with optional search and pagination */
   listUsers(params?: {
     search?: string
+    role?: string
+    sort?: 'email' | 'createdAtUtc'
+    direction?: 'asc' | 'desc'
     page?: number
     pageSize?: number
   }): Promise<PaginatedResponse<UserDto>> {
     const qs = new URLSearchParams()
     if (params?.search) qs.set('search', params.search)
+    if (params?.role) qs.set('role', params.role)
+    if (params?.sort) qs.set('sort', params.sort)
+    if (params?.direction) qs.set('direction', params.direction)
     if (params?.page) qs.set('page', String(params.page))
     if (params?.pageSize) qs.set('pageSize', String(params.pageSize))
     const query = qs.toString()

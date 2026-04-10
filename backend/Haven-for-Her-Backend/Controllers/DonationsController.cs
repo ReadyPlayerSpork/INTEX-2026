@@ -24,15 +24,38 @@ public class DonationsController(
         return ValidDonationTypes.Contains(type) ? type : null;
     }
 
+    private static string? TrimToNull(string? value)
+    {
+        var trimmed = value?.Trim();
+        return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+    }
+
+    private static string NormalizeCurrencyCode(string? requested)
+    {
+        var trimmed = TrimToNull(requested);
+        return trimmed?.ToUpperInvariant() ?? "USD";
+    }
+
+    private static ErrorResponse? ValidateDonationRequest(DonationRequest request, string? donationType)
+    {
+        if (donationType is null)
+            return new ErrorResponse("Invalid donation type.");
+
+        if (request.Amount is null || request.Amount <= 0)
+            return new ErrorResponse("Donation amount must be greater than 0.");
+
+        return null;
+    }
+
     private static Donation BuildDonation(DonationRequest request, string donationType, int supporterId, string channelSource) => new()
     {
         SupporterId = supporterId,
         DonationType = donationType,
         DonationDate = DateOnly.FromDateTime(DateTime.UtcNow),
         Amount = request.Amount,
-        CurrencyCode = request.CurrencyCode ?? "USD",
-        CampaignName = request.CampaignName,
-        Notes = request.Notes,
+        CurrencyCode = NormalizeCurrencyCode(request.CurrencyCode),
+        CampaignName = TrimToNull(request.CampaignName),
+        Notes = TrimToNull(request.Notes),
         ChannelSource = channelSource,
         IsRecurring = request.IsRecurring,
     };
@@ -54,15 +77,17 @@ public class DonationsController(
         try
         {
             var donationType = ResolveDonationType(request.DonationType);
-            if (donationType is null)
-                return BadRequest(new ErrorResponse("Invalid donation type."));
+            var validationError = ValidateDonationRequest(request, donationType);
+            if (validationError is not null)
+                return BadRequest(validationError);
+            var validatedDonationType = donationType!;
 
             var user = await userManager.GetUserAsync(User);
             if (user is null)
                 return Unauthorized();
 
             var supporter = await FindOrCreateSupporterForUser(user);
-            var donation = BuildDonation(request, donationType, supporter.SupporterId, "Website");
+            var donation = BuildDonation(request, validatedDonationType, supporter.SupporterId, "Website");
             return await SaveDonation(donation, "Thank you for your donation!");
         }
         catch (Exception ex)
@@ -84,11 +109,16 @@ public class DonationsController(
         try
         {
             var donationType = ResolveDonationType(request.DonationType);
-            if (donationType is null)
-                return BadRequest(new ErrorResponse("Invalid donation type."));
+            var validationError = ValidateDonationRequest(request, donationType);
+            if (validationError is not null)
+                return BadRequest(validationError);
+            var validatedDonationType = donationType!;
 
-            var supporter = await FindOrCreateAnonymousSupporter(request.DonorName, request.DonorEmail);
-            var donation = BuildDonation(request, donationType, supporter.SupporterId, "Website-Anonymous");
+            var donorName = TrimToNull(request.DonorName);
+            var donorEmail = TrimToNull(request.DonorEmail);
+
+            var supporter = await FindOrCreateAnonymousSupporter(donorName, donorEmail);
+            var donation = BuildDonation(request, validatedDonationType, supporter.SupporterId, "Website-Anonymous");
             return await SaveDonation(donation, "Thank you for your generous donation!");
         }
         catch (Exception ex)
@@ -129,7 +159,7 @@ public class DonationsController(
 
     private async Task<Supporter> FindOrCreateAnonymousSupporter(string? donorName, string? donorEmail)
     {
-        if (!string.IsNullOrWhiteSpace(donorEmail))
+        if (donorEmail is not null)
         {
             var existing = await db.Supporters.FirstOrDefaultAsync(s => s.Email == donorEmail);
             if (existing is not null)

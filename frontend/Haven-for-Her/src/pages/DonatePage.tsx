@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '@/api/client'
-import { ApiError } from '@/api/client'
+import { donationApi, getDonationErrorMessage } from '@/api/donationApi'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
@@ -29,21 +28,17 @@ export function DonatePage() {
     setLoading(true)
 
     try {
-      await api.post('/api/donations', {
-        amount: parseFloat(amount),
+      await donationApi.submitDonation({
+        amount,
         currencyCode,
-        campaignName: campaign || null,
-        notes: notes || null,
+        campaignName: campaign,
+        notes,
         isRecurring,
       })
       setSubmittedRecurring(isRecurring)
       setSuccess(true)
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message)
-      } else {
-        setError('An unexpected error occurred.')
-      }
+      setError(getDonationErrorMessage(err))
     } finally {
       setLoading(false)
     }

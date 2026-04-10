@@ -24,6 +24,21 @@ interface CaseloadItem {
   reintegrationStatus: string | null
 }
 
+function getRiskBadgeClassName(riskLevel: string | null): string {
+  switch (riskLevel?.trim().toLowerCase()) {
+    case 'critical':
+      return 'border-destructive/30 bg-destructive/10 text-destructive'
+    case 'high':
+      return 'border-orange-500/30 bg-orange-500/10 text-orange-700'
+    case 'medium':
+      return 'border-yellow-500/30 bg-yellow-500/10 text-yellow-700'
+    case 'low':
+      return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700'
+    default:
+      return 'border-border bg-muted text-muted-foreground'
+  }
+}
+
 const columns: ColumnDef<CaseloadItem>[] = [
   {
     key: 'caseControlNo',
@@ -38,7 +53,16 @@ const columns: ColumnDef<CaseloadItem>[] = [
   { key: 'internalCode', header: 'Internal Code', sortable: true },
   { key: 'safehouseName', header: 'Safehouse', sortable: true },
   { key: 'caseStatus', header: 'Status', sortable: true },
-  { key: 'currentRiskLevel', header: 'Risk Level', sortable: true },
+  {
+    key: 'currentRiskLevel',
+    header: 'Risk Level',
+    sortable: true,
+    render: (row) => (
+      <span className={`inline-flex min-w-20 justify-center rounded-full border px-2.5 py-1 text-xs font-semibold ${getRiskBadgeClassName(row.currentRiskLevel)}`}>
+        {row.currentRiskLevel || 'Unknown'}
+      </span>
+    ),
+  },
   {
     key: 'assignedSocialWorker',
     header: 'Assigned Worker',
@@ -75,7 +99,7 @@ export function CaseloadPage() {
   const table = useServerTable<CaseloadItem>({
     endpoint: '/api/caseload',
     pageSize: 20,
-    defaultSort: 'dateOfAdmission',
+    defaultSort: 'currentRiskLevel',
     defaultDirection: 'desc',
     filters,
   })

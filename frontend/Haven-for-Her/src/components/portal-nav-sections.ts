@@ -23,7 +23,6 @@ export const PORTAL_NAV_SECTIONS: PortalNavSection[] = [
     items: [
       { label: 'Dashboard', to: '/admin/dashboard' },
       { label: 'Users', to: '/admin/users' },
-      { label: 'Roles', to: '/admin/roles' },
       { label: 'Caseload', to: '/admin/caseload' },
       { label: 'Incidents', to: '/admin/incidents' },
       { label: 'Interventions', to: '/admin/interventions' },
