@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { reportsApi, type DonationTrend } from '@/api/reportsApi'
 import { TrendChart } from '@/components/shared/TrendChart'
 import { financialApi, type AllocationsResponse } from '@/api/financialApi'
 import { AllocationBreakdown } from '@/components/financial/AllocationBreakdown'
+import { api } from '@/api/client'
+import { Download } from 'lucide-react'
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -13,30 +18,43 @@ export function ReportsPage() {
   const [trends, setTrends] = useState<DonationTrend[]>([])
   const [allocations, setAllocations] = useState<AllocationsResponse | null>(null)
   const [loadingTrends, setLoadingTrends] = useState(true)
+  const [downloading, setDownloading] = useState(false)
 
-  const fetchTrends = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoadingTrends(true)
-    try {
-      const [t, a] = await Promise.all([
-        reportsApi.getDonationTrends(12),
-        financialApi.getAllocations(),
-      ])
-      setTrends(t)
-      setAllocations(a)
-    } catch {
-      // ignore
-    } finally {
-      setLoadingTrends(false)
-    }
+    // Fetch independently so one failure doesn't block the other
+    const [trendsResult, allocResult] = await Promise.allSettled([
+      reportsApi.getDonationTrends(12),
+      financialApi.getAllocations(),
+    ])
+    if (trendsResult.status === 'fulfilled') setTrends(trendsResult.value)
+    if (allocResult.status === 'fulfilled') setAllocations(allocResult.value)
+    setLoadingTrends(false)
   }, [])
 
-  useEffect(() => { void fetchTrends() }, [fetchTrends])
+  useEffect(() => { void fetchData() }, [fetchData])
 
-  const downloadCsv = () => {
-    const qs = new URLSearchParams()
-    if (from) qs.set('from', from)
-    if (to) qs.set('to', to)
-    window.open(`/api/financial/export/csv?${qs}`, '_blank')
+  const canDownload = from !== '' && to !== ''
+
+  const downloadCsv = async () => {
+    if (!canDownload) return
+    setDownloading(true)
+    try {
+      const qs = new URLSearchParams({ from, to })
+      const blob = await api.getBlob(`/api/financial/export/csv?${qs}`)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'donations-export.csv'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      // download failed — browser will show nothing
+    } finally {
+      setDownloading(false)
+    }
   }
 
   const chartData = trends.map((t) => ({
@@ -73,35 +91,41 @@ export function ReportsPage() {
       )}
 
       {/* CSV Export */}
-      <div className="rounded-2xl bg-cream p-6">
-        <h2 className="mb-4 font-heading text-lg font-semibold text-plum">Donation Export (CSV)</h2>
-        <p className="mb-4 text-sm text-soft-purple/70">
-          Download all donations for a date range as a CSV file.
-        </p>
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-heading text-lg text-plum">Donation Export (CSV)</CardTitle>
+          <CardDescription>
+            Select a date range then download all matching donations as a CSV file.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4 grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="export-from">From date</Label>
+              <Input
+                id="export-from"
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="export-to">To date</Label>
+              <Input
+                id="export-to"
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
+            </div>
+          </div>
 
-        <div className="mb-4 grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-soft-purple">From date</span>
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-soft-purple">To date</span>
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="border-input bg-background rounded-md border px-3 py-2 text-sm"
-            />
-          </label>
-        </div>
-
-        <Button onClick={downloadCsv}>Download CSV</Button>
-      </div>
+          <Button onClick={downloadCsv} disabled={!canDownload || downloading}>
+            <Download data-icon="inline-start" />
+            {downloading ? 'Downloading...' : 'Download CSV'}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }

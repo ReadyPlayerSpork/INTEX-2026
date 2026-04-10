@@ -52,6 +52,10 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         });
 }
 
+// ── RBAC: role-based authorization policies ────────────────────────────
+// Each policy maps to a named role (Admin, Financial, Counselor, etc.).
+// Controllers reference these via [Authorize(Policy = "...")] or
+// [Authorize(Roles = "...")] to restrict endpoints by role.
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(AuthPolicies.RequireAdmin, p => p.RequireRole(AuthRoles.Admin));
@@ -63,25 +67,33 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(AuthPolicies.RequireEmployee, p => p.RequireRole(AuthRoles.Employee));
 });
 
+// ── Password & lockout policy (IS 414: stronger than default) ──────────
+// Default ASP.NET Identity requires only 6 characters. We raise the bar
+// to 14 characters and enforce account lockout after 5 failures (15 min).
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
-    options.Password.RequiredLength = 14;
+    options.Password.RequiredLength = 14;      // >2× the default of 6
     options.Password.RequiredUniqueChars = 1;
 
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.MaxFailedAccessAttempts = 5;   // lock after 5 bad attempts
     options.Lockout.AllowedForNewUsers = true;
 });
 
+// ── Secure cookie configuration ────────────────────────────────────────
+// HttpOnly:  prevents JavaScript from reading the auth cookie (XSS defense)
+// SameSite:  Lax prevents cross-site request forgery on state-changing requests
+// Secure:    cookie is only sent over HTTPS connections
+// Sliding:   session renews on activity, expires after 7 days of inactivity
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.HttpOnly = true;              // no document.cookie access
+    options.Cookie.SameSite = SameSiteMode.Lax;  // CSRF protection
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // HTTPS only
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.SlidingExpiration = true;
     options.Events.OnRedirectToLogin = ctx =>
@@ -96,6 +108,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
+// ── CORS: restrict cross-origin requests to known frontend origins ─────
+// Only the frontend URL(s) configured in environment variables may call
+// the API with credentials (cookies). All other origins are blocked.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
@@ -120,6 +135,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+// ── HSTS: tell browsers to always use HTTPS for this domain ────────────
+// MaxAge 1 year + Preload flag = eligible for browser preload lists.
 builder.Services.AddHsts(options =>
 {
     options.MaxAge = TimeSpan.FromDays(365);
@@ -127,6 +144,9 @@ builder.Services.AddHsts(options =>
     options.Preload = true;
 });
 
+// ── Rate limiting on auth endpoints ────────────────────────────────────
+// Prevents brute-force login attempts: max 10 requests per minute per client.
+// Returns HTTP 429 Too Many Requests when exceeded.
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

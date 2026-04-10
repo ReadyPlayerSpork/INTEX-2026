@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace Haven_for_Her_Backend.Controllers;
 
+// Rate limiting ("auth" policy) is applied to every endpoint in this controller.
+// This throttles brute-force login/2FA attempts to 10 requests per minute.
 [ApiController]
 [Route("api/auth")]
 [EnableRateLimiting("auth")]

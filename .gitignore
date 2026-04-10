@@ -25,7 +25,9 @@ CLAUDE.local.md
 !.cursor/rules/**
 !.cursor/mcp.json
 
-# Environment & local secrets (never commit real credentials)
+# Environment & local secrets — IS 414: keep credentials out of code/public repo.
+# .env files hold DB passwords, OAuth secrets, API keys, etc.
+# Only the .env.example template (with placeholder values) is committed.
 .env
 .env.*
 !.env.example

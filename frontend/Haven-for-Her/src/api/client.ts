@@ -67,6 +67,17 @@ const api = {
     return request<T>(path);
   },
 
+  /** Fetch a binary/text endpoint as a Blob (for file downloads). */
+  async getBlob(path: string): Promise<Blob> {
+    const res = await fetch(`${getBaseUrl()}${path}`, {
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      throw new ApiError(res.status, `API ${res.status}: ${res.statusText}`);
+    }
+    return res.blob();
+  },
+
   post<T>(path: string, body?: unknown): Promise<T> {
     return request<T>(path, {
       method: 'POST',
