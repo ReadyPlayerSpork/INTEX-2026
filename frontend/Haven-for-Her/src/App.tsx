@@ -246,7 +246,7 @@ function App() {
               path="/counselor"
               element={<ProtectedRoute allowedRoles={['Counselor', 'Admin']} />}
             >
-              <Route element={<RolePortalLayout role="counselor" />}>
+              <Route element={<RolePortalLayout />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<CounselorDashboardPage />} />
                 <Route path="sessions" element={<SessionsPage />} />
@@ -260,7 +260,7 @@ function App() {
               path="/financial"
               element={<ProtectedRoute allowedRoles={['Financial', 'Admin']} />}
             >
-              <Route element={<RolePortalLayout role="financial" />}>
+              <Route element={<RolePortalLayout />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<FinancialDashboardPage />} />
                 <Route path="donors" element={<DonorManagementPage />} />
@@ -275,7 +275,7 @@ function App() {
               path="/social"
               element={<ProtectedRoute allowedRoles={['SocialMedia', 'Admin']} />}
             >
-              <Route element={<RolePortalLayout role="social" />}>
+              <Route element={<RolePortalLayout />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<SocialDashboardPage />} />
                 <Route path="posts" element={<PostsPage />} />
@@ -287,7 +287,7 @@ function App() {
               path="/admin"
               element={<ProtectedRoute allowedRoles={['Admin']} />}
             >
-              <Route element={<RolePortalLayout role="admin" />}>
+              <Route element={<RolePortalLayout />}>
                 <Route
                   index
                   element={<Navigate to="dashboard" replace />}
