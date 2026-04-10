@@ -125,7 +125,8 @@ public static class CsvDataSeeder
 
             var donations = ReadCsv<Donation>(csvDirectory, "donations.csv");
             db.Donations.AddRange(donations);
-            var recentDonations = BuildRecentDonations(supporters);
+            var maxDonationId = donations.Count > 0 ? donations.Max(x => x.DonationId) : 0;
+            var recentDonations = BuildRecentDonations(supporters, maxDonationId + 1);
             db.Donations.AddRange(recentDonations);
 
             var partnerAssignments = ReadCsv<PartnerAssignment>(csvDirectory, "partner_assignments.csv");
@@ -192,7 +193,7 @@ public static class CsvDataSeeder
     /// <summary>
     /// Adds monetary donations dated within the last 30 days (UTC) so dashboards and donor views show recent activity after each re-seed.
     /// </summary>
-    private static List<Donation> BuildRecentDonations(IReadOnlyList<Supporter> supporters)
+    private static List<Donation> BuildRecentDonations(IReadOnlyList<Supporter> supporters, int startId)
     {
         if (supporters.Count == 0) return [];
 
@@ -209,6 +210,7 @@ public static class CsvDataSeeder
             var amount = Math.Round((decimal)rng.NextDouble() * 220m + 25m, 2);
             list.Add(new Donation
             {
+                DonationId = startId + i,
                 SupporterId = supporterIds[rng.Next(supporterIds.Length)],
                 DonationType = "Monetary",
                 DonationDate = today.AddDays(-daysAgo),
