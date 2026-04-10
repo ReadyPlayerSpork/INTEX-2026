@@ -3,6 +3,7 @@ import { Brain } from 'lucide-react'
 import { api } from '@/api/client'
 import { getSocialMediaRecommendations, type SocialMediaRecommendations } from '@/api/mlApi'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { StatCard } from '@/components/shared/StatCard'
 
 /* ---------- Types matching SocialMediaController.GetDashboard ---------- */
 
@@ -99,10 +100,10 @@ export function SocialDashboardPage() {
     <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
       <div className="mb-8">
         <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-          Social media dashboard
+          Social media
         </p>
         <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
-          Social Media Dashboard
+          Content & Engagement
         </h1>
       </div>
 
@@ -146,18 +147,18 @@ export function SocialDashboardPage() {
 
       {/* Summary cards */}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Stat label="Total Posts" value={data.totalPosts.toLocaleString()} />
-        <StatWithChange
+        <StatCard label="Total Posts" value={data.totalPosts.toLocaleString()} />
+        <StatCard
           label="Impressions"
           value={data.totalImpressions.toLocaleString()}
           change={mom.impressions.changePercent}
         />
-        <StatWithChange
+        <StatCard
           label="Reach"
           value={data.totalReach.toLocaleString()}
           change={mom.reach.changePercent}
         />
-        <StatWithChange
+        <StatCard
           label="Avg Engagement Rate"
           value={`${data.avgEngagementRate.toFixed(2)}%`}
           change={mom.engagementRate.changePercent}
@@ -167,7 +168,7 @@ export function SocialDashboardPage() {
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Top Content Topics */}
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Top Content Topics</h2>
+          <h2 className="font-heading mb-3 text-lg font-semibold text-accent">Top Content Topics</h2>
           {data.topContentTopics.length === 0 ? (
             <p className="text-muted-foreground text-sm">No data yet.</p>
           ) : (
@@ -189,7 +190,7 @@ export function SocialDashboardPage() {
 
         {/* Platform Breakdown */}
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Platform Breakdown</h2>
+          <h2 className="font-heading mb-3 text-lg font-semibold text-accent">Platform Breakdown</h2>
           {data.platformBreakdown.length === 0 ? (
             <p className="text-muted-foreground text-sm">No data yet.</p>
           ) : (
@@ -217,7 +218,7 @@ export function SocialDashboardPage() {
 
         {/* Best Posting Times */}
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Best Posting Times</h2>
+          <h2 className="font-heading mb-3 text-lg font-semibold text-accent">Best Posting Times</h2>
           {data.bestPostingTimes.length === 0 ? (
             <p className="text-muted-foreground text-sm">No data yet.</p>
           ) : (
@@ -241,7 +242,7 @@ export function SocialDashboardPage() {
 
         {/* Content That Drives Donations */}
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Content That Drives Donations</h2>
+          <h2 className="font-heading mb-3 text-lg font-semibold text-accent">Content That Drives Donations</h2>
           {data.contentThatDrivesDonations.length === 0 ? (
             <p className="text-muted-foreground text-sm">No data yet.</p>
           ) : (
@@ -274,41 +275,3 @@ function MlStat({ label, value }: { label: string; value: string }) {
   )
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <Card className="border-border/70 bg-card/95">
-      <CardContent className="p-5 text-center">
-        <p className="text-primary text-2xl font-extrabold">{value}</p>
-        <p className="text-muted-foreground mt-2 text-xs">{label}</p>
-      </CardContent>
-    </Card>
-  )
-}
-
-function StatWithChange({
-  label,
-  value,
-  change,
-}: {
-  label: string
-  value: string | number
-  change: number | null
-}) {
-  const positive = change != null && change >= 0
-  return (
-    <Card className="border-border/70 bg-card/95">
-      <CardContent className="p-5 text-center">
-        <p className="text-primary text-2xl font-extrabold">{value}</p>
-        <p className="text-muted-foreground mt-2 text-xs">{label}</p>
-        {change != null && (
-          <p
-            className={`mt-2 text-xs font-semibold ${positive ? 'text-primary' : 'text-destructive'}`}
-          >
-            {positive ? '+' : ''}
-            {change.toFixed(1)}% MoM
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  )
-}

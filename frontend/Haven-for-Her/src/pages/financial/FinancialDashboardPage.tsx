@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/api/client'
-import { Card, CardContent } from '@/components/ui/card'
+import { StatCard } from '@/components/shared/StatCard'
 import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
 
 interface FinancialDashboard {
@@ -45,33 +45,33 @@ export function FinancialDashboardPage() {
     <div className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-20">
       <div className="mb-8">
         <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-          Financial dashboard
+          Financial portal
         </p>
         <h1 className="font-heading mt-2 text-4xl font-semibold text-accent">
-          Financial Dashboard
+          Giving Overview
         </h1>
       </div>
 
 
       {/* Summary cards */}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <Stat
+        <StatCard
           label="Monetary (USD)"
           value={formatCurrencyAmount('USD', data.totalMonetaryUsd)}
         />
-        <Stat
+        <StatCard
           label="In-Kind (est. USD)"
           value={formatCurrencyAmount('USD', data.totalInKindValueUsd)}
         />
-        <Stat label="Recurring" value={data.recurringDonations} />
-        <Stat label="One-Time" value={data.oneTimeDonations} />
-        <Stat label="Total Donors" value={data.totalDonors} />
+        <StatCard label="Recurring" value={data.recurringDonations} />
+        <StatCard label="One-Time" value={data.oneTimeDonations} />
+        <StatCard label="Total Donors" value={data.totalDonors} />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* By type */}
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Donations by Type</h2>
+          <h2 className="font-heading mb-3 text-lg font-semibold text-accent">Donations by Type</h2>
           <div className="space-y-2">
             {data.donationsByType.map((t) => (
               <div
@@ -90,7 +90,7 @@ export function FinancialDashboardPage() {
 
         {/* Top campaigns */}
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Top Campaigns</h2>
+          <h2 className="font-heading mb-3 text-lg font-semibold text-accent">Top Campaigns</h2>
           {data.topCampaigns.length === 0 ? (
             <p className="text-muted-foreground text-sm">No campaigns found.</p>
           ) : (
@@ -115,13 +115,3 @@ export function FinancialDashboardPage() {
   )
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <Card className="border-border/70 bg-card/95">
-      <CardContent className="p-5 text-center">
-        <p className="text-primary text-2xl font-extrabold">{value}</p>
-        <p className="text-muted-foreground mt-2 text-xs">{label}</p>
-      </CardContent>
-    </Card>
-  )
-}

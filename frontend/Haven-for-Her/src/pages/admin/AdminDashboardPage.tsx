@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, TrendingUp, Brain, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { api } from '@/api/client'
 import { getResidentAlerts, retrainModels, getMLStatus, type IncidentRiskAlert, type MLStatus } from '@/api/mlApi'
 import { SafehouseOccupancy } from '@/components/admin/SafehouseOccupancy'
@@ -297,7 +298,7 @@ export function AdminDashboardPage() {
             Admin Dashboard
           </p>
           <h1 className="font-heading text-accent mt-1 text-3xl font-semibold tracking-tight md:text-4xl">
-            Haven for Her
+            Organization Overview
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">Organizational overview</p>
         </div>
@@ -383,14 +384,15 @@ export function AdminDashboardPage() {
                   : 'Never (Run Initial Train)'}
               </p>
             </div>
-            <button
+            <Button
               onClick={handleRetrain}
               disabled={isRetraining}
-              className="group flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              size="sm"
+              className="group gap-2"
             >
               <RefreshCw className={`size-3.5 ${isRetraining ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
               {isRetraining ? 'Processing...' : 'Retrain Models'}
-            </button>
+            </Button>
           </div>
         </div>
         {retrainError && (
@@ -549,10 +551,6 @@ export function AdminDashboardPage() {
         </div>
       )}
 
-      <p className="text-muted-foreground pb-4 text-center text-xs">
-        Live data from PostgreSQL via{' '}
-        <span className="font-semibold">/api/admin/dashboard</span>
-      </p>
     </div>
   )
 }

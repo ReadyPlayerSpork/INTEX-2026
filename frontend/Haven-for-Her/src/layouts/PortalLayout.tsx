@@ -3,9 +3,10 @@
  * Provides a sidebar (desktop), mobile sheet nav, floating menu (mobile), and <Outlet />.
  */
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Menu, UserRound, ChevronDown, Home } from 'lucide-react'
+import { Menu, UserRound, ChevronDown, Home } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -39,38 +40,78 @@ const navInactive =
   'text-muted-foreground hover:bg-secondary hover:text-foreground'
 const navActive = 'bg-primary/15 text-primary'
 
-function renderSections(sections: PortalSection[], closeMobileNav?: () => void) {
-  return sections.map((section, idx) => (
-    <details key={section.title} className="group overflow-hidden rounded-xl" open={idx === 0}>
-      <summary className="flex cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2 text-sm font-bold text-foreground hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ui-open:bg-secondary/40 [&::-webkit-details-marker]:hidden">
-        {section.title}
-        <ChevronDown className="size-4 opacity-50 transition-transform group-open:rotate-180" />
-      </summary>
-      <div className="flex flex-col gap-0.5 pb-2 pt-1">
-        {section.links.map(({ label, to, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            onClick={() => closeMobileNav?.()}
-            className={({ isActive }) =>
-              `${navClass} pl-6 font-medium ${isActive ? navActive : navInactive}`
-            }
-          >
-            {label}
-          </NavLink>
-        ))}
-      </div>
-    </details>
-  ))
+function AccordionNav({
+  sections,
+  openIndex,
+  onToggle,
+  closeMobileNav,
+}: {
+  sections: PortalSection[]
+  openIndex: number | null
+  onToggle: (idx: number) => void
+  closeMobileNav?: () => void
+}) {
+  return (
+    <>
+      {sections.map((section, idx) => {
+        const isOpen = openIndex === idx
+        return (
+          <div key={section.title} className="rounded-xl">
+            <button
+              type="button"
+              onClick={() => onToggle(idx)}
+              aria-expanded={isOpen}
+              className="flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2 text-sm font-bold text-foreground hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {section.title}
+              <ChevronDown
+                className={cn(
+                  'size-4 opacity-50 transition-transform duration-200',
+                  isOpen && 'rotate-180',
+                )}
+              />
+            </button>
+            {isOpen && (
+              <div className="flex flex-col gap-0.5 pb-2 pt-1">
+                {section.links.map(({ label, to, end }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={end}
+                    onClick={() => closeMobileNav?.()}
+                    className={({ isActive }) =>
+                      `${navClass} pl-6 font-medium ${isActive ? navActive : navInactive}`
+                    }
+                  >
+                    {label}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </>
+  )
 }
 
 export function PortalLayout({ title, sections, homeRoute }: PortalLayoutProps) {
   const [mobileNav, setMobileNav] = useState(false)
+  const [openSection, setOpenSection] = useState<number | null>(0)
+  const [mobileOpenSection, setMobileOpenSection] = useState<number | null>(0)
   const home = homeRoute ?? sections[0]?.links[0]?.to ?? '/'
 
+  const toggleSection = useCallback(
+    (idx: number) => setOpenSection((prev) => (prev === idx ? null : idx)),
+    [],
+  )
+  const toggleMobileSection = useCallback(
+    (idx: number) => setMobileOpenSection((prev) => (prev === idx ? null : idx)),
+    [],
+  )
+
   return (
-    <div className="flex min-h-screen bg-[radial-gradient(circle_at_top,_rgba(240,221,213,0.55),_transparent_38%),linear-gradient(180deg,rgba(250,250,252,0.35),rgba(243,239,248,0.95))] text-foreground">
+    <div className="flex h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(240,221,213,0.55),_transparent_38%),linear-gradient(180deg,rgba(250,250,252,0.35),rgba(243,239,248,0.95))] text-foreground">
       {/* Skip link */}
       <a
         href="#portal-main"
@@ -106,7 +147,7 @@ export function PortalLayout({ title, sections, homeRoute }: PortalLayoutProps) 
         </div>
 
         <nav className="flex flex-1 min-h-0 flex-col gap-2 overflow-y-auto pr-1" aria-label="Portal Navigation">
-          {renderSections(sections)}
+          <AccordionNav sections={sections} openIndex={openSection} onToggle={toggleSection} />
         </nav>
 
         <div className="mt-4 border-t border-border/60 p-2 pt-4">
@@ -126,33 +167,30 @@ export function PortalLayout({ title, sections, homeRoute }: PortalLayoutProps) 
         </p>
       </aside>
 
-      {/* ── Main content area (no duplicate portal header) ─────── */}
+      {/* ── Main content area ───────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* ── Mobile top header ───────────────────────────────────── */}
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-card/95 px-4 shadow-sm md:hidden">
+          <div className="flex items-center gap-2.5">
+            <img src={logoMarkUrl} alt="H4H Logo" className="size-8 object-contain" />
+            <span className="font-heading text-sm font-semibold text-accent">{title}</span>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Open menu"
+            onClick={() => setMobileNav(true)}
+            className="-mr-2"
+          >
+            <Menu className="size-6" />
+          </Button>
+        </header>
+
         <main id="portal-main" className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8" tabIndex={-1}>
           <Outlet />
         </main>
       </div>
-
-      {/* Mobile: open portal nav sheet (sidebar is hidden on small screens) */}
-      <Button
-        type="button"
-        variant="outline"
-        size="icon-lg"
-        className="border-border/70 bg-card/95 fixed bottom-4 left-4 z-40 min-h-12 min-w-12 shadow-lg md:hidden"
-        aria-label="Open menu"
-        onClick={() => setMobileNav(true)}
-      >
-        <Menu className="size-5" />
-      </Button>
-
-      {/* ── Mobile FAB: quick link to portal home ───────────────── */}
-      <NavLink
-        to={home}
-        className="border-border/70 bg-card/95 text-muted-foreground hover:text-foreground fixed bottom-4 right-4 z-40 flex size-12 items-center justify-center rounded-full border shadow-lg md:hidden"
-        aria-label="Dashboard"
-      >
-        <LayoutDashboard className="size-5" />
-      </NavLink>
 
       {/* ── Mobile sheet nav ────────────────────────────────────── */}
       <Sheet open={mobileNav} onOpenChange={setMobileNav}>
@@ -177,7 +215,12 @@ export function PortalLayout({ title, sections, homeRoute }: PortalLayoutProps) 
               </NavLink>
             </div>
             <nav className="flex flex-col gap-2" aria-label="Portal mobile navigation">
-              {renderSections(sections, () => setMobileNav(false))}
+              <AccordionNav
+                sections={sections}
+                openIndex={mobileOpenSection}
+                onToggle={toggleMobileSection}
+                closeMobileNav={() => setMobileNav(false)}
+              />
             </nav>
             <div className="mt-8">
               <NavLink
