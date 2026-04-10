@@ -312,12 +312,12 @@ export function AnalyticsPage() {
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-5 shadow-bloom">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left">
+            <div className="overflow-x-auto overflow-y-auto max-h-[400px] rounded-xl border border-border/60">
+              <table className="w-full min-w-[720px] text-sm" aria-label="Safehouse performance by month">
+                <thead className="sticky top-0 z-10 bg-card">
+                  <tr className="border-border text-muted-foreground border-b text-left text-xs font-bold uppercase tracking-wide">
                     {['Safehouse', 'Month', 'Residents', 'Edu Progress', 'Health Score', 'Sessions', 'Visits', 'Incidents'].map((h) => (
-                      <th key={h} className="text-muted-foreground pb-3 pr-4 text-xs font-bold uppercase tracking-wide last:pr-0">
+                      <th key={h} className="px-3 py-2.5 pr-4 last:pr-3">
                         {h}
                       </th>
                     ))}
@@ -326,19 +326,19 @@ export function AnalyticsPage() {
                 <tbody className="divide-y divide-border">
                   {safehouseMetrics.map((m) => (
                     <tr key={m.metricId} className="motion-safe:transition-colors motion-safe:hover:bg-muted/40">
-                      <td className="text-card-foreground py-2.5 pr-4 font-medium">
+                      <td className="text-card-foreground px-3 py-2.5 font-medium">
                         <span className="flex items-center gap-1.5">
                           <Home className="text-muted-foreground size-3 shrink-0" />
                           {m.safehouseName}
                         </span>
                       </td>
-                      <td className="text-muted-foreground py-2.5 pr-4 tabular-nums">{m.monthStart}</td>
-                      <td className="text-card-foreground py-2.5 pr-4 tabular-nums font-semibold">{m.activeResidents}</td>
-                      <td className="text-muted-foreground py-2.5 pr-4 tabular-nums">{m.avgEducationProgress.toFixed(1)}%</td>
-                      <td className="text-muted-foreground py-2.5 pr-4 tabular-nums">{m.avgHealthScore.toFixed(1)}</td>
-                      <td className="text-muted-foreground py-2.5 pr-4 tabular-nums">{m.processRecordingCount}</td>
-                      <td className="text-muted-foreground py-2.5 pr-4 tabular-nums">{m.homeVisitationCount}</td>
-                      <td className={`py-2.5 tabular-nums font-semibold ${m.incidentCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      <td className="text-muted-foreground px-3 py-2.5 tabular-nums">{m.monthStart}</td>
+                      <td className="text-card-foreground px-3 py-2.5 tabular-nums font-semibold">{m.activeResidents}</td>
+                      <td className="text-muted-foreground px-3 py-2.5 tabular-nums">{m.avgEducationProgress.toFixed(1)}%</td>
+                      <td className="text-muted-foreground px-3 py-2.5 tabular-nums">{m.avgHealthScore.toFixed(1)}</td>
+                      <td className="text-muted-foreground px-3 py-2.5 tabular-nums">{m.processRecordingCount}</td>
+                      <td className="text-muted-foreground px-3 py-2.5 tabular-nums">{m.homeVisitationCount}</td>
+                      <td className={`px-3 py-2.5 pr-3 tabular-nums font-semibold ${m.incidentCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                         {m.incidentCount}
                       </td>
                     </tr>
