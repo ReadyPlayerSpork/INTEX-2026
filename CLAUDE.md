@@ -64,24 +64,23 @@ The backend uses **two separate DB contexts** (both PostgreSQL via Npgsql):
 Migrations are split into **two folders**: `Migrations/Domain/` and `Migrations/Identity/`.
 
 ### Domain seed CSVs (US demo data)
-- **Path:** `backend/Haven-for-Her-Backend/docs/lighthouse_csv_v7/*.csv` — domain tables are **wiped and re-seeded** on every API startup via `CsvDataSeeder` (see `Program.cs`).
+- **Path:** `backend/Haven-for-Her-Backend/docs/lighthouse_csv_v7/*.csv` — domain tables are seeded via `CsvDataSeeder` (see `Program.cs`) **only when** `REFRESH=true` (env var) **or** the domain DB is empty (first deploy). Data persists across restarts otherwise.
 - **Content:** United States–based sites and addresses; monetary rows use **`USD`** (legacy PHP amounts were converted in the generator at **58 PHP = 1 USD**). Supporters, donations, allocations, in-kind lines, and social posts are expanded ~**1.5×** for demos; regenerate with:
   `python scripts/localize_us_expand_seed_csv.py` (repo root).
 - **ML:** `ml-pipelines/serve.py` reads the same CSVs. `_csv()` normalizes **snake_case** CSV headers to **PascalCase** so feature code matches PostgreSQL `fetch_data` when `DATABASE_URL` is unset.
 
 Auth is cookie-based: HttpOnly, SameSite=Lax, Secure, 7-day sliding expiration. `GET /api/auth/me` returns `{ isAuthenticated, userName, email, roles[] }`.
 
-The default seeded admin is `admin@havenforher.local` / `admin!haven4her` (overridable via `GenerateDefaultIdentityAdmin` config).
+Seeded role accounts are created by `AuthIdentityGenerator` on startup (if they don't already exist). **All credentials are configurable via environment variables** — no passwords are hardcoded in committed source. Dev defaults are used only when the env vars are absent.
 
-Seeded role accounts (created by `AuthIdentityGenerator` on every fresh DB):
-
-| Role | Email | Password |
+| Role | Email env var | Password env var |
 |---|---|---|
-| Admin | `admin@havenforher.local` | `admin!haven4her` |
-| Counselor | `counselor@havenforher.local` | `Counselor!haven4her` |
-| Donor | `donor@havenforher.local` | `Donor!haven4her` |
+| Admin | `GenerateDefaultIdentityAdmin__Email` | `GenerateDefaultIdentityAdmin__Password` |
+| Counselor | `GenerateDefaultIdentityCounselor__Email` | `GenerateDefaultIdentityCounselor__Password` |
+| Donor | `GenerateDefaultIdentityDonor__Email` | `GenerateDefaultIdentityDonor__Password` |
+| Supporter accounts (CSV seed) | — | `SeedSupporterPassword` |
 
-Full table and MFA notes: [`docs/demo-credentials.md`](docs/demo-credentials.md). Admin and donor passwords can be overridden via `GenerateDefaultIdentityAdmin` / `GenerateDefaultIdentityDonor` config sections.
+Full table, dev defaults, and MFA notes: [`docs/demo-credentials.md`](docs/demo-credentials.md).
 
 The counselor account maps to the CSV caseload for `SW-15` (residents C0043, C3116, C9025, C3204 — 162 sessions, 69 visitations in the seed data).
 

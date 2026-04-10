@@ -11,12 +11,11 @@ namespace Haven_for_Her_Backend.Data;
 
 public static class CsvDataSeeder
 {
-    private const string DefaultPassword = "LighthouseDev2026!";
-
     public static async Task SeedAsync(
         HavenForHerBackendDbContext db,
         UserManager<ApplicationUser> userManager,
         string csvDirectory,
+        string? supporterPassword,
         ILogger logger)
     {
         // Wipe all domain data so every deploy gets a fresh seed from CSVs.
@@ -131,7 +130,14 @@ public static class CsvDataSeeder
                 education.Count, health.Count, interventions.Count, incidents.Count);
 
             // ── Create default user accounts from supporters ──
-            await CreateDefaultUsersAsync(supporters, userManager, logger);
+            if (!string.IsNullOrWhiteSpace(supporterPassword))
+            {
+                await CreateDefaultUsersAsync(supporters, userManager, supporterPassword, logger);
+            }
+            else
+            {
+                logger.LogWarning("SeedSupporterPassword not set — skipping supporter account creation");
+            }
         }
         finally
         {
@@ -226,6 +232,7 @@ public static class CsvDataSeeder
     private static async Task CreateDefaultUsersAsync(
         List<Supporter> supporters,
         UserManager<ApplicationUser> userManager,
+        string defaultPassword,
         ILogger logger)
     {
         var created = 0;
@@ -244,7 +251,7 @@ public static class CsvDataSeeder
                 CreatedAtUtc = s.CreatedAt,
             };
 
-            var result = await userManager.CreateAsync(user, DefaultPassword);
+            var result = await userManager.CreateAsync(user, defaultPassword);
             if (!result.Succeeded)
             {
                 logger.LogWarning("Could not create user {Email}: {Errors}",

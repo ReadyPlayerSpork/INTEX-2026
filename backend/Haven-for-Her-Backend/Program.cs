@@ -176,38 +176,54 @@ using (var scope = app.Services.CreateScope())
 
     await AuthIdentityGenerator.GenerateDefaultIdentityAsync(scope.ServiceProvider, app.Configuration);
 
-    // Seed CSV data on every startup (wipes and re-seeds domain tables).
-    // This ensures production always reflects the latest CSV data after deploy.
+    // ── CSV seeding: only run when REFRESH=true OR the domain DB is empty ──
+    var refreshEnv = app.Configuration["REFRESH"];
+    var forceRefresh = string.Equals(refreshEnv, "true", StringComparison.OrdinalIgnoreCase);
+    var isDomainEmpty = !await domainDb.Safehouses.AnyAsync();
+
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var seedLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CsvDataSeeder");
+    var supporterPassword = app.Configuration["SeedSupporterPassword"];
 
-    // Try ContentRootPath first, then fall back to the app base directory (where the DLL lives).
-    var candidatePaths = new[]
+    if (forceRefresh || isDomainEmpty)
     {
-        Path.Combine(app.Environment.ContentRootPath, "docs", "lighthouse_csv_v7"),
-        Path.Combine(AppContext.BaseDirectory, "docs", "lighthouse_csv_v7"),
-    };
+        if (forceRefresh)
+            seedLogger.LogInformation("REFRESH=true — wiping and re-seeding domain data");
+        else
+            seedLogger.LogInformation("Domain tables are empty — running initial seed");
 
-    var csvDir = candidatePaths.FirstOrDefault(Directory.Exists);
-    if (csvDir is not null)
-    {
-        try
+        // Try ContentRootPath first, then fall back to the app base directory (where the DLL lives).
+        var candidatePaths = new[]
         {
-            seedLogger.LogInformation("CSV directory resolved to {CsvDir}", csvDir);
-            await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, seedLogger);
+            Path.Combine(app.Environment.ContentRootPath, "docs", "lighthouse_csv_v7"),
+            Path.Combine(AppContext.BaseDirectory, "docs", "lighthouse_csv_v7"),
+        };
+
+        var csvDir = candidatePaths.FirstOrDefault(Directory.Exists);
+        if (csvDir is not null)
+        {
+            try
+            {
+                seedLogger.LogInformation("CSV directory resolved to {CsvDir}", csvDir);
+                await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, supporterPassword, seedLogger);
+            }
+            catch (Exception ex)
+            {
+                seedLogger.LogError(ex, "CSV seeding FAILED");
+            }
         }
-        catch (Exception ex)
+        else
         {
-            seedLogger.LogError(ex, "CSV seeding FAILED");
+            seedLogger.LogError(
+                "CSV directory not found. Tried: {Paths}. ContentRootPath={ContentRoot}, BaseDirectory={BaseDir}",
+                string.Join(", ", candidatePaths),
+                app.Environment.ContentRootPath,
+                AppContext.BaseDirectory);
         }
     }
     else
     {
-        seedLogger.LogError(
-            "CSV directory not found. Tried: {Paths}. ContentRootPath={ContentRoot}, BaseDirectory={BaseDir}",
-            string.Join(", ", candidatePaths),
-            app.Environment.ContentRootPath,
-            AppContext.BaseDirectory);
+        seedLogger.LogInformation("Domain data exists and REFRESH is not set — skipping CSV seed");
     }
 }
 
