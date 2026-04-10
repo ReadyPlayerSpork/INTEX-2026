@@ -30,8 +30,6 @@ export interface PortalSection {
 interface PortalLayoutProps {
   title: string
   sections: PortalSection[]
-  /** Route used by the mobile FAB and logo link. Defaults to the first link. */
-  homeRoute?: string
 }
 
 const navClass =
@@ -95,11 +93,10 @@ function AccordionNav({
   )
 }
 
-export function PortalLayout({ title, sections, homeRoute }: PortalLayoutProps) {
+export function PortalLayout({ title, sections }: PortalLayoutProps) {
   const [mobileNav, setMobileNav] = useState(false)
   const [openSection, setOpenSection] = useState<number | null>(0)
   const [mobileOpenSection, setMobileOpenSection] = useState<number | null>(0)
-  const home = homeRoute ?? sections[0]?.links[0]?.to ?? '/'
 
   const toggleSection = useCallback(
     (idx: number) => setOpenSection((prev) => (prev === idx ? null : idx)),
