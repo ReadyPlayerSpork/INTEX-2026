@@ -4,8 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 import mkcert from 'vite-plugin-mkcert'
 import path from 'path'
 
-export default defineConfig({
-  plugins: [react(), tailwindcss(), mkcert()],
+// mkcert must not run during `vite build`: in Docker/CI it can hang (CA install prompt),
+// hit permission errors under /.vite-plugin-mkcert, or fail without a network.
+export default defineConfig(({ command }) => ({
+  plugins: [
+    react(),
+    tailwindcss(),
+    ...(command === 'serve' ? [mkcert()] : []),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -21,4 +27,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

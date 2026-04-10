@@ -34,6 +34,8 @@ npm run lint       # ESLint
 npm run preview    # Preview production build
 ```
 
+**Production / CI builds (Dokploy, Railpack, Docker):** Use build path **`frontend/Haven-for-Her`** exactly—Linux images are case-sensitive, so a lowercase `haven-for-her` path can make the build step fail and leave an old image running. **`vite-plugin-mkcert`** is wired only for `vite` dev (`command === 'serve'`), not for `vite build`, so `npm run build` does not run mkcert (avoids CI hangs, permission errors under `/.vite-plugin-mkcert`, or blocked CA installs).
+
 ### Backend (`backend/Haven-for-Her-Backend/`)
 ```bash
 dotnet run --launch-profile https   # REQUIRED: starts on https://localhost:7229 + http://localhost:5064
