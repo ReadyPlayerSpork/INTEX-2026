@@ -84,6 +84,23 @@ namespace Haven_for_Her_Backend.Data
 
                 logger.LogInformation("Created seeded {Label} account ({Email})", label, email);
             }
+            else
+            {
+                // Force update password and clear lockout for seeded accounts if they already exist.
+                // This allows changing the password via Env Vars without wiping the Identity DB.
+                var token = await userManager.GeneratePasswordResetTokenAsync(user);
+                var resetResult = await userManager.ResetPasswordAsync(user, token, password);
+                if (resetResult.Succeeded)
+                {
+                    await userManager.SetLockoutEndDateAsync(user, null);
+                    await userManager.ResetAccessFailedCountAsync(user);
+                    logger.LogInformation("Reset password and cleared lockout for seeded {Label} account ({Email})", label, email);
+                }
+                else
+                {
+                    logger.LogWarning("Failed to reset password for existing seeded {Label} account ({Email})", label, email);
+                }
+            }
 
             foreach (var role in roles)
             {
