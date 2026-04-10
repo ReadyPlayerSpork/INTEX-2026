@@ -304,7 +304,7 @@ function App() {
                 <Route path="analytics" element={<AnalyticsPage />} />
               </Route>
             </Route>
-
+          </Route>
 
           <Route element={<PublicLayout />}>
             <Route path="*" element={<NotFoundPage />} />
