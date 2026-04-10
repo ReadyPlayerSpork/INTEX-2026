@@ -1,6 +1,8 @@
 using Haven_for_Her_Backend.Data;
+using Haven_for_Her_Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Haven_for_Her_Backend.Controllers;
 
@@ -83,6 +85,52 @@ public class MlController(IHttpClientFactory httpClientFactory, ILogger<MlContro
     [Authorize(Roles = AuthRoles.Admin)]
     public Task<IActionResult> RetrainModels()
         => ProxyPostEmptyBody("/api/ml/retrain");
+
+    [HttpGet("schedule")]
+    [Authorize(Roles = AuthRoles.Admin)]
+    public async Task<IActionResult> GetSchedule([FromServices] HavenForHerBackendDbContext dbContext)
+    {
+        var schedule = await dbContext.MlRetrainSchedules.FirstOrDefaultAsync();
+        if (schedule == null)
+        {
+            // Return defaults if none exists
+            return Ok(new MLRetrainSchedule
+            {
+                IsEnabled = false,
+                Frequency = "Daily",
+                Hour = 0,
+                Minute = 0
+            });
+        }
+        return Ok(schedule);
+    }
+
+    [HttpPost("schedule")]
+    [Authorize(Roles = AuthRoles.Admin)]
+    public async Task<IActionResult> UpdateSchedule(
+        [FromBody] MLRetrainSchedule updated,
+        [FromServices] HavenForHerBackendDbContext dbContext)
+    {
+        var schedule = await dbContext.MlRetrainSchedules.FirstOrDefaultAsync();
+        if (schedule == null)
+        {
+            schedule = new MLRetrainSchedule();
+            dbContext.MlRetrainSchedules.Add(schedule);
+        }
+
+        schedule.IsEnabled = updated.IsEnabled;
+        schedule.Frequency = updated.Frequency;
+        schedule.Hour = updated.Hour;
+        schedule.Minute = updated.Minute;
+        schedule.DayOfWeek = updated.DayOfWeek;
+        schedule.DayOfMonth = updated.DayOfMonth;
+        
+        // Reset NextRun so it's recalculated by the background service or we can do it here
+        schedule.NextRun = null; 
+
+        await dbContext.SaveChangesAsync();
+        return Ok(schedule);
+    }
 
     private async Task<IActionResult> ProxyPostEmptyBody(string path)
     {

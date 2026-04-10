@@ -34,6 +34,7 @@ public class HavenForHerBackendDbContext : DbContext
     public DbSet<SocialMediaPost> SocialMediaPosts { get; set; }
     public DbSet<SafehouseMonthlyMetric> SafehouseMonthlyMetrics { get; set; }
     public DbSet<PublicImpactSnapshot> PublicImpactSnapshots { get; set; }
+    public DbSet<MLRetrainSchedule> MlRetrainSchedules { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -149,5 +150,8 @@ public class HavenForHerBackendDbContext : DbContext
             .WithMany(r => r.IncidentReports)
             .HasForeignKey(ir => ir.ResidentId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MLRetrainSchedule>()
+            .ToTable("MLRetrainSchedules");
     }
 }
