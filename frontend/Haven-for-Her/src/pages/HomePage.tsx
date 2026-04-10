@@ -120,10 +120,10 @@ export function HomePage() {
         </section>
       )}
 
-      <section className="px-5 py-16 md:px-10 md:py-24" aria-label="Mission and ways to help">
-        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+      <section className="px-5 py-12 md:px-10 md:py-20" aria-label="Mission and ways to help">
+        <div className="mx-auto flex max-w-5xl flex-col gap-10 lg:gap-12">
           <Card className="bg-card/95">
-            <CardContent className="flex flex-col justify-between p-6 md:p-8">
+            <CardContent className="flex flex-col justify-between p-6 md:p-10">
               <div>
                 <h2 className="font-heading text-3xl font-semibold text-accent">
                   Our mission
@@ -144,7 +144,7 @@ export function HomePage() {
             </CardContent>
           </Card>
           <Card className="border-primary/20 bg-primary/7">
-            <CardContent className="p-6 md:p-8">
+            <CardContent className="p-6 md:p-10">
               <h2 className="font-heading text-3xl font-semibold text-accent">
                 How you can help
               </h2>
