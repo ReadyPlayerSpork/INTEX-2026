@@ -64,7 +64,7 @@ export function MLScheduleCard() {
             <Checkbox 
               id="enabled"
               checked={schedule.isEnabled}
-              onCheckedChange={(checked) => setSchedule({ ...schedule, isEnabled: !!checked })}
+              onCheckedChange={(checked) => setSchedule(prev => prev ? { ...prev, isEnabled: !!checked } : null)}
             />
           </div>
         </div>
@@ -75,7 +75,7 @@ export function MLScheduleCard() {
             <Label className="text-xs font-bold uppercase text-muted-foreground tracking-wide">Frequency</Label>
             <Select 
               value={schedule.frequency} 
-              onValueChange={(v: any) => setSchedule({ ...schedule, frequency: v })}
+              onValueChange={(v) => setSchedule(prev => prev ? { ...prev, frequency: v as any } : null)}
             >
               <SelectTrigger className="h-10 bg-background/50">
                 <SelectValue placeholder="Select frequency" />
@@ -97,7 +97,10 @@ export function MLScheduleCard() {
                   min={0} max={23} 
                   className="h-10 pl-8 bg-background/50" 
                   value={schedule.hour} 
-                  onChange={(e) => setSchedule({ ...schedule, hour: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0
+                    setSchedule(prev => prev ? { ...prev, hour: val } : null)
+                  }}
                 />
                 <Clock className="absolute left-2.5 top-3 size-4 text-muted-foreground/40" />
                 <span className="absolute right-2.5 top-2.5 text-[10px] font-bold text-muted-foreground/60">HR</span>
@@ -109,7 +112,10 @@ export function MLScheduleCard() {
                   min={0} max={59} 
                   className="h-10 pr-9 bg-background/50" 
                   value={schedule.minute} 
-                  onChange={(e) => setSchedule({ ...schedule, minute: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0
+                    setSchedule(prev => prev ? { ...prev, minute: val } : null)
+                  }}
                 />
                 <span className="absolute right-2.5 top-2.5 text-[10px] font-bold text-muted-foreground/60">MIN</span>
               </div>
@@ -122,7 +128,7 @@ export function MLScheduleCard() {
                  <Label className="text-xs font-bold uppercase text-muted-foreground tracking-wide">Day of Week</Label>
                  <Select 
                    value={String(schedule.dayOfWeek ?? 0)} 
-                   onValueChange={(v) => setSchedule({ ...schedule, dayOfWeek: parseInt(v) })}
+                   onValueChange={(v) => setSchedule(prev => prev ? { ...prev, dayOfWeek: parseInt(v || '0') } : null)}
                  >
                    <SelectTrigger className="h-10 bg-background/50">
                      <SelectValue placeholder="Select day" />
@@ -149,7 +155,10 @@ export function MLScheduleCard() {
                      min={1} max={31} 
                      className="h-10 pr-9 bg-background/50" 
                      value={schedule.dayOfMonth ?? 1} 
-                     onChange={(e) => setSchedule({ ...schedule, dayOfMonth: parseInt(e.target.value) || 1 })}
+                     onChange={(e) => {
+                       const val = parseInt(e.target.value) || 1
+                       setSchedule(prev => prev ? { ...prev, dayOfMonth: val } : null)
+                     }}
                    />
                    <span className="absolute right-2.5 top-2.5 text-[10px] font-bold text-muted-foreground/60">DAY</span>
                  </div>
@@ -171,7 +180,7 @@ export function MLScheduleCard() {
                   <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-tight mb-0.5">Last Run</p>
                   <div className="flex items-center gap-1.5">
                     <p className="text-xs font-semibold text-card-foreground">
-                      {new Date(schedule.lastRun).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      {new Date(schedule.lastRun || '').toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                     </p>
                     <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-tighter ${schedule.lastRunStatus?.includes('Success') ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
                       {schedule.lastRunStatus}
@@ -183,7 +192,7 @@ export function MLScheduleCard() {
                 <div>
                   <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-tight mb-0.5">Next Run</p>
                   <p className="text-xs font-bold text-primary">
-                    {new Date(schedule.nextRun).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    {new Date(schedule.nextRun || '').toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </p>
                 </div>
               )}

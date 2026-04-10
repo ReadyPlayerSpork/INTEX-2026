@@ -1,4 +1,5 @@
 using Haven_for_Her_Backend.Data;
+using Haven_for_Her_Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
