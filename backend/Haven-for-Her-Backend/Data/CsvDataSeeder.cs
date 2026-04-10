@@ -231,8 +231,8 @@ public static class CsvDataSeeder
                 var sql = $"""
                     SELECT setval(
                         pg_get_serial_sequence('{table}', '{column}'),
-                        COALESCE((SELECT MAX({column}) FROM {table}), 0),
-                        true);
+                        COALESCE((SELECT MAX({column}) FROM {table}), 1),
+                        (SELECT MAX({column}) FROM {table}) IS NOT NULL);
                     """;
                 await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
             }
