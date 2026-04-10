@@ -89,3 +89,4 @@ supporter_id,supporter_type,display_name,organization_name,first_name,last_name,
 88,Volunteer,Aria Brown (Network),,Aria,Brown,Local,West,United States,supporter.network88@example.com,+1 (555) 288-1616,Active,2022-01-06 00:00:00,2023-09-25,SocialMedia
 89,Volunteer,Ezra Taylor (Network),,Ezra,Taylor,International,Southeast,United States,supporter.network89@example.com,+1 (555) 289-1623,Active,2022-04-06 00:00:00,2023-03-23,PartnerReferral
 90,MonetaryDonor,Owen Nguyen (Network),,Owen,Nguyen,Local,West,United States,supporter.network90@example.com,+1 (555) 290-1630,Active,2022-03-07 00:00:00,2023-12-25,WordOfMouth
+91,MonetaryDonor,Demo Donor,,Demo,Donor,Local,West,United States,donor@havenforher.local,+1 (555) 999-0001,Active,2025-01-01 00:00:00,2025-06-01,Website

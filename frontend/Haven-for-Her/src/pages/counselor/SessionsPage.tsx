@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { api } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -64,6 +65,8 @@ const columns: ColumnDef<Session>[] = [
 ]
 
 export function SessionsPage() {
+  const { hasRole } = useAuth()
+  const isAdmin = hasRole('Admin')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
@@ -226,10 +229,14 @@ export function SessionsPage() {
         totalCount={table.totalCount}
         onPageChange={table.setPage}
         loading={table.loading}
-        onDelete={async (row) => {
-          await counselorApi.deleteSession(row.recordingId ?? row.processRecordingId)
-          table.refresh()
-        }}
+        onDelete={
+          isAdmin
+            ? async (row) => {
+                await counselorApi.deleteSession(row.recordingId ?? row.processRecordingId)
+                table.refresh()
+              }
+            : undefined
+        }
         deleteEntityLabel="session"
         getDeleteName={(row) => `Session on ${row.sessionDate} (${row.sessionType})`}
       />

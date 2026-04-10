@@ -61,6 +61,25 @@ export interface CaseConferencesResponse {
   items: CaseConferenceDto[]
 }
 
+export interface CounselorTimelineEvent {
+  eventType: string
+  eventDate: string
+  title: string
+  summary?: string | null
+  status?: string | null
+  recordingId?: number | null
+  visitationId?: number | null
+  planId?: number | null
+  detailPath?: string | null
+}
+
+export interface ResidentTimelineResponse {
+  residentId: number
+  caseControlNo: string
+  upcomingOnly: boolean
+  events: CounselorTimelineEvent[]
+}
+
 export const counselorApi = {
   getSession(recordingId: number): Promise<SessionDetailDto> {
     return api.get(`/api/counselor/sessions/${recordingId}`)
@@ -131,5 +150,17 @@ export const counselorApi = {
     if (params?.pageSize) qs.set('pageSize', String(params.pageSize))
     const query = qs.toString()
     return api.get(`/api/counselor/case-conferences${query ? `?${query}` : ''}`)
+  },
+
+  getResidentTimeline(
+    residentId: number,
+    options?: { upcomingOnly?: boolean },
+  ): Promise<ResidentTimelineResponse> {
+    const qs = new URLSearchParams()
+    if (options?.upcomingOnly) qs.set('upcomingOnly', 'true')
+    const query = qs.toString()
+    return api.get(
+      `/api/counselor/residents/${residentId}/timeline${query ? `?${query}` : ''}`,
+    )
   },
 }

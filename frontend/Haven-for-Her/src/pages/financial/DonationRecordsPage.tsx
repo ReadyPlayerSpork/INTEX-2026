@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -42,6 +43,8 @@ const columns: ColumnDef<DonationRecord>[] = [
 ]
 
 export function DonationRecordsPage() {
+  const { hasRole } = useAuth()
+  const isAdmin = hasRole('Admin')
   const [typeFilter, setTypeFilter] = useState('')
   const [campaignFilter, setCampaignFilter] = useState('')
   const [showDonation, setShowDonation] = useState(false)
@@ -106,11 +109,15 @@ export function DonationRecordsPage() {
         onPageChange={table.setPage}
         loading={table.loading}
         onEdit={(row) => setEditDonation(row)}
-        onDelete={async (row) => {
-          await financialApi.deleteDonation(row.donationId)
-          table.refresh()
-        }}
-        getCascadeInfo={(row) => financialApi.getDonationCascadeInfo(row.donationId)}
+        onDelete={
+          isAdmin
+            ? async (row) => {
+                await financialApi.deleteDonation(row.donationId)
+                table.refresh()
+              }
+            : undefined
+        }
+        getCascadeInfo={isAdmin ? (row) => financialApi.getDonationCascadeInfo(row.donationId) : undefined}
         deleteEntityLabel="donation"
         getDeleteName={(row) => `${row.donationType} on ${row.donationDate}${row.amount != null ? ` (${row.currencyCode} ${row.amount.toLocaleString()})` : ''}`}
       />

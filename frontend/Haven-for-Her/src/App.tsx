@@ -176,6 +176,11 @@ const CaseConferencesPage = lazy(() =>
     default: m.CaseConferencesPage,
   })),
 )
+const ResidentTimelinePage = lazy(() =>
+  import('@/pages/counselor/ResidentTimelinePage').then((m) => ({
+    default: m.ResidentTimelinePage,
+  })),
+)
 
 const RolePortalLayout = lazy(() =>
   import('@/layouts/RolePortalLayout').then((m) => ({
@@ -253,6 +258,10 @@ function App() {
                 <Route path="sessions/:id" element={<SessionDetailPage />} />
                 <Route path="visitations" element={<VisitationsPage />} />
                 <Route path="case-conferences" element={<CaseConferencesPage />} />
+                <Route
+                  path="residents/:residentId/timeline"
+                  element={<ResidentTimelinePage />}
+                />
               </Route>
             </Route>
 

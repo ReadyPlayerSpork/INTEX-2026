@@ -33,6 +33,9 @@ public class DonorController(
         {
             return Ok(new
             {
+                supporterType = (string?)null,
+                supporterStatus = (string?)null,
+                acquisitionChannel = (string?)null,
                 totalDonations = 0,
                 givingTotalsByCurrency = Array.Empty<object>(),
                 recurringDonations = 0,
@@ -66,6 +69,7 @@ public class DonorController(
             {
                 d.DonationId,
                 d.DonationDate,
+                d.DonationType,
                 d.Amount,
                 d.CurrencyCode,
                 d.CampaignName,
@@ -75,6 +79,9 @@ public class DonorController(
 
         return Ok(new
         {
+            supporterType = supporter.SupporterType,
+            supporterStatus = supporter.Status,
+            acquisitionChannel = supporter.AcquisitionChannel,
             totalDonations,
             givingTotalsByCurrency,
             recurringDonations = recurringCount,

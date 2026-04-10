@@ -110,24 +110,46 @@ const TAB_CONFIG: Record<string, { columns: string[]; idField: string }> = {
 
 export function ResidentProfilePage() {
   const { id } = useParams<{ id: string }>()
+  if (!id) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-12">
+        <p className="text-muted-foreground">Invalid resident.</p>
+      </div>
+    )
+  }
+  return <ResidentProfileContent id={id} />
+}
+
+function ResidentProfileContent({ id }: { id: string }) {
   const [resident, setResident] = useState<ResidentProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabName>('profile')
   const [showEdit, setShowEdit] = useState(false)
 
-  const fetchResident = useCallback(() => {
-    if (!id) return
+  useEffect(() => {
+    let cancelled = false
+    api
+      .get<ResidentProfile>(`/api/caseload/${id}`)
+      .then((r) => {
+        if (!cancelled) setResident(r)
+      })
+      .catch((err) => console.error('Failed to load resident profile', err))
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
+  function reloadResident() {
     setLoading(true)
     api
       .get<ResidentProfile>(`/api/caseload/${id}`)
       .then(setResident)
       .catch((err) => console.error('Failed to load resident profile', err))
       .finally(() => setLoading(false))
-  }, [id])
-
-  useEffect(() => {
-    fetchResident()
-  }, [fetchResident])
+  }
 
   if (loading) {
     return (
@@ -234,7 +256,7 @@ export function ResidentProfilePage() {
           onSubmit={async (data: CreateResidentRequest) => {
             await caseloadApi.updateResident(resident.residentId, data)
             setShowEdit(false)
-            fetchResident()
+            reloadResident()
           }}
           onClose={() => setShowEdit(false)}
         />

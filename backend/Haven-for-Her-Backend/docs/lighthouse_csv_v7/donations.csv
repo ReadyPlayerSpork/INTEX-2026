@@ -629,3 +629,4 @@ donation_id,supporter_id,donation_type,donation_date,is_recurring,campaign_name,
 628,9,SocialMedia,2026-01-13,True,Year-End Hope,Campaign,,,10.8,campaigns,Recurring gift,
 629,69,InKind,2023-08-18,True,GivingTuesday,Campaign,,,478.06,items,Campaign support,668
 630,59,Monetary,2023-08-14,True,Year-End Hope,Event,USD,4.31,4.31,dollars,In support of safehouse operations,1003
+631,91,Monetary,2025-06-15,False,Demo giving,Campaign,Website,USD,100.00,100.00,dollars,Seeded demo donation,

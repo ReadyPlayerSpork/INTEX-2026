@@ -12,13 +12,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { financialApi } from '@/api/financialApi'
 
+/** Donation row shape from financial list APIs (edit modal). */
+export interface EditableDonation {
+  donationId: number
+  donationType?: string
+  donationDate?: string
+  amount?: number | null
+  estimatedValue?: number | null
+  currencyCode?: string
+  campaignName?: string | null
+  channelSource?: string | null
+  isRecurring?: boolean
+}
+
 export function EditDonationModal({
   donation,
   open,
   onOpenChange,
   onSaved,
 }: {
-  donation: any | null
+  donation: EditableDonation | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onSaved: () => void
