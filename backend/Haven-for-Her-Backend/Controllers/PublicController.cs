@@ -22,8 +22,8 @@ public class PublicController(HavenForHerBackendDbContext db) : ControllerBase
         var activeSafehouses = await db.Safehouses.CountAsync(s => s.Status == "Active");
         var activePartners = await db.Partners.CountAsync(p => p.Status == "Active");
         var totalDonations = await db.Donations.CountAsync();
-        var totalDonationValuePhp = await db.Donations
-            .Where(d => d.Amount != null && d.CurrencyCode == "PHP")
+        var totalDonationValueUsd = await db.Donations
+            .Where(d => d.DonationType == "Monetary" && d.Amount != null)
             .SumAsync(d => d.Amount!.Value);
 
         var latestSnapshot = await db.PublicImpactSnapshots
@@ -38,7 +38,7 @@ public class PublicController(HavenForHerBackendDbContext db) : ControllerBase
             activeSafehouses,
             activePartners,
             totalDonations,
-            totalDonationValuePhp,
+            totalDonationValueUsd,
             latestSnapshot = latestSnapshot is null ? null : new
             {
                 latestSnapshot.Headline,
