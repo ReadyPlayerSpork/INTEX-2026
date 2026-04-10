@@ -7,7 +7,7 @@ export function VolunteerPage() {
   return (
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-12 grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <div className="mb-12 grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div className="max-w-3xl">
             <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
               Volunteer and events
