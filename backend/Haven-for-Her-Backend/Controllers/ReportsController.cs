@@ -79,12 +79,18 @@ public class ReportsController(HavenForHerBackendDbContext db) : ControllerBase
     [HttpGet("safehouse-comparison")]
     public async Task<IActionResult> GetSafehouseComparison([FromQuery] int months = 6)
     {
+        if (months < 1) months = 1;
+        if (months > 36) months = 36;
+
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var startDate = today.AddMonths(-months);
+        // Inclusive window: current calendar month plus the prior (months - 1) months.
+        // Upper bound drops seeded "future" months so the UI matches "last N months".
+        var currentMonthStart = new DateOnly(today.Year, today.Month, 1);
+        var startMonth = currentMonthStart.AddMonths(-(months - 1));
 
         var metrics = await db.SafehouseMonthlyMetrics
             .Include(m => m.Safehouse)
-            .Where(m => m.MonthStart >= startDate)
+            .Where(m => m.MonthStart >= startMonth && m.MonthStart <= currentMonthStart)
             .OrderBy(m => m.Safehouse.Name)
             .ThenBy(m => m.MonthStart)
             .Select(m => new
