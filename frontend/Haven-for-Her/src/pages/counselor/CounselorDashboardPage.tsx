@@ -243,6 +243,9 @@ export function CounselorDashboardPage() {
                   <th scope="col" className="px-3 py-2 font-medium">
                     ML Readiness
                   </th>
+                  <th scope="col" className="px-3 py-2 font-medium">
+                    Timeline
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -266,6 +269,14 @@ export function CounselorDashboardPage() {
                           --
                         </span>
                       )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Link
+                        to={`/counselor/residents/${r.residentId}/timeline`}
+                        className="text-primary text-sm font-medium underline underline-offset-2"
+                      >
+                        View
+                      </Link>
                     </td>
                   </tr>
                 ))}

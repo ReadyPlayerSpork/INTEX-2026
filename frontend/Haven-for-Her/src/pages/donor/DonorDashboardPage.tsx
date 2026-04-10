@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart } from 'lucide-react'
 import { api } from '@/api/client'
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { StatCard } from '@/components/shared/StatCard'
@@ -14,12 +14,16 @@ interface GivingTotalRow {
 }
 
 interface DonorDashboard {
+  supporterType?: string | null
+  supporterStatus?: string | null
+  acquisitionChannel?: string | null
   totalDonations: number
   givingTotalsByCurrency: GivingTotalRow[]
   recurringDonations: number
   recentDonations: {
     donationId: number
     donationDate: string
+    donationType?: string
     amount: number | null
     currencyCode: string
     campaignName: string | null
@@ -71,6 +75,36 @@ export function DonorDashboardPage() {
         </Link>
       </div>
 
+      {(data.supporterType || data.supporterStatus || data.acquisitionChannel) && (
+        <Card className="border-border/70 bg-card/95 mb-8">
+          <CardContent className="p-6">
+            <p className="text-muted-foreground mb-3 text-xs font-semibold tracking-wide uppercase">
+              Your supporter profile
+            </p>
+            <dl className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <dt className="text-muted-foreground text-xs">Classification</dt>
+                <dd className="font-heading text-foreground text-lg font-semibold">
+                  {data.supporterType ?? '—'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground text-xs">Status</dt>
+                <dd className="font-heading text-foreground text-lg font-semibold">
+                  {data.supporterStatus ?? '—'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground text-xs">Acquisition</dt>
+                <dd className="font-heading text-foreground text-lg font-semibold">
+                  {data.acquisitionChannel ?? '—'}
+                </dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="mb-8 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-3">
         <StatCard label="Total donations" value={data.totalDonations} />
         <GivingTotalsCard rows={data.givingTotalsByCurrency} />
@@ -99,6 +133,7 @@ export function DonorDashboardPage() {
             <thead>
               <tr className="border-border bg-secondary/50 border-b text-left">
                 <th scope="col" className="px-3 py-2 font-medium">Date</th>
+                <th scope="col" className="px-3 py-2 font-medium">Type</th>
                 <th scope="col" className="px-3 py-2 font-medium">Amount</th>
                 <th scope="col" className="px-3 py-2 font-medium">Campaign</th>
                 <th scope="col" className="px-3 py-2 font-medium">Recurring</th>
@@ -120,6 +155,7 @@ export function DonorDashboardPage() {
                       }
                     })()}
                   </td>
+                  <td className="px-3 py-2">{d.donationType ?? '—'}</td>
                   <td className="px-3 py-2">
                     {d.amount != null
                       ? formatCurrencyAmount(d.currencyCode || 'USD', d.amount)

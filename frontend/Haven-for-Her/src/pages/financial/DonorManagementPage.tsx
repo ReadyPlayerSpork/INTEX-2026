@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -43,6 +44,8 @@ const columns: ColumnDef<Donor>[] = [
 ]
 
 export function DonorManagementPage() {
+  const { hasRole } = useAuth()
+  const isAdmin = hasRole('Admin')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -136,11 +139,15 @@ export function DonorManagementPage() {
           })
           setEditTarget(row)
         }}
-        onDelete={async (row) => {
-          await financialApi.deleteSupporter(row.supporterId)
-          table.refresh()
-        }}
-        getCascadeInfo={(row) => financialApi.getSupporterCascadeInfo(row.supporterId)}
+        onDelete={
+          isAdmin
+            ? async (row) => {
+                await financialApi.deleteSupporter(row.supporterId)
+                table.refresh()
+              }
+            : undefined
+        }
+        getCascadeInfo={isAdmin ? (row) => financialApi.getSupporterCascadeInfo(row.supporterId) : undefined}
         deleteEntityLabel="supporter"
         getDeleteName={(row) => row.displayName ?? (`${row.firstName ?? ''} ${row.lastName ?? ''}`.trim() || `Supporter #${row.supporterId}`)}
       />

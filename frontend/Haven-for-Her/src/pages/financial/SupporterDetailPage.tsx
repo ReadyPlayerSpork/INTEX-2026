@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { financialApi, type SupporterDetailDto, type RecordDonationRequest } from '@/api/financialApi'
+import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
 import { Button } from '@/components/ui/button'
 import { SupporterFormModal } from '@/components/financial/SupporterFormModal'
 import { RecordDonationModal } from '@/components/financial/RecordDonationModal'
@@ -100,7 +101,7 @@ export function SupporterDetailPage() {
                 <th className="px-3 py-2 font-medium">Campaign</th>
                 <th className="px-3 py-2 font-medium">Channel</th>
                 <th className="px-3 py-2 font-medium">Recurring</th>
-                <th className="px-3 py-2 font-medium">Allocations</th>
+                <th className="px-3 py-2 font-medium">Allocations by program</th>
               </tr>
             </thead>
             <tbody>
@@ -118,10 +119,26 @@ export function SupporterDetailPage() {
                   <td className="px-3 py-2">{d.campaignName ?? '-'}</td>
                   <td className="px-3 py-2">{d.channelSource}</td>
                   <td className="px-3 py-2">{d.isRecurring ? 'Yes' : 'No'}</td>
-                  <td className="px-3 py-2">
-                    {d.allocations.length > 0
-                      ? d.allocations.map((a) => `${a.safehouseName}: ${a.amountAllocated.toLocaleString()}`).join(', ')
-                      : '-'}
+                  <td className="px-3 py-2 align-top">
+                    {d.allocations.length === 0 ? (
+                      '—'
+                    ) : (
+                      <ul className="max-w-md list-disc space-y-1.5 pl-4">
+                        {d.allocations.map((a) => (
+                          <li key={a.allocationId}>
+                            <span className="font-medium text-accent">{a.programArea}</span>
+                            {' · '}
+                            {a.safehouseName}
+                            {' — '}
+                            {formatCurrencyAmount(d.currencyCode ?? 'USD', a.amountAllocated)}
+                            <span className="text-muted-foreground text-xs">
+                              {' '}
+                              ({a.allocationDate})
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </td>
                 </tr>
               ))}

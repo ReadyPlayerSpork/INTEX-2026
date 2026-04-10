@@ -79,6 +79,9 @@ Seeded role accounts (created by `AuthIdentityGenerator` on every fresh DB):
 |---|---|---|
 | Admin | `admin@havenforher.local` | `admin!haven4her` |
 | Counselor | `counselor@havenforher.local` | `Counselor!haven4her` |
+| Donor | `donor@havenforher.local` | `Donor!haven4her` |
+
+Full table and MFA notes: [`docs/demo-credentials.md`](docs/demo-credentials.md). Admin and donor passwords can be overridden via `GenerateDefaultIdentityAdmin` / `GenerateDefaultIdentityDonor` config sections.
 
 The counselor account maps to the CSV caseload for `SW-15` (residents C0043, C3116, C9025, C3204 — 162 sessions, 69 visitations in the seed data).
 

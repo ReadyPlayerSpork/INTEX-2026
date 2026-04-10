@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { api } from '@/api/client'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -53,6 +54,8 @@ const columns: ColumnDef<Visitation>[] = [
 ]
 
 export function VisitationsPage() {
+  const { hasRole } = useAuth()
+  const isAdmin = hasRole('Admin')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
@@ -221,10 +224,14 @@ export function VisitationsPage() {
         totalCount={table.totalCount}
         onPageChange={table.setPage}
         loading={table.loading}
-        onDelete={async (row) => {
-          await counselorApi.deleteVisitation(row.familyVisitationTrackingId)
-          table.refresh()
-        }}
+        onDelete={
+          isAdmin
+            ? async (row) => {
+                await counselorApi.deleteVisitation(row.familyVisitationTrackingId)
+                table.refresh()
+              }
+            : undefined
+        }
         deleteEntityLabel="visitation"
         getDeleteName={(row) => `${row.visitType} on ${row.visitDate}`}
         rowClassName={(row) => (row.safetyConcernsNoted ? 'bg-destructive/5' : undefined)}

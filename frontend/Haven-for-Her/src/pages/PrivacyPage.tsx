@@ -1,10 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { resetCookieConsent } from '@/components/CookieConsent'
+import { resetEssentialCookieNotice } from '@/lib/essentialCookieNotice'
 
 export function PrivacyPage() {
-  const handleResetConsent = () => {
-    resetCookieConsent()
+  const handleShowNoticeAgain = () => {
+    resetEssentialCookieNotice()
     window.location.reload()
   }
 
@@ -292,12 +292,13 @@ export function PrivacyPage() {
               </ul>
               <p className="mt-3">
                 We do not use analytics, advertising, or third-party tracking
-                cookies. Your cookie consent preference is stored locally in
-                your browser and is not transmitted to our servers.
+                cookies. If you dismiss the bottom notice, we store only a
+                local flag that you have seen it (not sent to our servers) so
+                the banner does not repeat on every visit.
               </p>
               <div className="mt-4">
-                <Button variant="outline" size="sm" onClick={handleResetConsent}>
-                  Reset cookie consent preference
+                <Button variant="outline" size="sm" onClick={handleShowNoticeAgain}>
+                  Show essential cookie notice again
                 </Button>
               </div>
             </section>

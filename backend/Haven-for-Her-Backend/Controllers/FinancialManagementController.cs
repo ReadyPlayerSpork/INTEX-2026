@@ -290,6 +290,7 @@ public class FinancialManagementController(HavenForHerBackendDbContext db) : Con
     /// Delete a supporter and all their donations (Admin only).
     /// </summary>
     [HttpDelete("donors/{id:int}")]
+    [Authorize(Roles = AuthRoles.Admin)]
     public async Task<IActionResult> DeleteSupporter(int id)
     {
         var supporter = await db.Supporters.FindAsync(id);
@@ -303,9 +304,10 @@ public class FinancialManagementController(HavenForHerBackendDbContext db) : Con
     }
 
     /// <summary>
-    /// Delete a donation and its allocations.
+    /// Delete a donation and its allocations (Admin only).
     /// </summary>
     [HttpDelete("donations/{id:int}")]
+    [Authorize(Roles = AuthRoles.Admin)]
     public async Task<IActionResult> DeleteDonation(int id)
     {
         var donation = await db.Donations.FindAsync(id);

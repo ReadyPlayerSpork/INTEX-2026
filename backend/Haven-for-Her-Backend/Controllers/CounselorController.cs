@@ -1,4 +1,5 @@
 using Haven_for_Her_Backend.Data;
+using Haven_for_Her_Backend.Dtos;
 using Haven_for_Her_Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -303,20 +304,16 @@ public class CounselorController(
     // ── Delete Session ───────────────────────────────────────────────
 
     /// <summary>
-    /// Delete a process recording.
+    /// Delete a process recording (Admin only).
     /// </summary>
     [HttpDelete("sessions/{recordingId:int}")]
+    [Authorize(Roles = AuthRoles.Admin)]
     public async Task<IActionResult> DeleteSession(int recordingId)
     {
-        var email = (await userManager.GetUserAsync(User))?.Email ?? "";
-
         var recording = await db.ProcessRecordings
-            .Include(pr => pr.Resident)
             .FirstOrDefaultAsync(pr => pr.RecordingId == recordingId);
 
         if (recording is null) return NotFound();
-        if (recording.Resident.AssignedSocialWorker != email)
-            return Forbid();
 
         db.ProcessRecordings.Remove(recording);
         await db.SaveChangesAsync();
@@ -364,25 +361,147 @@ public class CounselorController(
     // ── Delete Visitation ───────────────────────────────────────────
 
     /// <summary>
-    /// Delete a home visitation.
+    /// Delete a home visitation (Admin only).
     /// </summary>
     [HttpDelete("visitations/{visitationId:int}")]
+    [Authorize(Roles = AuthRoles.Admin)]
     public async Task<IActionResult> DeleteVisitation(int visitationId)
     {
-        var email = (await userManager.GetUserAsync(User))?.Email ?? "";
-
         var visitation = await db.HomeVisitations
-            .Include(hv => hv.Resident)
             .FirstOrDefaultAsync(hv => hv.VisitationId == visitationId);
 
         if (visitation is null) return NotFound();
-        if (visitation.Resident.AssignedSocialWorker != email)
-            return Forbid();
 
         db.HomeVisitations.Remove(visitation);
         await db.SaveChangesAsync();
 
         return Ok(new { message = "Visitation deleted." });
+    }
+
+    /// <summary>
+    /// Unified timeline for a resident: sessions, home visitations, and case conference milestones.
+    /// Counselor must be assigned to the resident unless the caller is an Admin.
+    /// </summary>
+    [HttpGet("residents/{residentId:int}/timeline")]
+    public async Task<IActionResult> GetResidentTimeline(
+        int residentId,
+        [FromQuery] bool upcomingOnly = false)
+    {
+        var email = (await userManager.GetUserAsync(User))?.Email ?? "";
+        var isAdmin = User.IsInRole(AuthRoles.Admin);
+
+        var resident = await db.Residents.FindAsync(residentId);
+        if (resident is null) return NotFound();
+
+        if (!isAdmin && resident.AssignedSocialWorker != email)
+            return Forbid();
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var recordings = await db.ProcessRecordings
+            .Where(pr => pr.ResidentId == residentId)
+            .Select(pr => new
+            {
+                pr.RecordingId,
+                pr.SessionDate,
+                pr.SessionType,
+                pr.ProgressNoted,
+                pr.ConcernsFlagged,
+            })
+            .ToListAsync();
+
+        var visitRows = await db.HomeVisitations
+            .Where(hv => hv.ResidentId == residentId)
+            .Select(hv => new
+            {
+                hv.VisitationId,
+                hv.VisitDate,
+                hv.VisitType,
+                hv.VisitOutcome,
+                hv.FollowUpNeeded,
+            })
+            .ToListAsync();
+
+        var plans = await db.InterventionPlans
+            .Where(ip => ip.ResidentId == residentId && ip.CaseConferenceDate != null)
+            .Select(ip => new
+            {
+                ip.PlanId,
+                ip.CaseConferenceDate,
+                ip.PlanCategory,
+                ip.Status,
+                ip.PlanDescription,
+            })
+            .ToListAsync();
+
+        var sortable = new List<(DateOnly Date, CounselorTimelineEventDto Dto)>();
+
+        foreach (var r in recordings)
+        {
+            if (upcomingOnly && r.SessionDate < today)
+                continue;
+            sortable.Add((r.SessionDate, new CounselorTimelineEventDto
+            {
+                EventType = "Session",
+                EventDate = r.SessionDate.ToString("yyyy-MM-dd"),
+                Title = $"Session — {r.SessionType}",
+                Summary = r.ProgressNoted ? "Progress noted in session" : "Counseling session recorded",
+                Status = r.ConcernsFlagged ? "Concerns flagged" : null,
+                RecordingId = r.RecordingId,
+                DetailPath = $"/counselor/sessions/{r.RecordingId}",
+            }));
+        }
+
+        foreach (var v in visitRows)
+        {
+            if (upcomingOnly && v.VisitDate < today)
+                continue;
+            sortable.Add((v.VisitDate, new CounselorTimelineEventDto
+            {
+                EventType = "HomeVisitation",
+                EventDate = v.VisitDate.ToString("yyyy-MM-dd"),
+                Title = $"Home visit — {v.VisitType}",
+                Summary = v.VisitOutcome,
+                Status = v.FollowUpNeeded ? "Follow-up needed" : null,
+                VisitationId = v.VisitationId,
+                DetailPath = $"/counselor/visitations",
+            }));
+        }
+
+        foreach (var p in plans)
+        {
+            var d = p.CaseConferenceDate!.Value;
+            if (upcomingOnly && d < today)
+                continue;
+            sortable.Add((d, new CounselorTimelineEventDto
+            {
+                EventType = "CaseConference",
+                EventDate = d.ToString("yyyy-MM-dd"),
+                Title = $"Case conference — {p.PlanCategory}",
+                Summary = string.IsNullOrEmpty(p.PlanDescription)
+                    ? null
+                    : p.PlanDescription.Length > 160
+                        ? p.PlanDescription[..157] + "…"
+                        : p.PlanDescription,
+                Status = p.Status,
+                PlanId = p.PlanId,
+                DetailPath = "/counselor/case-conferences",
+            }));
+        }
+
+        var events = sortable
+            .OrderByDescending(x => x.Date)
+            .ThenByDescending(x => x.Dto.EventType)
+            .Select(x => x.Dto)
+            .ToList();
+
+        return Ok(new
+        {
+            residentId,
+            caseControlNo = resident.CaseControlNo,
+            upcomingOnly,
+            events,
+        });
     }
 
     // ── Case Conferences ────────────────────────────────────────────
