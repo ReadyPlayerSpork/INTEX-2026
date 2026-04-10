@@ -7,7 +7,6 @@ import {
   PRIMARY_NAV,
 } from '@/components/nav-config'
 import {
-  flattenPortalNavSections,
   getVisiblePortalSections,
 } from '@/components/portal-nav-sections'
 import { buttonVariants } from '@/components/ui/button'
@@ -65,7 +64,6 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const portalSections = getVisiblePortalSections(isAuthenticated, hasRole)
-  const accountItems = flattenPortalNavSections(portalSections)
 
   useEffect(() => {
     startTransition(() => {
@@ -107,7 +105,7 @@ export function Navbar() {
           ))}
         </nav>
 
-        {!isLoading && isAuthenticated && accountItems.length > 0 ? (
+        {!isLoading && isAuthenticated && portalSections.length > 0 ? (
           <DropdownMenu>
             <DropdownMenuTrigger
               type="button"
@@ -122,14 +120,18 @@ export function Navbar() {
               <ChevronDown className="size-4 opacity-70" aria-hidden />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-48">
-              {accountItems.map((item) => (
-                <DropdownMenuItem
-                  key={item.to}
-                  onClick={() => navigate(item.to)}
-                >
-                  {item.label}
-                </DropdownMenuItem>
-              ))}
+              {portalSections.map((section) => {
+                const headLink = section.items[0]
+                if (!headLink) return null
+                return (
+                  <DropdownMenuItem
+                    key={section.id}
+                    onClick={() => navigate(headLink.to)}
+                  >
+                    {section.heading}
+                  </DropdownMenuItem>
+                )
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}

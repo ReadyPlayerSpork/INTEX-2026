@@ -229,9 +229,7 @@ function App() {
                 element={<Navigate to="/account" replace />}
               />
             </Route>
-          </Route>
 
-          <Route element={<PortalRootLayout />}>
             <Route element={<ProtectedRoute allowedRoles={['Donor']} />}>
               <Route path="/donor/dashboard" element={<DonorDashboardPage />} />
             </Route>
@@ -240,6 +238,9 @@ function App() {
               <Route path="/survivor/counseling" element={<CounselingPage />} />
             </Route>
           </Route>
+
+          <Route element={<PortalRootLayout />}>
+
 
             <Route
               path="/counselor"
