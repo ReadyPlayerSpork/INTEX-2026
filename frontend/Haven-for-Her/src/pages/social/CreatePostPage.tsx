@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '@/api/client'
-import { getSocialMediaRecommendations, predictSocialMediaPost, type SocialMediaRecommendations } from '@/api/mlApi'
+import {
+  getSocialMediaRecommendations,
+  predictSocialMediaPost,
+  type SocialMediaRecommendations,
+  type SocialMediaPrediction,
+} from '@/api/mlApi'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ImagePlus, Megaphone, Loader2, CheckCircle2, ExternalLink, AlertTriangle, X, Brain } from 'lucide-react'
@@ -74,6 +79,16 @@ function dateInputToUtcIso(dateStr: string): string {
   return new Date(Date.UTC(y, m - 1, d, 12, 0, 0)).toISOString()
 }
 
+/** Matches ml-pipelines `serve._MIN_SOCIAL_CAPTION_FOR_SCORE` — minimum ad copy for a meaningful score. */
+const MIN_ML_SCORE_CAPTION_LEN = 20
+
+function hourBucketFromHour(h: number): string {
+  if (h >= 5 && h < 12) return 'morning'
+  if (h >= 12 && h < 17) return 'afternoon'
+  if (h >= 17 && h < 22) return 'evening'
+  return 'night'
+}
+
 export function CreatePostPage() {
   const navigate = useNavigate()
 
@@ -102,11 +117,7 @@ export function CreatePostPage() {
 
   const [mlTips, setMlTips] = useState<SocialMediaRecommendations | null>(null)
   const [mlTipsErr, setMlTipsErr] = useState<string | null>(null)
-  const [donationDriverPreview, setDonationDriverPreview] = useState<{
-    donationDriverProbability: number
-    predictedDonationDriver: boolean
-    recommendation: string
-  } | null>(null)
+  const [donationDriverPreview, setDonationDriverPreview] = useState<SocialMediaPrediction | null>(null)
   const [donationPreviewLoading, setDonationPreviewLoading] = useState(false)
 
   const [scheduleStart, setScheduleStart] = useState('')
@@ -196,17 +207,28 @@ export function CreatePostPage() {
     }
   }, [interestQuery, searchInterests])
 
+  useEffect(() => {
+    if (caption.trim().length < MIN_ML_SCORE_CAPTION_LEN) {
+      setDonationDriverPreview(null)
+    }
+  }, [caption])
+
+  const canScoreDonationDriver = caption.trim().length >= MIN_ML_SCORE_CAPTION_LEN
+
   const estimateDonationDriver = useCallback(async () => {
+    const capLen = caption.trim().length
+    if (capLen < MIN_ML_SCORE_CAPTION_LEN) return
+
     setDonationPreviewLoading(true)
     setDonationDriverPreview(null)
     try {
       const numHashtags = (caption.match(/#\w+/g) ?? []).length
-      const capLen = caption.trim().length > 0 ? caption.trim().length : 200
+      const timeOfDay = mlTips != null ? hourBucketFromHour(mlTips.bestPostHour) : 'afternoon'
       const res = await predictSocialMediaPost({
         platform: 'Facebook',
         postType: audience === 'donors' ? 'ImpactStory' : 'Support',
         mediaType: 'Photo',
-        timeOfDay: 'afternoon',
+        timeOfDay,
         sentimentTone: 'Hopeful',
         captionLength: capLen,
         numHashtags,
@@ -218,7 +240,7 @@ export function CreatePostPage() {
     } finally {
       setDonationPreviewLoading(false)
     }
-  }, [audience, caption])
+  }, [audience, caption, mlTips])
 
   function toggleCountry(code: string) {
     setCountries((prev) => {
@@ -503,16 +525,36 @@ export function CreatePostPage() {
             </p>
           )}
           {mlTips && (
-            <div className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-1 text-sm">
-              <span>
-                <strong className="text-foreground font-medium">Best time:</strong>{' '}
-                {mlTips.bestDayOfWeek} at {mlTips.bestPostHour}:00
-              </span>
-              <span>
-                <strong className="text-foreground font-medium">Suggested CTA:</strong>{' '}
-                {mlTips.recommendedCta}
-              </span>
-            </div>
+            <ul className="text-muted-foreground list-inside list-disc space-y-1.5 text-sm marker:text-primary/70">
+              <li>
+                <strong className="text-foreground font-medium">Best time (by engagement):</strong>{' '}
+                {mlTips.bestDayOfWeek} at {String(mlTips.bestPostHour).padStart(2, '0')}:00 — scoring uses the same
+                part-of-day bucket (morning / afternoon / evening / night) so your draft lines up with this hint.
+              </li>
+              <li>
+                <strong className="text-foreground font-medium">Suggested CTA (from donation-driving posts):</strong>{' '}
+                {mlTips.recommendedCtaLabel ?? mlTips.recommendedCta}
+                {mlTips.recommendedCtaLabel &&
+                mlTips.recommendedCta &&
+                mlTips.recommendedCtaLabel !== mlTips.recommendedCta ? (
+                  <span className="text-muted-foreground"> ({mlTips.recommendedCta})</span>
+                ) : null}
+              </li>
+              <li>
+                <strong className="text-foreground font-medium">Strong post types in data:</strong>{' '}
+                {mlTips.bestPostTypeForDonations} (donation referrals) ·{' '}
+                {mlTips.bestMediaTypeForEngagement} (engagement)
+              </li>
+              <li>
+                <strong className="text-foreground font-medium">Historical context:</strong>{' '}
+                avg engagement rate {(mlTips.avgEngagementRate * 100).toFixed(2)}% ·{' '}
+                {mlTips.totalDonationReferrals.toLocaleString()} donation referrals logged ·{' '}
+                {typeof mlTips.historicalDonationDriverRate === 'number'
+                  ? `${(mlTips.historicalDonationDriverRate * 100).toFixed(1)}%`
+                  : '—'}{' '}
+                of posts drove at least one referral
+              </li>
+            </ul>
           )}
           <div>
             <Button
@@ -520,20 +562,35 @@ export function CreatePostPage() {
               variant="outline"
               size="sm"
               onClick={() => void estimateDonationDriver()}
-              disabled={donationPreviewLoading}
+              disabled={donationPreviewLoading || !canScoreDonationDriver}
             >
               {donationPreviewLoading ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
                   Scoring&hellip;
                 </>
-              ) : (
+              ) : canScoreDonationDriver ? (
                 'Score draft (donation likelihood)'
+              ) : (
+                `Add ad copy (${MIN_ML_SCORE_CAPTION_LEN}+ characters) to score`
               )}
             </Button>
+            {!canScoreDonationDriver && (
+              <p className="text-muted-foreground mt-2 text-xs">
+                The model compares your caption length, hashtags, and format to historical posts. Empty or very
+                short copy is not scored.
+              </p>
+            )}
           </div>
           {donationDriverPreview && (
-            <div className="bg-card border-border rounded-xl border p-4 text-sm">
+            <div
+              className={[
+                'bg-card rounded-xl border p-4 text-sm',
+                donationDriverPreview.contentInsufficient
+                  ? 'border-amber-500/40'
+                  : 'border-border',
+              ].join(' ')}
+            >
               <p className="font-medium text-foreground">
                 Estimated donation-driver probability:{' '}
                 <span className="tabular-nums">

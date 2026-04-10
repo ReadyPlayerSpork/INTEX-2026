@@ -173,6 +173,8 @@ The project is deployed to a self-hosted **Dokploy** instance. External HTTPS is
   - With **Postgres** (same data as prod): set **`DATABASE_URL`** on the ML service (Dokploy **Environment**) to the internal Postgres URL, then `python train.py` (all models) or `python train.py incident_risk` (one model). Writes go to `MODEL_DIR` → **`/app/ml-pipelines/models`** and persist if that path is a volume.
   - **CSV-only** training: provide CSVs (e.g. mount `lighthouse_csv_v7` or set **`ML_CSV_DIR`**) and run with **`FLASK_ENV=development`** so `serve.py` allows CSV reads (production mode blocks CSV in `_csv()`).
 
+**Social ML (`/api/ml/social-media/predict`):** `POST` body must include a realistic **`captionLength`** (characters). If **`captionLength` is under 20**, the service returns a low placeholder probability and **`contentInsufficient: true`** instead of running the classifier on padded defaults. **`GET /api/ml/social-media/recommendations`** adds **`recommendedCtaLabel`** and **`historicalDonationDriverRate`** (camelCase via `to_camel`).
+
 Repo **`docker-compose.yml`** mounts **`ml-models`** → **`/app/ml-pipelines/models`** for local stacks (fixed from the old incorrect `/app/models` path).
 
 ### Auto-Deploy

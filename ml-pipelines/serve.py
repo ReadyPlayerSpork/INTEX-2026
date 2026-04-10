@@ -320,6 +320,59 @@ def _resident_progress_features() -> pd.DataFrame:
 
 
 
+def _social_media_time_of_day(hour) -> str:
+    try:
+        h = int(hour)
+        if 5 <= h < 12:
+            return "morning"
+        if 12 <= h < 17:
+            return "afternoon"
+        if 17 <= h < 22:
+            return "evening"
+        return "night"
+    except (TypeError, ValueError):
+        return "afternoon"
+
+
+# Meta / seed CTA codes -> short labels for API consumers
+_SOCIAL_CTA_LABELS = {
+    "LearnMore": "Learn more",
+    "DONATE_NOW": "Donate now",
+    "DONATE": "Donate",
+    "SIGN_UP": "Sign up",
+    "SUBSCRIBE": "Subscribe",
+    "ORDER_NOW": "Order now",
+    "BOOK_TRAVEL": "Book travel",
+    "CONTACT_US": "Contact us",
+    "APPLY_NOW": "Apply now",
+    "GET_QUOTE": "Get quote",
+    "DOWNLOAD": "Download",
+    "WATCH_MORE": "Watch more",
+    "LISTEN_NOW": "Listen now",
+    "SEE_MENU": "See menu",
+    "SHOP_NOW": "Shop now",
+}
+
+
+def _social_media_recommended_cta(donation_posts: pd.DataFrame) -> tuple[str, str]:
+    """Pick the most common non-empty CTA among donation-driving posts; fallback DONATE_NOW."""
+    default_code, default_label = "DONATE_NOW", _SOCIAL_CTA_LABELS["DONATE_NOW"]
+    if donation_posts is None or len(donation_posts) == 0:
+        return default_code, default_label
+    if "CallToActionType" not in donation_posts.columns:
+        return default_code, default_label
+    s = donation_posts["CallToActionType"].dropna().astype(str).str.strip()
+    s = s[~s.isin(["", "nan", "None", "none"])]
+    if len(s) == 0:
+        return default_code, default_label
+    raw = str(s.mode().iloc[0]).strip()
+    label = _SOCIAL_CTA_LABELS.get(raw, raw.replace("_", " ").title())
+    return raw, label
+
+
+_MIN_SOCIAL_CAPTION_FOR_SCORE = 20
+
+
 def _social_media_features() -> pd.DataFrame:
     """Build the same feature matrix used by the social media impact notebook."""
     df = _get_data("SocialMediaPosts", "social_media_posts.csv")
@@ -333,18 +386,8 @@ def _social_media_features() -> pd.DataFrame:
     df["CampaignName"] = df["CampaignName"].fillna("None") if "CampaignName" in df.columns else "None"
     df["CallToActionType"] = df["CallToActionType"].fillna("None") if "CallToActionType" in df.columns else "None"
 
-    def get_time_of_day(hour):
-        try:
-            h = int(hour)
-            if 5 <= h < 12: return "morning"
-            if 12 <= h < 17: return "afternoon"
-            if 17 <= h < 22: return "evening"
-            return "night"
-        except:
-            return "afternoon"
-
     if "PostHour" in df.columns:
-        df["TimeOfDay"] = df["PostHour"].apply(get_time_of_day)
+        df["TimeOfDay"] = df["PostHour"].apply(_social_media_time_of_day)
     else:
         df["TimeOfDay"] = "afternoon"
         
@@ -693,16 +736,22 @@ def social_media_recommendations():
 
         # Donation-driving stats
         donation_posts = df[df["DonationReferrals"] > 0]
-        top_cta = donation_posts["CallToActionType"].mode().iloc[0] if len(donation_posts) > 0 else "DonateNow"
+        top_cta, top_cta_label = _social_media_recommended_cta(donation_posts)
+        n_posts = len(df)
+        historical_driver_rate = (
+            float(len(donation_posts) / n_posts) if n_posts > 0 else 0.0
+        )
 
         return jsonify(to_camel({
             "BestPostHour": int(best_hour),
-            "BestDayOfWeek": best_day,
-            "BestPostTypeForDonations": best_type,
-            "BestMediaTypeForEngagement": best_media,
+            "BestDayOfWeek": str(best_day) if pd.notna(best_day) else "",
+            "BestPostTypeForDonations": str(best_type) if pd.notna(best_type) else "",
+            "BestMediaTypeForEngagement": str(best_media) if pd.notna(best_media) else "",
             "RecommendedCta": top_cta,
+            "RecommendedCtaLabel": top_cta_label,
             "AvgEngagementRate": round(float(df["EngagementRate"].mean()), 4),
             "TotalDonationReferrals": int(df["DonationReferrals"].sum()),
+            "HistoricalDonationDriverRate": round(historical_driver_rate, 4),
         }))
     except Exception as e:
         traceback.print_exc()
@@ -723,6 +772,31 @@ def social_media_predict():
         if not data:
             return jsonify({"error": "JSON body required"}), 400
 
+        caption_len = data.get("CaptionLength", data.get("caption_length"))
+        try:
+            caption_len = int(caption_len) if caption_len is not None else 0
+        except (TypeError, ValueError):
+            caption_len = 0
+        caption_len = max(0, caption_len)
+
+        if caption_len < _MIN_SOCIAL_CAPTION_FOR_SCORE:
+            return jsonify(to_camel({
+                "DonationDriverProbability": 0.06,
+                "PredictedDonationDriver": False,
+                "Recommendation": (
+                    f"Add at least {_MIN_SOCIAL_CAPTION_FOR_SCORE} characters of real ad copy "
+                    "before this score is meaningful. Short or empty drafts are not comparable to historical posts."
+                ),
+                "ContentInsufficient": True,
+            }))
+
+        nh = data.get("NumHashtags", data.get("num_hashtags", 0))
+        try:
+            num_hashtags = int(nh) if nh is not None else 0
+        except (TypeError, ValueError):
+            num_hashtags = 0
+        num_hashtags = max(0, num_hashtags)
+
         # Build a single-row DataFrame with the same dummy encoding
         df, _ = _social_media_features()  # just to get the encoding reference
         row = pd.DataFrame([{
@@ -731,9 +805,9 @@ def social_media_predict():
             "MediaType": data.get("MediaType", data.get("media_type", "Photo")),
             "TimeOfDay": data.get("TimeOfDay", data.get("time_of_day", "afternoon")),
             "SentimentTone": data.get("SentimentTone", data.get("sentiment_tone", "Hopeful")),
-            "CaptionLength": data.get("CaptionLength", data.get("caption_length", 200)),
-            "NumHashtags": data.get("NumHashtags", data.get("num_hashtags", 5)),
-            "IsBoosted": data.get("IsBoosted", data.get("is_boosted", False)),
+            "CaptionLength": caption_len,
+            "NumHashtags": num_hashtags,
+            "IsBoosted": bool(data.get("IsBoosted", data.get("is_boosted", False))),
         }])
         X_row = pd.get_dummies(row, drop_first=True)
         X_row = _align_features(X_row, features)
@@ -744,6 +818,7 @@ def social_media_predict():
             "PredictedDonationDriver": prob >= 0.5,
             "Recommendation": "This post is likely to drive donations!" if prob >= 0.5
                 else "Consider adding a stronger CTA or using video content to improve donation conversion.",
+            "ContentInsufficient": False,
         }))
     except Exception as e:
         traceback.print_exc()

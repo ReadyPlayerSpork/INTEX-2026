@@ -80,8 +80,12 @@ export interface SocialMediaRecommendations {
   bestPostTypeForDonations: string
   bestMediaTypeForEngagement: string
   recommendedCta: string
+  /** Human-readable label when `recommendedCta` is a Meta code (e.g. DONATE_NOW). */
+  recommendedCtaLabel?: string
   avgEngagementRate: number
   totalDonationReferrals: number
+  /** Share of historical posts that recorded at least one donation referral (0–1). */
+  historicalDonationDriverRate?: number
 }
 
 export interface SocialMediaPostData {
@@ -99,6 +103,8 @@ export interface SocialMediaPrediction {
   donationDriverProbability: number
   predictedDonationDriver: boolean
   recommendation: string
+  /** True when copy was too short for a meaningful model comparison. */
+  contentInsufficient?: boolean
 }
 
 export async function getSocialMediaRecommendations(): Promise<SocialMediaRecommendations> {

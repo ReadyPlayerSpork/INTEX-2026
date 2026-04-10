@@ -126,19 +126,28 @@ export function SocialDashboardPage() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <MlStat label="Best hour (UTC-style)" value={`${mlIntel.bestPostHour}:00`} />
+              <MlStat
+                label="Best hour (UTC-style)"
+                value={`${String(mlIntel.bestPostHour).padStart(2, '0')}:00`}
+              />
               <MlStat label="Best day" value={mlIntel.bestDayOfWeek} />
               <MlStat label="Post type (donations)" value={mlIntel.bestPostTypeForDonations} />
               <MlStat label="Media (engagement)" value={mlIntel.bestMediaTypeForEngagement} />
             </div>
             <div className="text-muted-foreground mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border/70 pt-4 text-sm">
-              <span>
+              <span className="min-w-[12rem] max-w-xl">
                 <strong className="text-foreground font-medium">Suggested CTA:</strong>{' '}
-                {mlIntel.recommendedCta}
+                <MlSuggestedCtaInline ml={mlIntel} />
               </span>
               <span className="tabular-nums">
-                Avg engagement {mlIntel.avgEngagementRate.toFixed(2)}% ·{' '}
+                Avg engagement {(mlIntel.avgEngagementRate * 100).toFixed(2)}% ·{' '}
                 {mlIntel.totalDonationReferrals.toLocaleString()} donation referrals (historical)
+                {typeof mlIntel.historicalDonationDriverRate === 'number' ? (
+                  <>
+                    {' '}
+                    · {(mlIntel.historicalDonationDriverRate * 100).toFixed(1)}% of posts drove referrals
+                  </>
+                ) : null}
               </span>
             </div>
           </CardContent>
@@ -272,6 +281,30 @@ function MlStat({ label, value }: { label: string; value: string }) {
       <p className="text-muted-foreground text-xs font-medium">{label}</p>
       <p className="font-heading mt-1 text-sm font-semibold text-foreground">{value}</p>
     </div>
+  )
+}
+
+/** Matches Create Post ML card: label + code, with resilient fallback if the API omits CTA fields. */
+function MlSuggestedCtaInline({ ml }: { ml: SocialMediaRecommendations }) {
+  const ctaLabel = (ml.recommendedCtaLabel ?? '').trim()
+  const ctaCode = (ml.recommendedCta ?? '').trim()
+  if (!ctaLabel && !ctaCode) {
+    return (
+      <span className="text-foreground">
+        Donate now <span className="text-muted-foreground">(DONATE_NOW)</span>
+        <span className="text-muted-foreground mt-1 block text-xs font-normal">
+          No CTA recorded on donation-driving posts in the dataset; this is the default fundraising CTA.
+        </span>
+      </span>
+    )
+  }
+  return (
+    <>
+      {ctaLabel || ctaCode}
+      {ctaLabel && ctaCode && ctaLabel !== ctaCode ? (
+        <span className="text-muted-foreground"> ({ctaCode})</span>
+      ) : null}
+    </>
   )
 }
 
