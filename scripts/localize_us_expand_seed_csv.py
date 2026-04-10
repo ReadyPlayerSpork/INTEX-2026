@@ -387,8 +387,11 @@ def main() -> None:
         src = supporters.iloc[rng.randint(0, n_sup - 1)].copy()
         nid = max_sid + 1 + j
         src["supporter_id"] = nid
-        base_name = src.get("display_name", "Supporter")
-        src["display_name"] = f"{base_name} (Network)"
+        base_name = str(src.get("display_name", "Supporter") or "Supporter").strip()
+        for suf in (" (Network)", " (network)"):
+            if base_name.endswith(suf):
+                base_name = base_name[: -len(suf)].strip()
+        src["display_name"] = base_name or "Supporter"
         src["email"] = f"supporter.network{nid}@example.com"
         src["phone"] = fake_us_phone(rng, nid)
         src["region"] = rng.choice(list(REGION_MAP.values()))

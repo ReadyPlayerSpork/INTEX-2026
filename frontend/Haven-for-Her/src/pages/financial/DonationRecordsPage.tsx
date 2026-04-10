@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DataTable, type ColumnDef } from '@/components/DataTable'
 import { useServerTable } from '@/hooks/useServerTable'
 import { financialApi } from '@/api/financialApi'
+import { RecordDonationModal } from '@/components/financial/RecordDonationModal'
 import { EditDonationModal } from './components/EditDonationModal'
 
 interface DonationRecord {
@@ -42,6 +44,7 @@ const columns: ColumnDef<DonationRecord>[] = [
 export function DonationRecordsPage() {
   const [typeFilter, setTypeFilter] = useState('')
   const [campaignFilter, setCampaignFilter] = useState('')
+  const [showDonation, setShowDonation] = useState(false)
   const [editDonation, setEditDonation] = useState<DonationRecord | null>(null)
 
   const filters = useMemo(
@@ -59,7 +62,12 @@ export function DonationRecordsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12">
-      <h1 className="mb-6 text-2xl font-bold">Donation Records</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Donation Records</h1>
+        <Button variant="outline" onClick={() => setShowDonation(true)}>
+          Record Donation
+        </Button>
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-3">
         <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v ?? '')}>
@@ -113,6 +121,17 @@ export function DonationRecordsPage() {
         onOpenChange={(open) => !open && setEditDonation(null)}
         onSaved={table.refresh}
       />
+
+      {showDonation && (
+        <RecordDonationModal
+          onSubmit={async (data) => {
+            await financialApi.recordDonation(data)
+            setShowDonation(false)
+            table.refresh()
+          }}
+          onClose={() => setShowDonation(false)}
+        />
+      )}
     </div>
   )
 }
