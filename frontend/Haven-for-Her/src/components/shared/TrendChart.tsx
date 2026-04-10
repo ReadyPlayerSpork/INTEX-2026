@@ -21,11 +21,11 @@ export function TrendChart({
 }: TrendChartProps) {
   if (data.length === 0) {
     return (
-      <div className="rounded-2xl bg-cream p-6">
-        <h3 className="font-heading text-lg font-semibold text-plum">
+      <div className="rounded-2xl border border-border/60 bg-card p-6">
+        <h3 className="font-heading text-lg font-semibold text-accent">
           {title}
         </h3>
-        <p className="mt-4 text-sm text-soft-purple/70">No data available.</p>
+        <p className="mt-4 text-sm text-muted-foreground">No data available.</p>
       </div>
     )
   }
@@ -36,62 +36,83 @@ export function TrendChart({
     1,
   )
 
-  return (
-    <div className="rounded-2xl bg-cream p-6">
-      <h3 className="font-heading text-lg font-semibold text-plum">{title}</h3>
+  // Pixel-based bar column height — avoids % height quirks in flex layouts and uses theme colors
+  // (bg-sage / bg-cream etc. are not in @theme; primary/accent/card are).
+  const labelBandPx = 28
+  const plotHeightPx = Math.max(height - labelBandPx, 48)
 
-      <div className="mt-2 flex items-center gap-4 text-xs text-soft-purple/70">
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-sage" />
+  return (
+    <div className="rounded-2xl border border-border/60 bg-card p-6">
+      <h3 className="font-heading text-lg font-semibold text-accent">{title}</h3>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span
+            className="inline-block size-2.5 shrink-0 rounded-sm bg-primary"
+            aria-hidden
+          />
           {valueLabel}
         </span>
         {secondaryLabel && (
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-plum/40" />
+          <span className="flex items-center gap-1.5">
+            <span
+              className="inline-block size-2.5 shrink-0 rounded-sm bg-accent/45"
+              aria-hidden
+            />
             {secondaryLabel}
           </span>
         )}
       </div>
       {secondaryLabel ? (
-        <p className="mt-1 text-[11px] leading-snug text-soft-purple/60">
+        <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
           Bar heights are scaled independently per series so monetary and in-kind trends are both
           visible. Use each bar&apos;s tooltip for exact amounts.
         </p>
       ) : null}
 
       <div
-        className="mt-4 flex items-end gap-1"
-        style={{ height }}
+        className="mt-4 flex min-h-0 items-end gap-1"
         role="img"
         aria-label={`${title} bar chart`}
       >
         {data.map((point, i) => {
-          const primaryHeight = (point.value / maxPrimary) * 100
-          const secondaryHeight =
-            point.secondaryValue !== undefined
-              ? (point.secondaryValue / maxSecondary) * 100
+          const primaryPx =
+            maxPrimary > 0 ? (point.value / maxPrimary) * plotHeightPx : 0
+          const secondaryPx =
+            point.secondaryValue !== undefined && maxSecondary > 0
+              ? (point.secondaryValue / maxSecondary) * plotHeightPx
               : 0
+          const showPrimary = point.value > 0
+          const showSecondary =
+            point.secondaryValue !== undefined && point.secondaryValue > 0
 
           return (
             <div
               key={i}
-              className="group flex flex-1 flex-col items-center gap-0.5"
+              className="group flex min-w-0 flex-1 flex-col items-center gap-0.5"
             >
-              <div className="relative flex w-full items-end justify-center gap-0.5" style={{ height: `${height - 24}px` }}>
+              <div
+                className="flex w-full items-end justify-center gap-0.5"
+                style={{ height: plotHeightPx }}
+              >
                 <div
-                  className="w-full max-w-[24px] rounded-t-md bg-sage transition-colors duration-150 hover:bg-sage/80"
-                  style={{ height: `${primaryHeight}%`, minHeight: point.value > 0 ? '4px' : '0' }}
+                  className="w-full max-w-[24px] shrink-0 rounded-t-md bg-primary transition-colors duration-150 hover:bg-primary/85"
+                  style={{
+                    height: `${Math.max(primaryPx, showPrimary ? 3 : 0)}px`,
+                  }}
                   title={`${point.label}: ${valueLabel} ${point.value.toLocaleString()}`}
                 />
                 {point.secondaryValue !== undefined && (
                   <div
-                    className="w-full max-w-[24px] rounded-t-md bg-plum/40 transition-colors duration-150 hover:bg-plum/60"
-                    style={{ height: `${secondaryHeight}%`, minHeight: point.secondaryValue > 0 ? '4px' : '0' }}
+                    className="w-full max-w-[24px] shrink-0 rounded-t-md bg-accent/45 transition-colors duration-150 hover:bg-accent/65"
+                    style={{
+                      height: `${Math.max(secondaryPx, showSecondary ? 3 : 0)}px`,
+                    }}
                     title={`${point.label}: ${secondaryLabel} ${point.secondaryValue.toLocaleString()}`}
                   />
                 )}
               </div>
-              <span className="text-[10px] leading-tight text-soft-purple/60 truncate w-full text-center">
+              <span className="w-full truncate text-center text-[10px] leading-tight text-muted-foreground">
                 {point.label}
               </span>
             </div>
