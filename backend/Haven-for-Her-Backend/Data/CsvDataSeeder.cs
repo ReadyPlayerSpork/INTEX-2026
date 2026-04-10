@@ -11,6 +11,45 @@ namespace Haven_for_Her_Backend.Data;
 
 public static class CsvDataSeeder
 {
+    /// <summary>
+    /// All CSVs required for a full domain seed. Must exist before we wipe tables,
+    /// otherwise a failed mid-seed run leaves the database empty (REFRESH=true disaster).
+    /// </summary>
+    private static readonly string[] RequiredSeedCsvs =
+    [
+        "safehouses.csv",
+        "supporters.csv",
+        "partners.csv",
+        "public_impact_snapshots.csv",
+        "social_media_posts.csv",
+        "residents.csv",
+        "donations.csv",
+        "partner_assignments.csv",
+        "safehouse_monthly_metrics.csv",
+        "donation_allocations.csv",
+        "in_kind_donation_items.csv",
+        "process_recordings.csv",
+        "home_visitations.csv",
+        "education_records.csv",
+        "health_wellbeing_records.csv",
+        "intervention_plans.csv",
+        "incident_reports.csv",
+    ];
+
+    public static void ValidateSeedDirectoryOrThrow(string csvDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(csvDirectory) || !Directory.Exists(csvDirectory))
+            throw new DirectoryNotFoundException($"CSV seed directory not found: '{csvDirectory}'");
+
+        var missing = RequiredSeedCsvs
+            .Where(f => !File.Exists(Path.Combine(csvDirectory, f)))
+            .ToList();
+
+        if (missing.Count > 0)
+            throw new FileNotFoundException(
+                $"REFRESH aborted: {missing.Count} required CSV(s) missing under '{csvDirectory}': {string.Join(", ", missing)}");
+    }
+
     public static async Task SeedAsync(
         HavenForHerBackendDbContext db,
         UserManager<ApplicationUser> userManager,
@@ -18,6 +57,9 @@ public static class CsvDataSeeder
         string? supporterPassword,
         ILogger logger)
     {
+        ValidateSeedDirectoryOrThrow(csvDirectory);
+        logger.LogInformation("CSV pre-flight OK — all {Count} required files present under {Dir}", RequiredSeedCsvs.Length, csvDirectory);
+
         // Wipe all domain data so every deploy gets a fresh seed from CSVs.
         // Uses ExecuteDeleteAsync (bulk SQL DELETE) — much faster than RemoveRange.
         // Delete in reverse dependency order (Level 2 → 1 → 0).

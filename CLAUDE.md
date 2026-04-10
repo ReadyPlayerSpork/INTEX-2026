@@ -67,6 +67,8 @@ Migrations are split into **two folders**: `Migrations/Domain/` and `Migrations/
 
 ### Domain seed CSVs (US demo data)
 - **Path:** `backend/Haven-for-Her-Backend/docs/lighthouse_csv_v7/*.csv` — domain tables are seeded via `CsvDataSeeder` (see `Program.cs`) **only when** `REFRESH=true` (env var) **or** the domain DB is empty (first deploy). Data persists across restarts otherwise.
+- **REFRESH safety:** `CsvDataSeeder` validates that **all required CSV files exist** before running bulk deletes. If the container image is missing `docs/lighthouse_csv_v7` (publish/copy issue), startup logs an error and **skips** seeding in `Program.cs` when the directory is absent — but older builds that wiped **before** reading CSVs could leave Postgres empty; fix the image/path, redeploy, then run `REFRESH=true` again (or restore from **Volume Backups** / a DB dump).
+- **Publish:** `Haven-for-Her-Backend.csproj` includes `<Content Include="docs\lighthouse_csv_v7\**\*.csv" CopyToPublishDirectory="PreserveNewest" />` so `dotnet publish` / typical images carry CSVs; custom buildpacks must preserve that output.
 - **Content:** United States–based sites and addresses; monetary rows use **`USD`** (legacy PHP amounts were converted in the generator at **58 PHP = 1 USD**). Supporters, donations, allocations, in-kind lines, and social posts are expanded ~**1.5×** for demos; regenerate with:
   `python scripts/localize_us_expand_seed_csv.py` (repo root).
 - **ML:** `ml-pipelines/serve.py` reads the same CSVs. `_csv()` normalizes **snake_case** CSV headers to **PascalCase** so feature code matches PostgreSQL `fetch_data` when `DATABASE_URL` is unset.
