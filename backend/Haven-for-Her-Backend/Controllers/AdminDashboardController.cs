@@ -223,6 +223,13 @@ public class AdminDashboardController(HavenForHerBackendDbContext db) : Controll
             .Distinct()
             .ToListAsync();
 
+        // ── Program Impact KPIs ────────────────────────────────────────
+        var startOfYear = new DateOnly(today.Year, 1, 1);
+        var newAdmissionsYtd = residents.Count(r => r.DateOfAdmission >= startOfYear);
+        var reintegrationsCompleted = residents.Count(r => r.ReintegrationStatus == "Completed");
+        var sessionsThisMonth = await db.ProcessRecordings
+            .CountAsync(p => p.SessionDate >= startOfMonth);
+
         // ── Dashboard extras (mockup parity, SQLite-backed) ────────────
         var criticalRiskResidents = activeResidents.Count(r => r.CurrentRiskLevel == "Critical");
         var highRiskCases = activeResidents.Count(r =>
@@ -347,6 +354,9 @@ public class AdminDashboardController(HavenForHerBackendDbContext db) : Controll
                 criticalRiskResidents,
                 highRiskCases,
                 upcomingVisitationsNext7Days,
+                newAdmissionsYtd,
+                reintegrationsCompleted,
+                sessionsThisMonth,
             },
         });
     }

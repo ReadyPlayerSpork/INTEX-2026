@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, TrendingUp, Brain, RefreshCw } from 'lucide-react'
+import { AlertTriangle, TrendingUp, Brain, RefreshCw, UserPlus, CheckCircle2, BookOpen, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { api } from '@/api/client'
 import { getResidentAlerts, retrainModels, getMLStatus, type IncidentRiskAlert, type MLStatus } from '@/api/mlApi'
@@ -110,6 +110,9 @@ interface DashboardData {
     criticalRiskResidents: number
     highRiskCases: number
     upcomingVisitationsNext7Days: number
+    newAdmissionsYtd: number
+    reintegrationsCompleted: number
+    sessionsThisMonth: number
   }
   financial: {
     totalDonationsThisMonth: number
@@ -336,6 +339,44 @@ export function AdminDashboardPage() {
           sub="Home visits in the next 7 days (all residents)"
           href="/admin/caseload"
         />
+      </div>
+
+      {/* Program Impact */}
+      <div>
+        <p className="text-muted-foreground mb-3 text-xs font-bold uppercase tracking-[0.18em]">
+          Program Impact
+        </p>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <SummaryCard
+            label="New admissions (YTD)"
+            value={qs.newAdmissionsYtd ?? 0}
+            sub={`Residents admitted in ${new Date().getFullYear()}`}
+            href="/admin/caseload"
+            icon={<UserPlus className="text-primary size-4 shrink-0 opacity-80" />}
+          />
+          <SummaryCard
+            label="Reintegrations completed"
+            value={qs.reintegrationsCompleted ?? 0}
+            sub="Successful reintegrations (all-time)"
+            href="/admin/caseload"
+            icon={<CheckCircle2 className="text-primary size-4 shrink-0 opacity-80" />}
+          />
+          <SummaryCard
+            label="Sessions this month"
+            value={qs.sessionsThisMonth ?? 0}
+            sub="Counseling sessions recorded"
+            href="/admin/caseload"
+            icon={<BookOpen className="text-primary size-4 shrink-0 opacity-80" />}
+          />
+          <SummaryCard
+            label="Unresolved incidents"
+            value={qs.unresolvedIncidents ?? 0}
+            sub="Open incidents requiring action"
+            href="/admin/incidents"
+            variant={(qs.unresolvedIncidents ?? 0) > 0 ? 'destructive' : 'default'}
+            icon={<ShieldAlert className="text-destructive size-4 shrink-0 opacity-80" />}
+          />
+        </div>
       </div>
 
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-bloom">
