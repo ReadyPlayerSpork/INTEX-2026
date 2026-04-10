@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
+import { ScrollReveal } from '@/components/ui/scroll-reveal'
 import youngWomanSmiling from '@/assets/Young Woman Smiling.jpg'
 
 export function VolunteerPage() {
@@ -8,24 +9,28 @@ export function VolunteerPage() {
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 grid gap-10 lg:grid-cols-2 lg:items-center">
-          <div className="max-w-2xl">
-            <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-              Volunteer and events
-            </p>
-            <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
-              There are many ways to show up with care.
-            </h1>
-            <p className="text-muted-foreground mt-4 leading-8 text-pretty">
-              Review the current opportunities to contribute your time and skills. Find a role that matches your schedule and expertise below.
-            </p>
-          </div>
-          <div className="hidden lg:flex lg:justify-end">
-            <img
-              src={youngWomanSmiling}
-              alt="Smiling young woman"
-              className="rounded-3xl object-cover aspect-[2/3] w-full max-w-[420px] shadow-xl border border-border/50 brightness-105 contrast-105"
-            />
-          </div>
+          <ScrollReveal>
+            <div className="max-w-2xl">
+              <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+                Volunteer and events
+              </p>
+              <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
+                There are many ways to show up with care.
+              </h1>
+              <p className="text-muted-foreground mt-4 leading-8 text-pretty">
+                Review the current opportunities to contribute your time and skills. Find a role that matches your schedule and expertise below.
+              </p>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal direction="right" delay={0.2}>
+            <div className="hidden lg:flex lg:justify-end">
+              <img
+                src={youngWomanSmiling}
+                alt="Smiling young woman"
+                className="rounded-3xl object-cover aspect-[2/3] w-full max-w-[420px] shadow-xl border border-border/50 brightness-105 contrast-105"
+              />
+            </div>
+          </ScrollReveal>
         </div>
 
         <div className="mb-10 lg:mb-16">
@@ -34,14 +39,18 @@ export function VolunteerPage() {
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">Priority</span>
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
-            <FeaturedOpportunityCard
-              title="Safe Home Support"
-              description="Assist with day-to-day operations at our safe homes: tutoring, meal preparation, and recreational activities. Your consistent presence brings stability."
-            />
-            <FeaturedOpportunityCard
-              title="Mentorship Program"
-              description="Mentor a survivor through education, career preparation, and personal development. Requires a formal background check and specialized training."
-            />
+            <ScrollReveal delay={0}>
+              <FeaturedOpportunityCard
+                title="Safe Home Support"
+                description="Assist with day-to-day operations at our safe homes: tutoring, meal preparation, and recreational activities. Your consistent presence brings stability."
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={0.1}>
+              <FeaturedOpportunityCard
+                title="Mentorship Program"
+                description="Mentor a survivor through education, career preparation, and personal development. Requires a formal background check and specialized training."
+              />
+            </ScrollReveal>
           </div>
         </div>
 
@@ -50,25 +59,20 @@ export function VolunteerPage() {
             <h2 className="font-heading text-2xl font-semibold text-accent">Other ways to contribute</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <CompactOpportunityCard
-              title="Community Events"
-              description="Help organize fundraising events, awareness campaigns, and community outreach programs."
-            />
-            <CompactOpportunityCard
-              title="Skills-Based"
-              description="Contribute your professional skills: legal, medical, counseling, IT, or marketing."
-            />
-            <CompactOpportunityCard
-              title="Online Advocacy"
-              description="Help spread awareness through social media, content creation, and digital advocacy campaigns."
-            />
-            <CompactOpportunityCard
-              title="Corporate Partners"
-              description="Connect your organization with Haven for Her for sponsorship or employee volunteering."
-            />
+            {[
+              { title: "Community Events", description: "Help organize fundraising events, awareness campaigns, and community outreach programs." },
+              { title: "Skills-Based", description: "Contribute your professional skills: legal, medical, counseling, IT, or marketing." },
+              { title: "Online Advocacy", description: "Help spread awareness through social media, content creation, and digital advocacy campaigns." },
+              { title: "Corporate Partners", description: "Connect your organization with Haven for Her for sponsorship or employee volunteering." },
+            ].map((card, i) => (
+              <ScrollReveal key={card.title} delay={i * 0.08}>
+                <CompactOpportunityCard title={card.title} description={card.description} />
+              </ScrollReveal>
+            ))}
           </div>
         </div>
 
+        <ScrollReveal>
         <Card className="relative mt-16 overflow-hidden border-border/70 bg-card text-center shadow-sm">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
           <CardContent className="relative px-6 py-10 md:p-12">
@@ -89,6 +93,7 @@ export function VolunteerPage() {
             </div>
           </CardContent>
         </Card>
+        </ScrollReveal>
       </div>
     </div>
   )

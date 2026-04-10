@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { ApiError } from '@/api/client'
 import { getGoogleSignInUrl } from '@/lib/auth'
 import { safeReturnPath } from '@/features/public/login/useLoginForm'
+import { ScrollReveal } from '@/components/ui/scroll-reveal'
 
 const PERSONAS = [
   { value: 'Survivor', label: 'Seeking Help' },
@@ -117,6 +118,7 @@ export function RegisterPage() {
   return (
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.92fr_1.08fr]">
+        <ScrollReveal>
         <div className="space-y-5">
           <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
             Create an account
@@ -130,7 +132,9 @@ export function RegisterPage() {
             us, and improve support for donors, survivors, and volunteers.
           </p>
         </div>
+        </ScrollReveal>
 
+        <ScrollReveal direction="right" delay={0.15}>
         <Card className="border-border/70 bg-card/95">
           <CardContent className="p-8">
             <h2 className="font-heading text-3xl font-semibold text-accent">
@@ -302,6 +306,7 @@ export function RegisterPage() {
             </p>
           </CardContent>
         </Card>
+        </ScrollReveal>
       </div>
     </div>
   )
