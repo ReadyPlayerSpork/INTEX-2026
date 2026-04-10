@@ -30,8 +30,9 @@ export function TrendChart({
     )
   }
 
-  const maxValue = Math.max(
-    ...data.map((d) => Math.max(d.value, d.secondaryValue ?? 0)),
+  const maxPrimary = Math.max(...data.map((d) => d.value), 1)
+  const maxSecondary = Math.max(
+    ...data.map((d) => (d.secondaryValue !== undefined ? d.secondaryValue : 0)),
     1,
   )
 
@@ -51,6 +52,12 @@ export function TrendChart({
           </span>
         )}
       </div>
+      {secondaryLabel ? (
+        <p className="mt-1 text-[11px] leading-snug text-soft-purple/60">
+          Bar heights are scaled independently per series so monetary and in-kind trends are both
+          visible. Use each bar&apos;s tooltip for exact amounts.
+        </p>
+      ) : null}
 
       <div
         className="mt-4 flex items-end gap-1"
@@ -59,10 +66,11 @@ export function TrendChart({
         aria-label={`${title} bar chart`}
       >
         {data.map((point, i) => {
-          const primaryHeight = (point.value / maxValue) * 100
-          const secondaryHeight = point.secondaryValue
-            ? (point.secondaryValue / maxValue) * 100
-            : 0
+          const primaryHeight = (point.value / maxPrimary) * 100
+          const secondaryHeight =
+            point.secondaryValue !== undefined
+              ? (point.secondaryValue / maxSecondary) * 100
+              : 0
 
           return (
             <div

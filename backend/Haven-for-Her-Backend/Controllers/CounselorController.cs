@@ -22,9 +22,17 @@ public class CounselorController(
     public async Task<IActionResult> GetDashboard()
     {
         var email = (await userManager.GetUserAsync(User))?.Email ?? "";
+        var isAdmin = User.IsInRole(AuthRoles.Admin);
 
-        var assignedResidents = await db.Residents
-            .Where(r => r.AssignedSocialWorker == email)
+        var assignedResidentsQuery = db.Residents.AsQueryable();
+        if (!isAdmin)
+        {
+            assignedResidentsQuery = assignedResidentsQuery.Where(r =>
+                r.AssignedSocialWorker != null
+                && r.AssignedSocialWorker.ToLower() == email.ToLowerInvariant());
+        }
+
+        var assignedResidents = await assignedResidentsQuery
             .Include(r => r.Safehouse)
             .OrderByDescending(r => r.DateOfAdmission)
             .Select(r => new
@@ -39,8 +47,9 @@ public class CounselorController(
             })
             .ToListAsync();
 
+        var scopedIds = await GetScopedResidentIdsAsync(email);
         var recentSessions = await db.ProcessRecordings
-            .Where(pr => pr.SocialWorker == email)
+            .Where(pr => scopedIds.Contains(pr.ResidentId))
             .OrderByDescending(pr => pr.SessionDate)
             .Take(10)
             .Select(pr => new
@@ -85,10 +94,7 @@ public class CounselorController(
     {
         var email = (await userManager.GetUserAsync(User))?.Email ?? "";
 
-        var assignedResidentIds = await db.Residents
-            .Where(r => r.AssignedSocialWorker == email)
-            .Select(r => r.ResidentId)
-            .ToListAsync();
+        var assignedResidentIds = await GetScopedResidentIdsAsync(email);
 
         var query = db.ProcessRecordings
             .Where(pr => assignedResidentIds.Contains(pr.ResidentId));
@@ -142,11 +148,13 @@ public class CounselorController(
         if (!ModelState.IsValid) return ValidationProblem();
 
         var email = (await userManager.GetUserAsync(User))?.Email ?? "";
+        var isAdmin = User.IsInRole(AuthRoles.Admin);
 
-        // Verify the resident is assigned to this counselor
+        // Verify the resident is assigned to this counselor (Admin may record for any resident)
         var resident = await db.Residents.FindAsync(recording.ResidentId);
         if (resident is null) return NotFound(new { message = "Resident not found." });
-        if (!string.Equals(resident.AssignedSocialWorker, email, StringComparison.OrdinalIgnoreCase))
+        if (!isAdmin
+            && !string.Equals(resident.AssignedSocialWorker, email, StringComparison.OrdinalIgnoreCase))
             return Forbid();
 
         recording.RecordingId = 0; // ensure new
@@ -174,10 +182,7 @@ public class CounselorController(
     {
         var email = (await userManager.GetUserAsync(User))?.Email ?? "";
 
-        var assignedResidentIds = await db.Residents
-            .Where(r => r.AssignedSocialWorker == email)
-            .Select(r => r.ResidentId)
-            .ToListAsync();
+        var assignedResidentIds = await GetScopedResidentIdsAsync(email);
 
         var query = db.HomeVisitations
             .Where(hv => assignedResidentIds.Contains(hv.ResidentId));
@@ -220,10 +225,12 @@ public class CounselorController(
         if (!ModelState.IsValid) return ValidationProblem();
 
         var email = (await userManager.GetUserAsync(User))?.Email ?? "";
+        var isAdmin = User.IsInRole(AuthRoles.Admin);
 
         var resident = await db.Residents.FindAsync(visitation.ResidentId);
         if (resident is null) return NotFound(new { message = "Resident not found." });
-        if (!string.Equals(resident.AssignedSocialWorker, email, StringComparison.OrdinalIgnoreCase))
+        if (!isAdmin
+            && !string.Equals(resident.AssignedSocialWorker, email, StringComparison.OrdinalIgnoreCase))
             return Forbid();
 
         visitation.VisitationId = 0;
@@ -251,8 +258,7 @@ public class CounselorController(
 
         if (recording is null) return NotFound();
 
-        // Verify the resident is assigned to this counselor
-        if (recording.Resident.AssignedSocialWorker != email)
+        if (!CanAccessResident(recording.Resident.AssignedSocialWorker, email))
             return Forbid();
 
         return Ok(new
@@ -290,7 +296,7 @@ public class CounselorController(
             .FirstOrDefaultAsync(pr => pr.RecordingId == recordingId);
 
         if (existing is null) return NotFound();
-        if (existing.Resident.AssignedSocialWorker != email)
+        if (!CanAccessResident(existing.Resident.AssignedSocialWorker, email))
             return Forbid();
 
         existing.SessionDate = updated.SessionDate;
@@ -347,7 +353,7 @@ public class CounselorController(
             .FirstOrDefaultAsync(hv => hv.VisitationId == visitationId);
 
         if (existing is null) return NotFound();
-        if (existing.Resident.AssignedSocialWorker != email)
+        if (!CanAccessResident(existing.Resident.AssignedSocialWorker, email))
             return Forbid();
 
         existing.VisitDate = updated.VisitDate;
@@ -402,7 +408,7 @@ public class CounselorController(
         var resident = await db.Residents.FindAsync(residentId);
         if (resident is null) return NotFound();
 
-        if (!isAdmin && resident.AssignedSocialWorker != email)
+        if (!isAdmin && !ResidentAssignedTo(resident.AssignedSocialWorker, email))
             return Forbid();
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -525,10 +531,7 @@ public class CounselorController(
     {
         var email = (await userManager.GetUserAsync(User))?.Email ?? "";
 
-        var assignedResidentIds = await db.Residents
-            .Where(r => r.AssignedSocialWorker == email)
-            .Select(r => r.ResidentId)
-            .ToListAsync();
+        var assignedResidentIds = await GetScopedResidentIdsAsync(email);
 
         var query = db.InterventionPlans
             .Include(ip => ip.Resident)
@@ -556,5 +559,36 @@ public class CounselorController(
             .ToListAsync();
 
         return Ok(new { totalCount, page, pageSize, items });
+    }
+
+    private bool CanAccessResident(string? assignedSocialWorker, string email) =>
+        User.IsInRole(AuthRoles.Admin)
+        || ResidentAssignedTo(assignedSocialWorker, email);
+
+    private static bool ResidentAssignedTo(string? assignedSocialWorker, string email) =>
+        !string.IsNullOrEmpty(assignedSocialWorker)
+        && !string.IsNullOrEmpty(email)
+        && string.Equals(assignedSocialWorker, email, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Residents a counselor may act on in list views. Admins see all residents.
+    /// Assignment match is case-insensitive (PostgreSQL text equality is not).
+    /// </summary>
+    private async Task<List<int>> GetScopedResidentIdsAsync(string email)
+    {
+        if (User.IsInRole(AuthRoles.Admin))
+        {
+            return await db.Residents.AsNoTracking()
+                .Select(r => r.ResidentId)
+                .ToListAsync();
+        }
+
+        var el = email.ToLowerInvariant();
+        return await db.Residents.AsNoTracking()
+            .Where(r =>
+                r.AssignedSocialWorker != null
+                && r.AssignedSocialWorker.ToLower() == el)
+            .Select(r => r.ResidentId)
+            .ToListAsync();
     }
 }
