@@ -8,8 +8,6 @@ import {
 } from '@/features/public/donate/donationCurrencies'
 import { useAnonymousDonateForm } from '@/features/public/donate/useAnonymousDonateForm'
 import { SharedDonationForm } from '@/features/public/donate/SharedDonationForm'
-import { motion, useReducedMotion } from 'framer-motion'
-import { ScrollReveal } from '@/components/ui/scroll-reveal'
 
 export function AnonymousDonatePage() {
   const {
@@ -32,24 +30,11 @@ export function AnonymousDonatePage() {
   } = useAnonymousDonateForm()
 
   const exampleTiers = getCurrencyExampleTiers(currencyCode)
-  const shouldReduce = useReducedMotion()
 
   if (success) {
     return (
       <div className="px-5 py-16 md:px-10 md:py-24">
-        <motion.div
-          initial={shouldReduce ? false : { opacity: 0, scale: 0.92 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
-          className="relative mx-auto max-w-xl"
-        >
-          <motion.div
-            initial={shouldReduce ? false : { opacity: 0, scale: 0.5 }}
-            animate={{ opacity: [0, 0.4, 0], scale: [0.5, 1.4, 1.8] }}
-            transition={{ duration: 1.4, ease: 'easeOut' }}
-            className="pointer-events-none absolute inset-0 rounded-2xl bg-primary/15 blur-xl"
-          />
-        <Card className="relative border-primary/20 bg-primary/7 text-center">
+        <Card className="mx-auto max-w-xl border-primary/20 bg-primary/7 text-center">
           <CardContent className="p-8">
             <h1 className="font-heading text-4xl font-semibold text-accent">
               Thank you
@@ -66,7 +51,6 @@ export function AnonymousDonatePage() {
             </Link>
           </CardContent>
         </Card>
-        </motion.div>
       </div>
     )
   }
@@ -74,7 +58,6 @@ export function AnonymousDonatePage() {
   return (
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-        <ScrollReveal>
         <div className="space-y-5">
           <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
             Anonymous giving
@@ -115,9 +98,7 @@ export function AnonymousDonatePage() {
             </CardContent>
           </Card>
         </div>
-        </ScrollReveal>
 
-        <ScrollReveal direction="right" delay={0.15}>
         <Card className="border-border/70 bg-card/95">
           <CardContent className="p-8">
             <h2 className="font-heading text-3xl font-semibold text-accent">
@@ -160,7 +141,6 @@ export function AnonymousDonatePage() {
             </p>
           </CardContent>
         </Card>
-        </ScrollReveal>
       </div>
     </div>
   )

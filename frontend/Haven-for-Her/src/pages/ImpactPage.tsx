@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import {
   useImpactStats,
   useImpactTrends,
@@ -18,10 +17,6 @@ import {
 } from 'recharts'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
-import { useInView } from 'framer-motion'
-import { ScrollReveal } from '@/components/ui/scroll-reveal'
-import { ScrollProgress } from '@/components/ui/scroll-progress'
-import { AnimatedCounter } from '@/components/ui/animated-counter'
 import womenGreenTop from "@/assets/Women's Green Top.jpg"
 
 function parseMetricPayload(
@@ -68,8 +63,6 @@ const METRIC_LABELS: Record<string, string> = {
 export function ImpactPage() {
   const { stats, isLoading: loadingStats } = useImpactStats()
   const { trends, isLoading: loadingTrends } = useImpactTrends()
-  const chartRef = useRef<HTMLDivElement>(null)
-  const chartInView = useInView(chartRef, { once: true, margin: '-100px' })
 
   if (loadingStats) {
     return (
@@ -99,57 +92,90 @@ export function ImpactPage() {
     ''
 
   return (
-    <>
-    <ScrollProgress />
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 grid gap-10 lg:grid-cols-2 lg:items-center">
-          <ScrollReveal>
-            <div className="max-w-3xl">
-              <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
-                Our mission
-              </p>
-              <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
-                Protecting and restoring lives
-              </h1>
-              <p className="text-muted-foreground mt-4 text-pretty text-lg leading-8">
-                Here is a realistic look at our operations and outcomes. We track our effectiveness so
-                partners and donors know exactly where resources go and how lives are changing—using the
-                same resident-level signals that power our outcome models.
-              </p>
-            </div>
-          </ScrollReveal>
-          <ScrollReveal direction="right" delay={0.2}>
-            <img
-              src={womenGreenTop}
-              alt="Women in an embrace"
-              className="hidden lg:block rounded-3xl object-cover aspect-[4/3] w-full shadow-xl border border-border/50 brightness-105 contrast-105"
-            />
-          </ScrollReveal>
+          <div className="max-w-3xl">
+            <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
+              Our mission
+            </p>
+            <h1 className="font-heading mt-3 text-balance text-[clamp(2.5rem,5vw,4rem)] font-semibold text-accent">
+              Protecting and restoring lives
+            </h1>
+            <p className="text-muted-foreground mt-4 text-pretty text-lg leading-8">
+              Here is a realistic look at our operations and outcomes. We track our effectiveness so
+              partners and donors know exactly where resources go and how lives are changing—using the
+              same resident-level signals that power our outcome models.
+            </p>
+          </div>
+          <img
+            src={womenGreenTop}
+            alt="Women in an embrace"
+            className="hidden lg:block rounded-3xl object-cover aspect-[4/3] w-full shadow-xl border border-border/50 brightness-105 contrast-105"
+          />
         </div>
 
         <div className="mb-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            <Stat key="served" label="Survivors served (all time)" value={stats.totalResidentsServed} animate />,
-            <Stat key="active" label="Residents in active care (rounded)" value={formatAnonymizedCount(stats.activeResidents)} hint="Shown like our home page to protect privacy." />,
-            <Stat key="homes" label="Active safe homes" value={stats.activeSafehouses} animate />,
-            <Stat key="partners" label="Partner organizations" value={stats.activePartners} animate />,
-            <Stat key="health" label="Average wellbeing score (active care)" value={live?.avgGeneralHealthScore != null ? live.avgGeneralHealthScore.toFixed(2) : '\u2014'} hint={live && live.residentsInHealthSample > 0 ? 'From the most recent wellbeing record per resident in active care.' : undefined} />,
-            <Stat key="edu" label="Average education progress (active care)" value={live?.avgEducationProgressPercent != null ? `${live.avgEducationProgressPercent.toFixed(1)}%` : '\u2014'} hint={live && live.residentsInEducationSample > 0 ? 'From the most recent education record per resident in active care.' : undefined} />,
-            <Stat key="weekly" label="Illustrative weekly support per resident (USD)" value={impact?.estimatedWeeklySupportPerResidentUsd != null ? formatCurrencyAmount('USD', impact.estimatedWeeklySupportPerResidentUsd) : '\u2014'} hint={impact?.basedOnTrailingTwelveMonths ? 'Based on monetary USD gifts in the last 12 months, spread across active residents (illustrative).' : 'Based on all-time monetary USD in our system, divided by 52 weeks and active residents when recent data is thin (illustrative).'} />,
-            <Stat key="total" label="Total monetary giving (USD, all time)" value={formatCurrencyAmount('USD', stats.totalDonationValueUsd)} />,
-          ].map((stat, i) => (
-            <ScrollReveal key={i} delay={i * 0.07}>
-              {stat}
-            </ScrollReveal>
-          ))}
+          <Stat label="Survivors served (all time)" value={stats.totalResidentsServed} />
+          <Stat
+            label="Residents in active care (rounded)"
+            value={formatAnonymizedCount(stats.activeResidents)}
+            hint="Shown like our home page to protect privacy."
+          />
+          <Stat label="Active safe homes" value={stats.activeSafehouses} />
+          <Stat label="Partner organizations" value={stats.activePartners} />
+          <Stat
+            label="Average wellbeing score (active care)"
+            value={
+              live?.avgGeneralHealthScore != null
+                ? live.avgGeneralHealthScore.toFixed(2)
+                : '—'
+            }
+            hint={
+              live && live.residentsInHealthSample > 0
+                ? 'From the most recent wellbeing record per resident in active care.'
+                : undefined
+            }
+          />
+          <Stat
+            label="Average education progress (active care)"
+            value={
+              live?.avgEducationProgressPercent != null
+                ? `${live.avgEducationProgressPercent.toFixed(1)}%`
+                : '—'
+            }
+            hint={
+              live && live.residentsInEducationSample > 0
+                ? 'From the most recent education record per resident in active care.'
+                : undefined
+            }
+          />
+          <Stat
+            label="Illustrative weekly support per resident (USD)"
+            value={
+              impact?.estimatedWeeklySupportPerResidentUsd != null
+                ? formatCurrencyAmount(
+                    'USD',
+                    impact.estimatedWeeklySupportPerResidentUsd,
+                  )
+                : '—'
+            }
+            hint={
+              impact?.basedOnTrailingTwelveMonths
+                ? 'Based on monetary USD gifts in the last 12 months, spread across active residents (illustrative).'
+                : 'Based on all-time monetary USD in our system, divided by 52 weeks and active residents when recent data is thin (illustrative).'
+            }
+          />
+          <Stat
+            label="Total monetary giving (USD, all time)"
+            value={formatCurrencyAmount('USD', stats.totalDonationValueUsd)}
+          />
         </div>
 
         {impact &&
           impact.sampleGiftWeekCoveragePercent != null &&
           impact.estimatedWeeklySupportPerResidentUsd != null &&
           impact.estimatedWeeklySupportPerResidentUsd > 0 && (
-            <ScrollReveal>
             <Card className="border-border/70 bg-card/95 mb-10">
               <CardContent className="p-8">
                 <h2 className="font-heading text-xl font-semibold text-accent">
@@ -180,7 +206,6 @@ export function ImpactPage() {
                 </p>
               </CardContent>
             </Card>
-            </ScrollReveal>
           )}
 
         {loadingTrends ? (
@@ -213,14 +238,13 @@ export function ImpactPage() {
         ) : null}
 
         {!loadingTrends && trends.length > 0 ? (
-          <ScrollReveal>
           <Card className="border-border/70 bg-card/95 mb-10">
             <CardContent className="p-8">
               <h2 className="font-heading text-2xl font-semibold text-accent mb-6">
                 Donations vs. Resident Outcomes
               </h2>
-              <div ref={chartRef} className="h-[400px] w-full">
-                {chartInView && <ResponsiveContainer width="100%" height="100%">
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart
                     data={trends}
                     margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
@@ -297,15 +321,13 @@ export function ImpactPage() {
                       activeDot={{ r: 6 }}
                     />
                   </ComposedChart>
-                </ResponsiveContainer>}
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
-          </ScrollReveal>
         ) : null}
 
         {stats.latestSnapshot && (
-          <ScrollReveal>
           <Card className="border-primary/18 bg-primary/7 mb-10">
             <CardContent className="p-8">
               <h2 className="font-heading text-2xl font-semibold text-accent">
@@ -344,18 +366,14 @@ export function ImpactPage() {
               )}
             </CardContent>
           </Card>
-          </ScrollReveal>
         )}
 
-        <ScrollReveal>
-          <p className="text-muted-foreground mt-12 text-center text-sm">
-            All data is anonymized and aggregated. No personally identifiable
-            information is displayed.
-          </p>
-        </ScrollReveal>
+        <p className="text-muted-foreground mt-12 text-center text-sm">
+          All data is anonymized and aggregated. No personally identifiable
+          information is displayed.
+        </p>
       </div>
     </div>
-    </>
   )
 }
 
@@ -363,23 +381,15 @@ function Stat({
   label,
   value,
   hint,
-  animate: shouldAnimate,
 }: {
   label: string
   value: string | number
   hint?: string
-  animate?: boolean
 }) {
   return (
     <Card className="h-full border-border/70 bg-card/95">
       <CardContent className="p-6 text-center">
-        <p className="font-heading text-primary text-3xl font-semibold">
-          {shouldAnimate && typeof value === 'number' ? (
-            <AnimatedCounter value={value} />
-          ) : (
-            value
-          )}
-        </p>
+        <p className="font-heading text-primary text-3xl font-semibold">{value}</p>
         <p className="text-muted-foreground mt-2 text-sm">{label}</p>
         {hint ? (
           <p className="text-muted-foreground/90 mt-2 text-xs leading-snug">{hint}</p>

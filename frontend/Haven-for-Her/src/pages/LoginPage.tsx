@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useLoginForm } from '@/features/public/login/useLoginForm'
-import { ScrollReveal } from '@/components/ui/scroll-reveal'
 
 export function LoginPage() {
   const {
@@ -26,7 +25,6 @@ export function LoginPage() {
   return (
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <ScrollReveal>
         <div className="space-y-5">
           <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
             Welcome back
@@ -40,9 +38,7 @@ export function LoginPage() {
             survivor resources.
           </p>
         </div>
-        </ScrollReveal>
 
-        <ScrollReveal direction="right" delay={0.15}>
         <Card className="border-border/70 bg-card/95">
           <CardContent className="p-8">
             {error && (
@@ -161,7 +157,6 @@ export function LoginPage() {
             )}
           </CardContent>
         </Card>
-        </ScrollReveal>
       </div>
     </div>
   )

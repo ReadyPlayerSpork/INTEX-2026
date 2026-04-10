@@ -144,8 +144,6 @@ builder.Services.AddHttpClient("MlService", client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-builder.Services.AddHostedService<MLRetrainSchedulerService>();
-
 // ── Meta Ads API ───────────────────────────────────────────────────────────
 // Config is loaded from environment variables or appsettings (double-underscore → colon mapping).
 // Set META_SYSTEM_USER_TOKEN, META_AD_ACCOUNT_ID, META_PAGE_ID, etc.

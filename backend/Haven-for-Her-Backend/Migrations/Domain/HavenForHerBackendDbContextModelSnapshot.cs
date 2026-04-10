@@ -568,47 +568,6 @@ namespace Haven_for_Her_Backend.Migrations.Domain
                     b.ToTable("intervention_plans");
                 });
 
-            modelBuilder.Entity("Haven_for_Her_Backend.Models.MLRetrainSchedule", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("DayOfMonth")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("DayOfWeek")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Frequency")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("Hour")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastRun")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastRunStatus")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Minute")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("NextRun")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("MLRetrainSchedules");
-                });
-
             modelBuilder.Entity("Haven_for_Her_Backend.Models.Partner", b =>
                 {
                     b.Property<int>("PartnerId")

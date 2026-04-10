@@ -1,8 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { resetEssentialCookieNotice } from '@/lib/essentialCookieNotice'
-import { ScrollReveal } from '@/components/ui/scroll-reveal'
-import { ScrollProgress } from '@/components/ui/scroll-progress'
 
 export function PrivacyPage() {
   const handleShowNoticeAgain = () => {
@@ -11,11 +9,8 @@ export function PrivacyPage() {
   }
 
   return (
-    <>
-    <ScrollProgress />
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto max-w-4xl">
-        <ScrollReveal>
         <div className="mb-8 max-w-3xl">
           <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
             Privacy policy
@@ -29,9 +24,7 @@ export function PrivacyPage() {
             survivors, volunteers, and staff.
           </p>
         </div>
-        </ScrollReveal>
 
-        <ScrollReveal delay={0.1}>
         <Card className="border-border/70 bg-card/95">
           <CardContent className="space-y-8 p-8 text-sm leading-7">
             <section>
@@ -359,9 +352,7 @@ export function PrivacyPage() {
             </p>
           </CardContent>
         </Card>
-        </ScrollReveal>
       </div>
     </div>
-    </>
   )
 }

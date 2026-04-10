@@ -137,26 +137,3 @@ export interface MLStatus {
 export async function getMLStatus(): Promise<MLStatus> {
   return api.get('/api/ml/status')
 }
-
-// -- Schedule --
-
-export interface MLRetrainSchedule {
-  id?: number
-  isEnabled: boolean
-  frequency: 'Daily' | 'Weekly' | 'Monthly'
-  hour: number
-  minute: number
-  dayOfWeek?: number
-  dayOfMonth?: number
-  lastRun?: string
-  lastRunStatus?: string
-  nextRun?: string
-}
-
-export async function getMLSchedule(): Promise<MLRetrainSchedule> {
-  return api.get('/api/ml/schedule')
-}
-
-export async function updateMLSchedule(schedule: MLRetrainSchedule): Promise<MLRetrainSchedule> {
-  return api.post('/api/ml/schedule', schedule)
-}

@@ -17,7 +17,6 @@ import { RiskDonutChart } from '@/components/admin/RiskDonutChart'
 import { NarrativeAlertsPanel } from '@/components/admin/NarrativeAlertsPanel'
 import { CaseloadPreviewTable, type CaseloadRow } from '@/components/admin/CaseloadPreviewTable'
 import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
-import { MLScheduleCard } from '@/components/admin/MLScheduleCard'
 
 interface DonationByType {
   type: string
@@ -379,8 +378,6 @@ export function AdminDashboardPage() {
           />
         </div>
       </div>
-
-      <MLScheduleCard />
 
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-bloom">
         {isRetraining && (
