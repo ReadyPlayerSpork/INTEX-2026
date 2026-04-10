@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Menu, UserRound, ChevronDown, Home } from 'lucide-react'
+import { Menu, UserRound, ChevronDown, Home } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -167,33 +167,30 @@ export function PortalLayout({ title, sections, homeRoute }: PortalLayoutProps) 
         </p>
       </aside>
 
-      {/* ── Main content area (no duplicate portal header) ─────── */}
+      {/* ── Main content area ───────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* ── Mobile top header ───────────────────────────────────── */}
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-card/95 px-4 shadow-sm md:hidden">
+          <div className="flex items-center gap-2.5">
+            <img src={logoMarkUrl} alt="H4H Logo" className="size-8 object-contain" />
+            <span className="font-heading text-sm font-semibold text-accent">{title}</span>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Open menu"
+            onClick={() => setMobileNav(true)}
+            className="-mr-2"
+          >
+            <Menu className="size-6" />
+          </Button>
+        </header>
+
         <main id="portal-main" className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8" tabIndex={-1}>
           <Outlet />
         </main>
       </div>
-
-      {/* Mobile: open portal nav sheet (sidebar is hidden on small screens) */}
-      <Button
-        type="button"
-        variant="outline"
-        size="icon-lg"
-        className="border-border/70 bg-card/95 fixed bottom-4 left-4 z-40 min-h-12 min-w-12 shadow-lg md:hidden"
-        aria-label="Open menu"
-        onClick={() => setMobileNav(true)}
-      >
-        <Menu className="size-5" />
-      </Button>
-
-      {/* ── Mobile FAB: quick link to portal home ───────────────── */}
-      <NavLink
-        to={home}
-        className="border-border/70 bg-card/95 text-muted-foreground hover:text-foreground fixed bottom-4 right-4 z-40 flex size-12 items-center justify-center rounded-full border shadow-lg md:hidden"
-        aria-label="Dashboard"
-      >
-        <LayoutDashboard className="size-5" />
-      </NavLink>
 
       {/* ── Mobile sheet nav ────────────────────────────────────── */}
       <Sheet open={mobileNav} onOpenChange={setMobileNav}>
