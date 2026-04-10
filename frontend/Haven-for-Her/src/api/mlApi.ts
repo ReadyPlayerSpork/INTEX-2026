@@ -66,6 +66,8 @@ export interface SafehouseOutcome {
   safehouseName: string
   predictedEducationProgress: number
   actualEducationProgress: number
+  /** First day of the month both values refer to (YYYY-MM-DD). */
+  comparisonMonthStart?: string
 }
 
 export async function getSafehouseOutcomes(): Promise<SafehouseOutcome[]> {

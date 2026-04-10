@@ -185,26 +185,28 @@ export function SafehousesPage() {
             </CardTitle>
             <div className="text-muted-foreground space-y-2 text-sm leading-relaxed">
               <p>
-                Compares the funding-based model estimate to <strong className="text-foreground">reported</strong>{' '}
-                monthly metrics per safehouse. Values are average <strong className="text-foreground">education progress (%)</strong> on a
-                0–100 scale (milestones toward individualized education goals—similar to{' '}
-                <code className="text-foreground/90 rounded bg-muted px-1 py-0.5 text-xs">progress_percent</code> on
-                education records and <code className="text-foreground/90 rounded bg-muted px-1 py-0.5 text-xs">avg_education_progress</code>{' '}
-                on monthly safehouse metrics). This is not a letter grade.
+                Each row is <strong className="text-foreground">one calendar month</strong> per site (see{' '}
+                <strong className="text-foreground">Comparison month</strong>). <strong className="text-foreground">Recorded</strong> is that
+                month’s <code className="text-foreground/90 rounded bg-muted px-1 py-0.5 text-xs">avg_education_progress</code> from monthly
+                metrics (0–100 milestone scale, not a letter grade). <strong className="text-foreground">Predicted</strong> is the regression
+                model’s estimate for <em>that same month</em> from lagged funding, headcount, and (once retrained) prior-month progress.
               </p>
               <ul className="text-muted-foreground list-disc space-y-1 pl-5">
                 <li>
-                  <strong className="text-foreground">Predicted</strong> — regression from the safehouse outcomes model using{' '}
-                  <em>lagged</em> funding (by program area) and active resident counts.
+                  <strong className="text-foreground">Why predictions looked “stuck” in the 30s</strong> — Older deployments trained mainly on
+                  lagged dollars + residents. Demo data often climbs toward 100% in later months, so a funding-only curve can sit far below
+                  recorded completion. That is a <em>benchmark gap</em>, not a bug in the metrics row.
                 </li>
                 <li>
-                  <strong className="text-foreground">Actual</strong> — average from the latest month with meaningful reported progress
-                  (non-zero education and wellbeing in metrics); placeholder months are skipped when possible.
+                  <strong className="text-foreground">Delta (pred − recorded)</strong> — Negative usually means the site is{' '}
+                  <em>ahead of</em> what funding-only inputs alone would suggest (often good). Positive means recorded progress was below the
+                  model benchmark for that month.
                 </li>
                 <li>
-                  <strong className="text-foreground">Delta</strong> — Predicted minus Actual. Positive means the model expected{' '}
-                  <em>higher</em> progress than was reported (gap vs expectation or data lag); negative means the site outperformed what
-                  funding-only features alone would suggest.
+                  <strong className="text-foreground">Retrain</strong> — After updating the ML service, run{' '}
+                  <code className="text-foreground/90 rounded bg-muted px-1 py-0.5 text-xs">python train.py safehouse_outcomes</code> in{' '}
+                  <code className="text-foreground/90 rounded bg-muted px-1 py-0.5 text-xs">ml-pipelines/</code> so the model picks up the
+                  prior-month progress feature and calibrates better to your data.
                 </li>
               </ul>
             </div>
@@ -215,9 +217,10 @@ export function SafehousesPage() {
                 <thead>
                   <tr className="border-border border-b text-left">
                     <th className="px-3 py-2 font-medium">Safehouse</th>
+                    <th className="px-3 py-2 font-medium">Comparison month</th>
                     <th className="px-3 py-2 font-medium tabular-nums">Predicted (%)</th>
-                    <th className="px-3 py-2 font-medium tabular-nums">Actual (%)</th>
-                    <th className="px-3 py-2 font-medium tabular-nums">Delta (pred − actual)</th>
+                    <th className="px-3 py-2 font-medium tabular-nums">Recorded (%)</th>
+                    <th className="px-3 py-2 font-medium tabular-nums">Delta (pred − recorded)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -226,6 +229,9 @@ export function SafehousesPage() {
                     return (
                       <tr key={o.safehouseId} className="border-border border-b">
                         <td className="px-3 py-2">{o.safehouseName}</td>
+                        <td className="px-3 py-2 tabular-nums text-muted-foreground">
+                          {o.comparisonMonthStart ?? '—'}
+                        </td>
                         <td className="px-3 py-2 tabular-nums">
                           {o.predictedEducationProgress.toFixed(2)}
                         </td>

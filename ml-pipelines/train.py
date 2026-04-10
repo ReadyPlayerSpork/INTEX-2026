@@ -432,7 +432,8 @@ def train_resident_progress() -> dict:
 # ---------------------------------------------------------------------------
 def train_safehouse_outcomes() -> dict:
     """
-    Predict education progress based on lagged funding allocations (regression).
+    Predict monthly avg education progress (0–100) from lagged funding by program area,
+    active residents, and prior month's recorded progress (see serve._safehouse_features).
 
     Shallower RandomForest with min leaf/split and subsample to limit overfit on small cohorts.
     """

@@ -175,6 +175,8 @@ The project is deployed to a self-hosted **Dokploy** instance. External HTTPS is
 
 **Social ML (`/api/ml/social-media/predict`):** `POST` body must include a realistic **`captionLength`** (characters). If **`captionLength` is under 20**, the service returns a low placeholder probability and **`contentInsufficient: true`** instead of running the classifier on padded defaults. **`GET /api/ml/social-media/recommendations`** adds **`recommendedCtaLabel`** and **`historicalDonationDriverRate`** (camelCase via `to_camel`).
 
+**Safehouse outcomes (`/api/ml/safehouse-outcomes`):** Each row compares **predicted vs recorded** **`AvgEducationProgress`** for the **same** latest month per safehouse (`comparisonMonthStart`). The regressor uses lagged funding, **`ActiveResidents`**, and **`LaggedEducationProgress`** (prior month). Deploy updated `*.joblib` after `python train.py safehouse_outcomes` so serving matches `serve._safehouse_features`; predictions are **clipped to 0–100**.
+
 Repo **`docker-compose.yml`** mounts **`ml-models`** → **`/app/ml-pipelines/models`** for local stacks (fixed from the old incorrect `/app/models` path).
 
 ### Auto-Deploy

@@ -436,12 +436,15 @@ def _safehouse_features() -> (pd.DataFrame, pd.DataFrame):
     df["LaggedWellbeingFunding"] = df.groupby("SafehouseId")["WellbeingFunding"].shift(1)
     df["LaggedOpsFunding"] = df.groupby("SafehouseId")["OpsFunding"].shift(1)
     df["LaggedTransportFunding"] = df.groupby("SafehouseId")["TransportFunding"].shift(1)
+    # Prior-month recorded progress (strong predictor; funding-only models sit far below ceiling months)
+    df["LaggedEducationProgress"] = df.groupby("SafehouseId")["AvgEducationProgress"].shift(1)
     
     df_final = df.dropna(subset=["LaggedTotalFunding"])
     
     features = [
-        "LaggedTotalFunding", "LaggedEduFunding", "LaggedWellbeingFunding", 
-        "LaggedOpsFunding", "LaggedTransportFunding", "ActiveResidents"
+        "LaggedTotalFunding", "LaggedEduFunding", "LaggedWellbeingFunding",
+        "LaggedOpsFunding", "LaggedTransportFunding", "ActiveResidents",
+        "LaggedEducationProgress",
     ]
     
     # Ensure columns exist (e.g. ActiveResidents)
@@ -688,27 +691,26 @@ def safehouse_outcomes():
     try:
         df_final, X = _safehouse_features()
 
-        def prediction_and_actual_rows(g):
-            """Latest row for model features; last month with reported progress for Actual."""
-            g = g.sort_values("MonthStart")
-            pred_row = g.iloc[-1]
-            meaningful = g[
-                (g["AvgEducationProgress"] > 0) & (g["AvgHealthScore"] > 0)
-            ]
-            actual_row = meaningful.iloc[-1] if len(meaningful) > 0 else pred_row
-            return pred_row, actual_row
-
         results = []
         for _, g in df_final.groupby("SafehouseId", sort=False):
-            pred_row, actual_row = prediction_and_actual_rows(g)
-            feat_row = pd.DataFrame([pred_row[features]])
+            g = g.sort_values("MonthStart")
+            pred_row = g.iloc[-1]
+            feat_row = pd.DataFrame([pred_row[features]]).fillna(0)
             feat_row = _align_features(feat_row, features)
-            pred = float(model.predict(feat_row)[0])
+            pred_raw = float(model.predict(feat_row)[0])
+            pred = max(0.0, min(100.0, pred_raw))
+            actual = float(pred_row.get("AvgEducationProgress", 0))
+            ms = pred_row.get("MonthStart")
+            try:
+                month_iso = "" if pd.isna(ms) else pd.Timestamp(ms).date().isoformat()
+            except (ValueError, TypeError):
+                month_iso = ""
             results.append({
                 "SafehouseId": int(pred_row["SafehouseId"]),
-                "SafehouseName": pred_row.get("Name", ""),
+                "SafehouseName": str(pred_row.get("Name", "") or ""),
                 "PredictedEducationProgress": round(pred, 2),
-                "ActualEducationProgress": round(float(actual_row.get("AvgEducationProgress", 0)), 2),
+                "ActualEducationProgress": round(actual, 2),
+                "ComparisonMonthStart": month_iso,
             })
         return jsonify(to_camel(results))
     except Exception as e:
