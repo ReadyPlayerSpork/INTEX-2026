@@ -187,38 +187,49 @@ using (var scope = app.Services.CreateScope())
 
     if (forceRefresh || isDomainEmpty)
     {
+        seedLogger.LogInformation(
+            "CSV seed gate: REFRESH raw={RefreshRaw}, forceRefresh={Force}, domainEmpty={Empty}, ContentRoot={Root}, BaseDir={Base}",
+            refreshEnv ?? "(null)",
+            forceRefresh,
+            isDomainEmpty,
+            app.Environment.ContentRootPath,
+            AppContext.BaseDirectory);
+
         if (forceRefresh)
-            seedLogger.LogInformation("REFRESH=true — wiping and re-seeding domain data");
+            seedLogger.LogInformation("REFRESH=true — will wipe and re-seed domain data when CSV seed runs");
         else
             seedLogger.LogInformation("Domain tables are empty — running initial seed");
 
-        // Try ContentRootPath first, then fall back to the app base directory (where the DLL lives).
+        // Common layouts: SDK publish, Railpack/Dokploy /app, cwd, plus explicit /app fallbacks.
         var candidatePaths = new[]
         {
             Path.Combine(app.Environment.ContentRootPath, "docs", "lighthouse_csv_v7"),
             Path.Combine(AppContext.BaseDirectory, "docs", "lighthouse_csv_v7"),
+            Path.Combine(Directory.GetCurrentDirectory(), "docs", "lighthouse_csv_v7"),
+            "/app/docs/lighthouse_csv_v7",
+            Path.Combine("/app", "publish", "docs", "lighthouse_csv_v7"),
         };
 
         var csvDir = candidatePaths.FirstOrDefault(Directory.Exists);
-        if (csvDir is not null)
+        if (csvDir is null)
         {
-            try
-            {
-                seedLogger.LogInformation("CSV directory resolved to {CsvDir}", csvDir);
-                await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, supporterPassword, seedLogger);
-            }
-            catch (Exception ex)
-            {
-                seedLogger.LogError(ex, "CSV seeding FAILED");
-            }
+            var msg =
+                "CSV directory not found — cannot seed. Tried: " + string.Join("; ", candidatePaths) +
+                $". ContentRootPath={app.Environment.ContentRootPath}, BaseDirectory={AppContext.BaseDirectory}, cwd={Directory.GetCurrentDirectory()}";
+            seedLogger.LogError("{Message}", msg);
+            // Do not start serving an empty org after REFRESH or first deploy; fail the process so logs/Dokploy show the error.
+            throw new InvalidOperationException(msg);
         }
-        else
+
+        seedLogger.LogInformation("CSV directory resolved to {CsvDir}", csvDir);
+        try
         {
-            seedLogger.LogError(
-                "CSV directory not found. Tried: {Paths}. ContentRootPath={ContentRoot}, BaseDirectory={BaseDir}",
-                string.Join(", ", candidatePaths),
-                app.Environment.ContentRootPath,
-                AppContext.BaseDirectory);
+            await CsvDataSeeder.SeedAsync(domainDb, userManager, csvDir, supporterPassword, seedLogger);
+        }
+        catch (Exception ex)
+        {
+            seedLogger.LogError(ex, "CSV seeding FAILED — process will exit so the DB is not left partially empty");
+            throw;
         }
     }
     else

@@ -30,7 +30,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="docs\lighthouse_csv_v7\**\*.csv" CopyToPublishDirectory="PreserveNewest" />
+        <!-- CopyToOutputDirectory: bin output for dotnet run; CopyToPublishDirectory: container / publish (Railpack, etc.) -->
+        <Content Include="docs\lighthouse_csv_v7\**\*.csv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>
