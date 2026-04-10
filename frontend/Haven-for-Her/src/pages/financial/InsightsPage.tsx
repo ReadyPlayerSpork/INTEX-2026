@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '@/api/client'
 import { Card, CardContent } from '@/components/ui/card'
 import { getDonorChurnBatch, type ChurnPrediction } from '@/api/mlApi'
 import { formatCurrencyAmount } from '@/features/public/donate/donationCurrencies'
+import { supporterTableLabel } from '@/lib/cleanSupporterDisplayName'
 
 interface Insights {
   activeDonors: number
   lapsedDonors: number
-  topDonors: { supporterId: number; total: number; count: number }[]
+  topDonors: { supporterId: number; displayName: string; total: number; count: number }[]
 }
 
 function churnBadge(level: string) {
@@ -117,7 +119,12 @@ export function InsightsPage() {
                 {churnData.slice(0, 15).map((d) => (
                   <tr key={d.supporterId} className="border-border border-b">
                     <td className="px-3 py-2">
-                      {d.displayName || `#${d.supporterId}`}
+                      <Link
+                        to={`/financial/donors/${d.supporterId}`}
+                        className="text-primary font-medium underline-offset-2 hover:underline"
+                      >
+                        {supporterTableLabel(d.displayName, d.supporterId)}
+                      </Link>
                     </td>
                     <td className="px-3 py-2 tabular-nums">
                       {(d.churnProbability * 100).toFixed(1)}%
@@ -140,7 +147,7 @@ export function InsightsPage() {
             <thead>
               <tr className="border-border border-b text-left">
                 <th className="px-3 py-2 font-medium">#</th>
-                <th className="px-3 py-2 font-medium">Supporter ID</th>
+                <th className="px-3 py-2 font-medium">Supporter name</th>
                 <th className="px-3 py-2 font-medium">Total (USD)</th>
                 <th className="px-3 py-2 font-medium">Donations</th>
               </tr>
@@ -149,7 +156,14 @@ export function InsightsPage() {
               {data.topDonors.map((d, i) => (
                 <tr key={d.supporterId} className="border-border border-b">
                   <td className="px-3 py-2">{i + 1}</td>
-                  <td className="px-3 py-2">{d.supporterId}</td>
+                  <td className="px-3 py-2">
+                    <Link
+                      to={`/financial/donors/${d.supporterId}`}
+                      className="text-primary font-medium underline-offset-2 hover:underline"
+                    >
+                      {supporterTableLabel(d.displayName, d.supporterId)}
+                    </Link>
+                  </td>
                   <td className="px-3 py-2">
                     {formatCurrencyAmount('USD', d.total)}
                   </td>

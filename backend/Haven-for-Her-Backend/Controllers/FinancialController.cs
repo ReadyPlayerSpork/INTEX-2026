@@ -223,14 +223,39 @@ public class FinancialController(HavenForHerBackendDbContext db) : ControllerBas
 
         var lapsedCount = allDonorIdsLast12.Except(activeDonorIdSet).Count();
 
-        // Top donors by total
-        var topDonors = await db.Donations
+        // Top donors by total (with display name for insights table)
+        var topDonorsAgg = await db.Donations
             .Where(d => d.SupporterId != 0 && d.Amount.HasValue)
             .GroupBy(d => d.SupporterId)
-            .Select(g => new { supporterId = g.Key, total = g.Sum(d => d.Amount!.Value), count = g.Count() })
-            .OrderByDescending(g => g.total)
+            .Select(g => new { SupporterId = g.Key, Total = g.Sum(d => d.Amount!.Value), Count = g.Count() })
+            .OrderByDescending(g => g.Total)
             .Take(10)
             .ToListAsync();
+
+        var topIds = topDonorsAgg.Select(x => x.SupporterId).ToList();
+        var supporterRows = await db.Supporters
+            .Where(s => topIds.Contains(s.SupporterId))
+            .Select(s => new { s.SupporterId, s.DisplayName, s.FirstName, s.LastName })
+            .ToListAsync();
+        var nameLookup = supporterRows.ToDictionary(s => s.SupporterId);
+
+        string NameFor(int id)
+        {
+            if (!nameLookup.TryGetValue(id, out var s))
+                return $"Supporter #{id}";
+            if (!string.IsNullOrWhiteSpace(s.DisplayName))
+                return s.DisplayName;
+            var fl = $"{s.FirstName} {s.LastName}".Trim();
+            return string.IsNullOrEmpty(fl) ? $"Supporter #{id}" : fl;
+        }
+
+        var topDonors = topDonorsAgg.Select(t => new
+        {
+            supporterId = t.SupporterId,
+            displayName = NameFor(t.SupporterId),
+            total = t.Total,
+            count = t.Count,
+        }).ToList();
 
         return Ok(new
         {

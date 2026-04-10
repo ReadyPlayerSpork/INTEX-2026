@@ -7,7 +7,6 @@ import { DataTable, type ColumnDef } from '@/components/DataTable'
 import { useServerTable } from '@/hooks/useServerTable'
 import { financialApi, type CreateSupporterRequest } from '@/api/financialApi'
 import { SupporterFormModal } from '@/components/financial/SupporterFormModal'
-import { RecordDonationModal } from '@/components/financial/RecordDonationModal'
 
 interface Donor {
   supporterId: number
@@ -50,7 +49,6 @@ export function DonorManagementPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [editTarget, setEditTarget] = useState<Donor | null>(null)
   const [editInitial, setEditInitial] = useState<CreateSupporterRequest | null>(null)
-  const [showDonation, setShowDonation] = useState(false)
 
   const filters = useMemo(
     () => ({ search, supporterType: typeFilter, status: statusFilter }),
@@ -70,7 +68,6 @@ export function DonorManagementPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Donor Management</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowDonation(true)}>Record Donation</Button>
           <Button onClick={() => setShowCreate(true)}>New Supporter</Button>
         </div>
       </div>
@@ -172,16 +169,6 @@ export function DonorManagementPage() {
         />
       )}
 
-      {showDonation && (
-        <RecordDonationModal
-          onSubmit={async (data) => {
-            await financialApi.recordDonation(data)
-            setShowDonation(false)
-            table.refresh()
-          }}
-          onClose={() => setShowDonation(false)}
-        />
-      )}
     </div>
   )
 }

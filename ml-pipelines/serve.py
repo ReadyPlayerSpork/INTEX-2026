@@ -431,6 +431,15 @@ def _risk_level(prob: float) -> str:
         return "High"
 
 
+def _donor_churn_risk_level(prob: float) -> str:
+    """Buckets for donor churn UI: Low ≤20%, Medium 20–40%, High >40%."""
+    if prob <= 0.20:
+        return "Low"
+    if prob <= 0.40:
+        return "Medium"
+    return "High"
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -500,7 +509,7 @@ def donor_churn_batch():
                 "SupporterId": int(row["SupporterId"]),
                 "DisplayName": row.get("DisplayName", ""),
                 "ChurnProbability": round(prob, 4),
-                "RiskLevel": _risk_level(prob),
+                "RiskLevel": _donor_churn_risk_level(prob),
             })
         results.sort(key=lambda x: x["ChurnProbability"], reverse=True)
         return jsonify(to_camel(results))
