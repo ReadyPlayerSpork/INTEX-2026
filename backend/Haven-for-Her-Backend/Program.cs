@@ -236,6 +236,9 @@ using (var scope = app.Services.CreateScope())
     {
         seedLogger.LogInformation("Domain data exists and REFRESH is not set — skipping CSV seed");
     }
+
+    var seqLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("PostgresSequenceSync");
+    await CsvDataSeeder.ResyncPostgresIdentitySequencesAsync(domainDb, seqLogger);
 }
 
 // Configure the HTTP request pipeline.

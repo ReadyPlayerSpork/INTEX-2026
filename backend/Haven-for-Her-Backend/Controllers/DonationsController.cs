@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Haven_for_Her_Backend.Controllers;
 
@@ -130,11 +131,24 @@ public class DonationsController(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to create anonymous donation.");
+            LogDonationPersistenceFailure(ex, "Failed to create anonymous donation");
             return Problem(
                 detail: "Unable to save donation. Please try again or contact support.",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
+    }
+
+    private void LogDonationPersistenceFailure(Exception ex, string context)
+    {
+        if (ex is DbUpdateException dbEx && dbEx.InnerException is PostgresException pg)
+        {
+            logger.LogError(dbEx,
+                "{Context}: Postgres {SqlState} — {MessageText}. Detail: {Detail}",
+                context, pg.SqlState, pg.MessageText, pg.Detail);
+            return;
+        }
+
+        logger.LogError(ex, "{Context}", context);
     }
 
     private async Task<Supporter> FindOrCreateSupporterForUser(ApplicationUser user)

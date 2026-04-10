@@ -6,6 +6,7 @@ using CsvHelper.TypeConversion;
 using Haven_for_Her_Backend.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Haven_for_Her_Backend.Data;
 
@@ -210,6 +211,62 @@ public static class CsvDataSeeder
 
         logger.LogInformation("CSV seed complete.");
     }
+
+    /// <summary>
+    /// Bulk inserts from CSV supply explicit primary keys; PostgreSQL identity sequences are not advanced,
+    /// so the next ORM-generated insert can collide (e.g. donations, supporters). Call after seed and on startup.
+    /// </summary>
+    public static async Task ResyncPostgresIdentitySequencesAsync(
+        HavenForHerBackendDbContext db,
+        ILogger logger,
+        CancellationToken cancellationToken = default)
+    {
+        if (!string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
+            return;
+
+        foreach (var (table, column) in DomainIdentityColumns)
+        {
+            try
+            {
+                var sql = $"""
+                    SELECT setval(
+                        pg_get_serial_sequence('{table}', '{column}'),
+                        COALESCE((SELECT MAX({column}) FROM {table}), 0),
+                        true);
+                    """;
+                await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Could not resync identity sequence for {Table}.{Column}", table, column);
+            }
+        }
+
+        logger.LogInformation("PostgreSQL domain identity sequences resynced.");
+    }
+
+    /// <summary>Tables with integer identity PKs in the domain model (matches migrations / snake_case columns).</summary>
+    private static readonly (string Table, string Column)[] DomainIdentityColumns =
+    [
+        ("counseling_requests", "request_id"),
+        ("donations", "donation_id"),
+        ("donation_allocations", "allocation_id"),
+        ("education_records", "education_record_id"),
+        ("health_wellbeing_records", "health_record_id"),
+        ("home_visitations", "visitation_id"),
+        ("in_kind_donation_items", "item_id"),
+        ("incident_reports", "incident_id"),
+        ("intervention_plans", "plan_id"),
+        ("partners", "partner_id"),
+        ("partner_assignments", "assignment_id"),
+        ("process_recordings", "recording_id"),
+        ("public_impact_snapshots", "snapshot_id"),
+        ("residents", "resident_id"),
+        ("safehouses", "safehouse_id"),
+        ("safehouse_monthly_metrics", "metric_id"),
+        ("social_media_posts", "post_id"),
+        ("supporters", "supporter_id"),
+    ];
 
     /// <summary>
     /// Adds monetary donations dated within the last 30 days (UTC) so dashboards and donor views show recent activity after each re-seed.
