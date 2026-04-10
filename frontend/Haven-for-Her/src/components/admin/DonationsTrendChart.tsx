@@ -69,6 +69,9 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
           <span className="text-muted-foreground"> recurring · </span>
           <span className="font-semibold text-accent">{oneTimePct}%</span>
           <span className="text-muted-foreground"> one-time</span>
+          <span className="text-muted-foreground block mt-0.5 max-w-[14rem] leading-snug">
+            (share of monetary gifts in the last 30 days)
+          </span>
         </div>
       </div>
 

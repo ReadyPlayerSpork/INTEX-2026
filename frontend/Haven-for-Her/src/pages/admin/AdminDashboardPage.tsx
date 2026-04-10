@@ -324,9 +324,9 @@ export function AdminDashboardPage() {
           icon={<AlertTriangle className="text-destructive size-4 shrink-0 opacity-80" />}
         />
         <SummaryCard
-          label="Donations (month)"
+          label="Monetary gifts (30d)"
           value={usd(qs.donationsThisMonth)}
-          sub={`${pctChange(fin.percentChange)} vs last month`}
+          sub={`${pctChange(fin.percentChange)} vs prior 30 days (monetary)`}
           href="/financial/donations"
           icon={<TrendingUp className="text-primary size-4 shrink-0 opacity-80" />}
         />

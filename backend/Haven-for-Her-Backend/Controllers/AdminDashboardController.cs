@@ -26,33 +26,45 @@ public class AdminDashboardController(HavenForHerBackendDbContext db) : Controll
         var now = DateTime.UtcNow;
         var today = DateOnly.FromDateTime(now);
         var startOfMonth = new DateOnly(today.Year, today.Month, 1);
-        var startOfLastMonth = startOfMonth.AddMonths(-1);
         var thirtyDaysAgo = today.AddDays(-30);
         var sevenDaysAgo = today.AddDays(-7);
         var sixtyDaysAgo = today.AddDays(-60);
 
-        // ── Financial ──────────────────────────────────────────────────
-        var thisMonthDonations = await db.Donations
-            .Where(d => d.DonationDate >= startOfMonth)
+        // ── Financial (rolling 30-day windows, monetary Amount only) ──
+        // Calendar-month buckets often read $0 when seed data lags "today"; monetary
+        // gifts in the last 30 days stay aligned with real DB activity.
+        const int giftWindowDays = 30;
+        var currentGiftStart = today.AddDays(-(giftWindowDays - 1));
+        var priorGiftEnd = currentGiftStart.AddDays(-1);
+        var priorGiftStart = priorGiftEnd.AddDays(-(giftWindowDays - 1));
+
+        var currentWindowDonations = await db.Donations.AsNoTracking()
+            .Where(d => d.DonationDate >= currentGiftStart && d.DonationDate <= today)
             .ToListAsync();
 
-        var lastMonthDonations = await db.Donations
-            .Where(d => d.DonationDate >= startOfLastMonth && d.DonationDate < startOfMonth)
+        var priorWindowDonations = await db.Donations.AsNoTracking()
+            .Where(d => d.DonationDate >= priorGiftStart && d.DonationDate <= priorGiftEnd)
             .ToListAsync();
 
-        var totalThisMonth = thisMonthDonations.Sum(d => d.Amount ?? 0m);
-        var totalLastMonth = lastMonthDonations.Sum(d => d.Amount ?? 0m);
+        static bool IsMonetaryWithAmount(Donation d) =>
+            d.DonationType == "Monetary" && d.Amount.HasValue;
+
+        var currentMonetary = currentWindowDonations.Where(IsMonetaryWithAmount).ToList();
+        var priorMonetary = priorWindowDonations.Where(IsMonetaryWithAmount).ToList();
+
+        var totalThisMonth = currentMonetary.Sum(d => d.Amount!.Value);
+        var totalLastMonth = priorMonetary.Sum(d => d.Amount!.Value);
         var percentChange = totalLastMonth == 0
             ? (totalThisMonth > 0 ? 100m : 0m)
             : Math.Round((totalThisMonth - totalLastMonth) / totalLastMonth * 100, 1);
 
-        var donationsByType = thisMonthDonations
+        var donationsByType = currentWindowDonations
             .GroupBy(d => d.DonationType)
             .Select(g => new { type = g.Key, total = g.Sum(d => d.Amount ?? 0m), count = g.Count() })
             .OrderByDescending(x => x.total)
             .ToList();
 
-        var topCampaigns = thisMonthDonations
+        var topCampaigns = currentWindowDonations
             .Where(d => d.CampaignName != null)
             .GroupBy(d => d.CampaignName!)
             .Select(g => new { campaign = g.Key, total = g.Sum(d => d.Amount ?? 0m), count = g.Count() })
@@ -60,8 +72,8 @@ public class AdminDashboardController(HavenForHerBackendDbContext db) : Controll
             .Take(5)
             .ToList();
 
-        var recurringCount = thisMonthDonations.Count(d => d.IsRecurring);
-        var oneTimeCount = thisMonthDonations.Count(d => !d.IsRecurring);
+        var recurringCount = currentMonetary.Count(d => d.IsRecurring);
+        var oneTimeCount = currentMonetary.Count(d => !d.IsRecurring);
 
         // Donor health: active (donated in last 90 days), lapsed (91-365), churned (>365)
         var donorLastDonation = await db.Donations
