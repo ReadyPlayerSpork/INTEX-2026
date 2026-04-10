@@ -181,6 +181,27 @@ public static class CsvDataSeeder
             {
                 logger.LogWarning("SeedSupporterPassword not set — skipping supporter account creation");
             }
+
+            // Sync PostgreSQL sequences so auto-increment IDs don't collide with seeded IDs
+            const string sequenceSyncSql = """
+                DO $$
+                DECLARE
+                    r RECORD;
+                BEGIN
+                    FOR r IN 
+                        SELECT t.table_name, c.column_name
+                        FROM information_schema.tables t
+                        JOIN information_schema.columns c ON t.table_name = c.table_name
+                        WHERE t.table_schema = 'public' AND c.is_identity = 'YES'
+                    LOOP
+                        EXECUTE 'SELECT setval(pg_get_serial_sequence(''"'||r.table_name||'"'', '''||r.column_name||'''), COALESCE((SELECT MAX("'||r.column_name||'") FROM "'||r.table_name||'"), 1), true)';
+                    END LOOP;
+                END $$;
+                """;
+            
+            logger.LogInformation("Synchronizing PostgreSQL identity sequences...");
+            await db.Database.ExecuteSqlRawAsync(sequenceSyncSql);
+            logger.LogInformation("Sequence synchronization complete.");
         }
         finally
         {
