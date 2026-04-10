@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { DataTable, type ColumnDef } from '@/components/DataTable'
 import { useServerTable } from '@/hooks/useServerTable'
 import { financialApi } from '@/api/financialApi'
+import { EditDonationModal } from './components/EditDonationModal'
 
 interface DonationRecord {
   donationId: number
@@ -41,6 +42,7 @@ const columns: ColumnDef<DonationRecord>[] = [
 export function DonationRecordsPage() {
   const [typeFilter, setTypeFilter] = useState('')
   const [campaignFilter, setCampaignFilter] = useState('')
+  const [editDonation, setEditDonation] = useState<DonationRecord | null>(null)
 
   const filters = useMemo(
     () => ({ type: typeFilter, campaign: campaignFilter }),
@@ -95,6 +97,7 @@ export function DonationRecordsPage() {
         totalCount={table.totalCount}
         onPageChange={table.setPage}
         loading={table.loading}
+        onEdit={(row) => setEditDonation(row)}
         onDelete={async (row) => {
           await financialApi.deleteDonation(row.donationId)
           table.refresh()
@@ -102,6 +105,13 @@ export function DonationRecordsPage() {
         getCascadeInfo={(row) => financialApi.getDonationCascadeInfo(row.donationId)}
         deleteEntityLabel="donation"
         getDeleteName={(row) => `${row.donationType} on ${row.donationDate}${row.amount != null ? ` (${row.currencyCode} ${row.amount.toLocaleString()})` : ''}`}
+      />
+
+      <EditDonationModal
+        donation={editDonation}
+        open={!!editDonation}
+        onOpenChange={(open) => !open && setEditDonation(null)}
+        onSaved={table.refresh}
       />
     </div>
   )

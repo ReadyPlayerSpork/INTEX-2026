@@ -130,6 +130,10 @@ export const financialApi = {
     return api.post('/api/financial/management/donations', data)
   },
 
+  updateDonation(id: number, data: Partial<RecordDonationRequest>): Promise<{ message: string }> {
+    return api.put(`/api/financial/management/donations/${id}`, data)
+  },
+
   deleteDonation(id: number): Promise<{ message: string }> {
     return api.delete(`/api/financial/management/donations/${id}`)
   },

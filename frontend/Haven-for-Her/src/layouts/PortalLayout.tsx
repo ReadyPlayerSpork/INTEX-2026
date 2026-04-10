@@ -5,7 +5,7 @@
 
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Menu, UserRound, ChevronDown } from 'lucide-react'
+import { LayoutDashboard, Menu, UserRound, ChevronDown, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -93,7 +93,19 @@ export function PortalLayout({ title, sections, homeRoute }: PortalLayoutProps) 
           </div>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-2 overflow-y-auto" aria-label="Portal Navigation">
+        <div className="mb-4">
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              `${navClass} flex items-center gap-2 ${isActive ? navActive : navInactive}`
+            }
+          >
+            <Home className="size-4" />
+            Return to Home Page
+          </NavLink>
+        </div>
+
+        <nav className="flex flex-1 min-h-0 flex-col gap-2 overflow-y-auto pr-1" aria-label="Portal Navigation">
           {renderSections(sections)}
         </nav>
 
@@ -151,7 +163,19 @@ export function PortalLayout({ title, sections, homeRoute }: PortalLayoutProps) 
               {title}
             </SheetTitle>
           </SheetHeader>
-          <div className="flex flex-1 flex-col overflow-y-auto p-3">
+          <div className="flex flex-1 min-h-0 flex-col overflow-y-auto p-3">
+            <div className="mb-4 border-b border-border/60 pb-4">
+              <NavLink
+                to="/"
+                onClick={() => setMobileNav(false)}
+                className={({ isActive }) =>
+                  `${navClass} flex items-center gap-2 ${isActive ? navActive : navInactive}`
+                }
+              >
+                <Home className="size-4" />
+                Return to Home Page
+              </NavLink>
+            </div>
             <nav className="flex flex-col gap-2" aria-label="Portal mobile navigation">
               {renderSections(sections, () => setMobileNav(false))}
             </nav>

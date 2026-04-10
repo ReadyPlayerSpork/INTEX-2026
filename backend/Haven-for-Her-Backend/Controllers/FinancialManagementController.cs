@@ -137,6 +137,32 @@ public class FinancialManagementController(HavenForHerBackendDbContext db) : Con
     }
 
     /// <summary>
+    /// Update a donation record (Admin/Financial only).
+    /// </summary>
+    [HttpPut("donations/{id:int}")]
+    public async Task<IActionResult> UpdateDonation(int id, [FromBody] Donation updated)
+    {
+        if (!ModelState.IsValid) return ValidationProblem();
+
+        var existing = await db.Donations.FindAsync(id);
+        if (existing is null) return NotFound();
+
+        existing.DonationType = updated.DonationType ?? "Monetary";
+        existing.DonationDate = updated.DonationDate;
+        existing.Amount = updated.Amount;
+        existing.EstimatedValue = updated.EstimatedValue;
+        existing.CurrencyCode = updated.CurrencyCode ?? "USD";
+        existing.CampaignName = updated.CampaignName;
+        existing.ChannelSource = updated.ChannelSource ?? "Unknown";
+        existing.IsRecurring = updated.IsRecurring;
+        existing.Notes = updated.Notes;
+
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Donation updated." });
+    }
+
+    /// <summary>
     /// List donation allocations with safehouse/program area grouping.
     /// </summary>
     [HttpGet("allocations")]
