@@ -28,7 +28,7 @@ export function ResourcesPage() {
   return (
     <div className="px-5 py-16 md:px-10 md:py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-12 grid gap-10 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
+        <div className="mb-12 grid gap-10 lg:grid-cols-[1.5fr_0.5fr] lg:items-start">
           <div className="max-w-3xl">
             <p className="text-muted-foreground text-sm font-semibold tracking-[0.18em] uppercase">
               Resources and support
@@ -47,9 +47,19 @@ export function ResourcesPage() {
           <img
             src={womanWearingGlasses}
             alt="Woman wearing glasses looking thoughtfully"
-            className="rounded-3xl object-cover aspect-auto w-full shadow-xl border border-border/50 brightness-[1.02] contrast-105"
+            className="hidden lg:block rounded-3xl object-cover aspect-[3/4] w-full shadow-xl border border-border/50 brightness-105 contrast-105"
           />
         </div>
+
+        <section className="mb-12">
+          <div className="mb-5 flex items-center justify-between border-b border-border/50 pb-3">
+            <h2 className="font-heading text-2xl font-semibold text-accent">
+              Crisis Hotlines
+            </h2>
+            <span className="flex h-6 items-center rounded-full bg-red-100 px-2.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">Emergency</span>
+          </div>
+          <CrisisHotlines />
+        </section>
 
         <section className="mb-12">
           <h2 className="font-heading mb-4 text-2xl font-semibold text-accent">
@@ -88,13 +98,6 @@ export function ResourcesPage() {
                   </a>
                 </div>
               </div>
-        </section>
-
-        <section className="mb-12">
-          <h2 className="font-heading mb-4 text-2xl font-semibold text-accent">
-            Crisis Hotlines
-          </h2>
-          <CrisisHotlines />
         </section>
 
         <section ref={safeHomesSectionRef} id="safe-homes" className="scroll-mt-24">
