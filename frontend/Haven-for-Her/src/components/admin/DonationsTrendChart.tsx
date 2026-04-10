@@ -1,5 +1,10 @@
 /**
- * Last 6 months of monetary donation totals — SVG sparkline (no chart library).
+ * Last 6 months of monetary donation totals — responsive SVG sparkline.
+ *
+ * Strategy: the SVG renders only the area fill + line with preserveAspectRatio="none"
+ * so it stretches to fill all available card height without distortion concerns.
+ * Dots and month labels are HTML elements positioned via percentage coordinates so
+ * they stay perfectly circular/crisp regardless of card height.
  */
 
 import { memo } from 'react'
@@ -24,25 +29,34 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
   recurringPct,
   oneTimePct,
 }: DonationsTrendChartProps) {
+  // SVG coordinate space — only used for the fill + line path.
+  // No text or circles live here, so preserveAspectRatio="none" is safe.
   const w = 320
-  const h = 120
-  const pad = { t: 8, r: 8, b: 28, l: 8 }
+  const h = 100
+  const pad = { t: 6, r: 4, b: 6, l: 4 }
   const innerW = w - pad.l - pad.r
   const innerH = h - pad.t - pad.b
 
   const max = Math.max(...months.map((m) => m.total), 1)
+
   const pts = months.map((m, i) => {
     const x = pad.l + (innerW * i) / Math.max(months.length - 1, 1)
     const y = pad.t + innerH - (innerH * m.total) / max
-    return { x, y, ...m }
+    // Percentage positions for HTML dot overlay (must match SVG coordinates exactly)
+    const xPct = (x / w) * 100
+    const yPct = (y / h) * 100
+    return { x, y, xPct, yPct, ...m }
   })
 
-  const lineD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
-  const areaD = `${lineD} L ${pts[pts.length - 1]?.x ?? pad.l} ${pad.t + innerH} L ${pad.l} ${pad.t + innerH} Z`
+  const lineD = pts
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+    .join(' ')
+  const areaD = `${lineD} L ${(pts[pts.length - 1]?.x ?? pad.l).toFixed(2)} ${h} L ${pad.l} ${h} Z`
 
   return (
     <div className="h-full flex flex-col rounded-2xl border border-border bg-card p-5 shadow-bloom">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+      {/* ── Header ── */}
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="font-heading text-base font-semibold text-card-foreground">
             Donations overview
@@ -59,50 +73,60 @@ export const DonationsTrendChart = memo(function DonationsTrendChart({
         </div>
       </div>
 
-      <svg
-        viewBox={`0 0 ${w} ${h}`}
-        className="text-primary h-auto w-full"
-        role="img"
-        aria-label="Donation totals by month"
-      >
-        {/* Gradient stops are hard-coded because SVG stopColor can't reference CSS custom properties.
-            These values must match --primary in index.css (oklch(0.528 0.094 139)). */}
-        <defs>
-          <linearGradient id="donFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="oklch(0.52 0.08 145 / 0.35)" />
-            <stop offset="100%" stopColor="oklch(0.52 0.08 145 / 0)" />
-          </linearGradient>
-        </defs>
-        <path d={areaD} fill="url(#donFill)" className="motion-safe:transition-opacity" />
-        <path
-          d={lineD}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2.25}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
+      {/* ── Chart area — grows to fill remaining card height ── */}
+      <div className="relative flex-1 min-h-0">
+        {/* SVG: area fill + trend line only — stretches freely */}
+        <svg
+          viewBox={`0 0 ${w} ${h}`}
+          className="absolute inset-0 h-full w-full text-primary"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <defs>
+            {/* Gradient stops hard-coded: SVG stopColor cannot read CSS custom properties.
+                Values match --primary oklch(0.528 0.094 139) in index.css. */}
+            <linearGradient id="donFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="oklch(0.52 0.08 145 / 0.32)" />
+              <stop offset="100%" stopColor="oklch(0.52 0.08 145 / 0)" />
+            </linearGradient>
+          </defs>
+          <path d={areaD} fill="url(#donFill)" />
+          <path
+            d={lineD}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+
+        {/* HTML dots — always perfectly circular, no SVG distortion */}
         {pts.map((p) => (
-          <circle key={`${p.year}-${p.month}`} cx={p.x} cy={p.y} r={3.5} className="fill-primary" />
+          <div
+            key={`dot-${p.year}-${p.month}`}
+            className="absolute z-10 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-2 ring-card"
+            style={{ left: `${p.xPct}%`, top: `${p.yPct}%` }}
+            aria-hidden="true"
+          />
         ))}
+      </div>
+
+      {/* ── Month labels — HTML row beneath chart ── */}
+      <div className="mt-2 flex justify-between">
         {pts.map((p) => (
-          <text
-            key={`l-${p.year}-${p.month}`}
-            x={p.x}
-            y={h - 6}
-            textAnchor="middle"
-            className="fill-muted-foreground text-xs font-semibold"
+          <span
+            key={`lbl-${p.year}-${p.month}`}
+            className="text-muted-foreground text-xs font-semibold"
           >
             {p.label}
-          </text>
+          </span>
         ))}
-      </svg>
+      </div>
 
-      {/* Spacer pushes footer to the bottom of the flex card */}
-      <div className="flex-1" />
-
-      <p className="text-muted-foreground mt-2 text-center text-xs">
+      {/* ── Footer stat ── */}
+      <p className="text-muted-foreground mt-3 text-center text-xs">
         Peak this window:{' '}
         <span className="text-card-foreground font-semibold tabular-nums">
           {formatMoney(Math.max(...months.map((m) => m.total), 0))}
