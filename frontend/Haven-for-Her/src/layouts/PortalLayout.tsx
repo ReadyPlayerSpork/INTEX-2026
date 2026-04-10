@@ -70,7 +70,7 @@ export function PortalLayout({ title, sections, homeRoute }: PortalLayoutProps) 
   const home = homeRoute ?? sections[0]?.links[0]?.to ?? '/'
 
   return (
-    <div className="flex min-h-screen bg-[radial-gradient(circle_at_top,_rgba(240,221,213,0.55),_transparent_38%),linear-gradient(180deg,rgba(250,250,252,0.35),rgba(243,239,248,0.95))] text-foreground">
+    <div className="flex h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(240,221,213,0.55),_transparent_38%),linear-gradient(180deg,rgba(250,250,252,0.35),rgba(243,239,248,0.95))] text-foreground">
       {/* Skip link */}
       <a
         href="#portal-main"
