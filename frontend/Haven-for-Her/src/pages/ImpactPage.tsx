@@ -1,4 +1,8 @@
-import { useImpactStats, useImpactTrends } from '@/features/public/home/useImpactStats'
+import {
+  useImpactStats,
+  useImpactTrends,
+  type ImpactTrend,
+} from '@/features/public/home/useImpactStats'
 import { formatAnonymizedCount } from '@/features/public/home/anonymizedCounts'
 import {
   Bar,
@@ -276,14 +280,15 @@ export function ImpactPage() {
                         borderRadius: '8px',
                       }}
                       itemStyle={{ color: 'hsl(var(--foreground))' }}
-                      formatter={(value: any, name: any) => {
-                        const val = Number(value || 0)
-                        const nameStr = String(name || '')
+                      formatter={(value, name) => {
+                        const raw = Array.isArray(value) ? value[0] : value
+                        const val = Number(raw ?? 0)
+                        const nameStr = String(name ?? '')
                         if (nameStr === 'Total Donations') return [`$${val.toLocaleString()}`, nameStr]
                         if (nameStr === 'Avg Education Progress') return [`${val.toFixed(1)}%`, nameStr]
                         if (nameStr === 'Avg Health Score (x20)')
                           return [`${(val / 20).toFixed(1)} / 5`, 'Avg Health Score']
-                        return [val, nameStr]
+                        return [String(val), nameStr]
                       }}
                     />
                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
@@ -308,7 +313,7 @@ export function ImpactPage() {
                     <Line
                       yAxisId="right"
                       type="monotone"
-                      dataKey={(d: any) => d.avgHealthScore * 20}
+                      dataKey={(d: ImpactTrend) => d.avgHealthScore * 20}
                       name="Avg Health Score (x20)"
                       stroke="hsl(var(--destructive))"
                       strokeWidth={3}

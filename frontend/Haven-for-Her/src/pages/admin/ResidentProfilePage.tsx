@@ -323,12 +323,25 @@ function ProfileTab({ resident }: { resident: ResidentProfile }) {
 
 /* ---- Healing Journey Timeline (Process Recordings) ---- */
 
+interface ProcessRecordingTimelineItem {
+  recordingId: number
+  sessionDate: string
+  sessionType: string
+  sessionDurationMinutes: number
+  emotionalStateObserved: string | null
+  concernsFlagged: boolean
+  socialWorker?: string | null
+  sessionNarrative?: string | null
+  interventionsApplied?: string | null
+  followUpActions?: string | null
+}
+
 function ProcessRecordingTimeline({ residentId }: { residentId: number }) {
-  const [records, setRecords] = useState<any[]>([])
+  const [records, setRecords] = useState<ProcessRecordingTimelineItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get<any[]>(`/api/caseload/${residentId}/recordings`)
+    api.get<ProcessRecordingTimelineItem[]>(`/api/caseload/${residentId}/recordings`)
       .then(setRecords)
       .finally(() => setLoading(false))
   }, [residentId])
@@ -351,13 +364,15 @@ function ProcessRecordingTimeline({ residentId }: { residentId: number }) {
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                 rec.concernsFlagged ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
               }`}>
-                {rec.emotionalStateObserved}
+                {rec.emotionalStateObserved ?? '—'}
               </span>
             </div>
             <div className="text-muted-foreground text-xs mb-2">
-              {rec.sessionType} Session • {rec.sessionDurationMinutes} mins • {rec.socialWorker}
+              {rec.sessionType} Session • {rec.sessionDurationMinutes} mins • {rec.socialWorker ?? '—'}
             </div>
-            <p className="text-sm text-foreground leading-relaxed italic mb-3">"{rec.sessionNarrative}"</p>
+            <p className="text-sm text-foreground leading-relaxed italic mb-3">
+              &ldquo;{rec.sessionNarrative ?? ''}&rdquo;
+            </p>
             <div className="space-y-2">
               <div className="text-[11px]">
                 <span className="font-bold uppercase text-soft-purple/70">Interventions:</span>
@@ -377,12 +392,20 @@ function ProcessRecordingTimeline({ residentId }: { residentId: number }) {
 
 /* ---- Case Conferences Tab ---- */
 
+interface ResidentCaseConference {
+  planId: number
+  caseConferenceDate: string
+  planCategory: string
+  planDescription: string
+  status: string
+}
+
 function CaseConferencesTab({ residentId }: { residentId: number }) {
-  const [conferences, setConferences] = useState<any[]>([])
+  const [conferences, setConferences] = useState<ResidentCaseConference[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get<any[]>(`/api/caseload/${residentId}/case-conferences`)
+    api.get<ResidentCaseConference[]>(`/api/caseload/${residentId}/case-conferences`)
       .then(setConferences)
       .finally(() => setLoading(false))
   }, [residentId])
@@ -424,7 +447,13 @@ function CaseConferencesTab({ residentId }: { residentId: number }) {
   )
 }
 
-function ConferenceCard({ conference, isUpcoming }: { conference: any, isUpcoming?: boolean }) {
+function ConferenceCard({
+  conference,
+  isUpcoming,
+}: {
+  conference: ResidentCaseConference
+  isUpcoming?: boolean
+}) {
   return (
     <div className={`p-4 rounded-xl border ${isUpcoming ? 'bg-primary/5 border-primary/20 shadow-bloom' : 'bg-card border-border shadow-sm'}`}>
       <div className="flex items-center justify-between mb-2">

@@ -8,19 +8,40 @@ interface RecordDonationModalProps {
   onClose: () => void
 }
 
+interface RecordDonationFormState {
+  supporterId: string
+  donationType: string
+  donationDate: string
+  channelSource: string
+  currencyCode: string
+  amount: string
+  estimatedValue: string
+  isRecurring: boolean
+  campaignName: string
+  notes: string
+  itemCategory: string
+  hours: string
+  platform: string
+}
+
+const initialForm = (supporterId?: number): RecordDonationFormState => ({
+  supporterId: supporterId ? String(supporterId) : '',
+  donationType: 'Monetary',
+  donationDate: '',
+  channelSource: '',
+  currencyCode: 'USD',
+  amount: '',
+  estimatedValue: '',
+  isRecurring: false,
+  campaignName: '',
+  notes: '',
+  itemCategory: '',
+  hours: '',
+  platform: '',
+})
+
 export function RecordDonationModal({ supporterId, onSubmit, onClose }: RecordDonationModalProps) {
-  const [form, setForm] = useState({
-    supporterId: supporterId ? String(supporterId) : '',
-    donationType: 'Monetary',
-    donationDate: '',
-    channelSource: '',
-    currencyCode: 'USD',
-    amount: '',
-    estimatedValue: '',
-    isRecurring: false,
-    campaignName: '',
-    notes: '',
-  })
+  const [form, setForm] = useState<RecordDonationFormState>(() => initialForm(supporterId))
   const [submitting, setSubmitting] = useState(false)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
@@ -36,9 +57,12 @@ export function RecordDonationModal({ supporterId, onSubmit, onClose }: RecordDo
     // Append extra info to notes to ensure it's saved without schema changes
     let finalNotes = form.notes || ''
     const extra: string[] = []
-    if (form.donationType === 'InKind' && (form as any).itemCategory) extra.push(`Category: ${(form as any).itemCategory}`)
-    if ((form.donationType === 'Time' || form.donationType === 'Skills') && (form as any).hours) extra.push(`Hours: ${(form as any).hours}`)
-    if (form.donationType === 'SocialMedia' && (form as any).platform) extra.push(`Platform: ${(form as any).platform}`)
+    if (form.donationType === 'InKind' && form.itemCategory.trim())
+      extra.push(`Category: ${form.itemCategory.trim()}`)
+    if ((form.donationType === 'Time' || form.donationType === 'Skills') && form.hours.trim())
+      extra.push(`Hours: ${form.hours.trim()}`)
+    if (form.donationType === 'SocialMedia' && form.platform.trim())
+      extra.push(`Platform: ${form.platform.trim()}`)
     
     if (extra.length > 0) {
       finalNotes = finalNotes ? `${finalNotes}\n[Details: ${extra.join(', ')}]` : `[Details: ${extra.join(', ')}]`
@@ -109,20 +133,20 @@ export function RecordDonationModal({ supporterId, onSubmit, onClose }: RecordDo
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-soft-purple">Item Category</span>
-                <input name="itemCategory" placeholder="e.g. Hygiene, Food" value={(form as any).itemCategory ?? ''} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+                <input name="itemCategory" placeholder="e.g. Hygiene, Food" value={form.itemCategory} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
               </label>
             </>
           )}
           {(form.donationType === 'Time' || form.donationType === 'Skills') && (
             <label className="col-span-2 block">
               <span className="text-sm font-medium text-soft-purple">Hours Contributed</span>
-              <input name="hours" type="number" step="0.1" value={(form as any).hours ?? ''} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <input name="hours" type="number" step="0.1" value={form.hours} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
           )}
           {form.donationType === 'SocialMedia' && (
             <label className="col-span-2 block">
               <span className="text-sm font-medium text-soft-purple">Platform / Action</span>
-              <input name="platform" placeholder="e.g. Instagram Share, Facebook Post" value={(form as any).platform ?? ''} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <input name="platform" placeholder="e.g. Instagram Share, Facebook Post" value={form.platform} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
           )}
           <label className="block">

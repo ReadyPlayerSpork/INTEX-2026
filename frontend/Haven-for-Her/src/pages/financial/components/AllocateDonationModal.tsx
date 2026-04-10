@@ -16,6 +16,10 @@ interface Allocation {
   allocationDate: string
 }
 
+interface AllocationsListResponse {
+  items?: Allocation[]
+}
+
 interface AllocateDonationModalProps {
   donationId: number
   donationAmount: number
@@ -57,7 +61,7 @@ export function AllocateDonationModal({
     setLoading(true)
     Promise.all([
       api.get<Safehouse[]>('/api/public/safehouses'),
-      api.get<{ items?: Allocation[] }>(
+      api.get<AllocationsListResponse>(
         `/api/financial/management/allocations?donationId=${donationId}&pageSize=500`,
       ),
     ])
@@ -93,8 +97,10 @@ export function AllocateDonationModal({
         allocationDate: new Date().toISOString().split('T')[0],
       })
       // Refresh
-      const res = await api.get<any>(`/api/financial/management/allocations?donationId=${donationId}`)
-      setExistingAllocations(res.items || [])
+      const res = await api.get<AllocationsListResponse>(
+        `/api/financial/management/allocations?donationId=${donationId}&pageSize=500`,
+      )
+      setExistingAllocations(res.items ?? [])
       setForm({ ...form, amountAllocated: '' })
       onSaved()
     } finally {
@@ -105,8 +111,10 @@ export function AllocateDonationModal({
   async function handleDelete(id: number) {
     if (!confirm('Delete this allocation?')) return
     await api.delete(`/api/financial/management/allocations/${id}`)
-    const res = await api.get<any>(`/api/financial/management/allocations?donationId=${donationId}`)
-    setExistingAllocations(res.items || [])
+    const res = await api.get<AllocationsListResponse>(
+      `/api/financial/management/allocations?donationId=${donationId}&pageSize=500`,
+    )
+    setExistingAllocations(res.items ?? [])
     onSaved()
   }
 
