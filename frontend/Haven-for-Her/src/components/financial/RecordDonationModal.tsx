@@ -90,9 +90,27 @@ export function RecordDonationModal({ supporterId, onSubmit, onClose }: RecordDo
             </>
           )}
           {form.donationType === 'InKind' && (
+            <>
+              <label className="block">
+                <span className="text-sm font-medium text-soft-purple">Estimated Total Value</span>
+                <input name="estimatedValue" type="number" step="0.01" value={form.estimatedValue} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-soft-purple">Item Category</span>
+                <input name="itemCategory" placeholder="e.g. Hygiene, Food" value={(form as any).itemCategory ?? ''} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              </label>
+            </>
+          )}
+          {(form.donationType === 'Time' || form.donationType === 'Skills') && (
             <label className="col-span-2 block">
-              <span className="text-sm font-medium text-soft-purple">Estimated Value</span>
-              <input name="estimatedValue" type="number" step="0.01" value={form.estimatedValue} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+              <span className="text-sm font-medium text-soft-purple">Hours Contributed</span>
+              <input name="hours" type="number" step="0.1" value={(form as any).hours ?? ''} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
+            </label>
+          )}
+          {form.donationType === 'SocialMedia' && (
+            <label className="col-span-2 block">
+              <span className="text-sm font-medium text-soft-purple">Platform / Action</span>
+              <input name="platform" placeholder="e.g. Instagram Share, Facebook Post" value={(form as any).platform ?? ''} onChange={handleChange} className="border-input bg-background mt-1 block w-full rounded-md border px-3 py-2 text-sm" />
             </label>
           )}
           <label className="block">

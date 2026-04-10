@@ -115,29 +115,78 @@ public class FinancialManagementController(HavenForHerBackendDbContext db) : Con
 
         return Ok(new { message = "Supporter updated." });
     }
+/// <summary>
+/// Record a donation from the staff side.
+/// </summary>
+[HttpPost("donations")]
+public async Task<IActionResult> RecordDonation([FromBody] Donation donation)
+{
+    if (!ModelState.IsValid) return ValidationProblem();
 
-    /// <summary>
-    /// Record a donation from the staff side.
-    /// </summary>
-    [HttpPost("donations")]
-    public async Task<IActionResult> RecordDonation([FromBody] Donation donation)
-    {
-        if (!ModelState.IsValid) return ValidationProblem();
+    donation.DonationId = 0;
+    if (string.IsNullOrWhiteSpace(donation.CurrencyCode))
+        donation.CurrencyCode = "USD";
+    if (string.IsNullOrWhiteSpace(donation.DonationType))
+        donation.DonationType = "Monetary";
 
-        donation.DonationId = 0;
-        if (string.IsNullOrWhiteSpace(donation.CurrencyCode))
-            donation.CurrencyCode = "USD";
-        if (string.IsNullOrWhiteSpace(donation.DonationType))
-            donation.DonationType = "Monetary";
+    db.Donations.Add(donation);
+    await db.SaveChangesAsync();
 
-        db.Donations.Add(donation);
-        await db.SaveChangesAsync();
+    return Ok(new { message = "Donation recorded.", donationId = donation.DonationId });
+}
 
-        return Ok(new { message = "Donation recorded.", donationId = donation.DonationId });
-    }
+[HttpPost("donations/{id:int}/allocations")]
+public async Task<IActionResult> CreateAllocation(int id, [FromBody] DonationAllocation allocation)
+{
+    if (!ModelState.IsValid) return ValidationProblem();
 
-    /// <summary>
-    /// Update a donation record (Admin/Financial only).
+    var donation = await db.Donations.FindAsync(id);
+    if (donation is null) return NotFound();
+
+    allocation.AllocationId = 0;
+    allocation.DonationId = id;
+    if (allocation.AllocationDate == default)
+        allocation.AllocationDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+    db.DonationAllocations.Add(allocation);
+    await db.SaveChangesAsync();
+
+    return Ok(new { message = "Allocation recorded.", allocationId = allocation.AllocationId });
+}
+
+[HttpDelete("allocations/{id:int}")]
+[Authorize(Roles = AuthRoles.Admin)]
+public async Task<IActionResult> DeleteAllocation(int id)
+{
+    var allocation = await db.DonationAllocations.FindAsync(id);
+    if (allocation is null) return NotFound();
+
+    db.DonationAllocations.Remove(allocation);
+    await db.SaveChangesAsync();
+
+    return Ok(new { message = "Allocation deleted." });
+}
+
+[HttpPost("donations/{id:int}/items")]
+public async Task<IActionResult> CreateInKindItem(int id, [FromBody] InKindDonationItem item)
+{
+    if (!ModelState.IsValid) return ValidationProblem();
+
+    var donation = await db.Donations.FindAsync(id);
+    if (donation is null) return NotFound();
+
+    item.ItemId = 0;
+    item.DonationId = id;
+
+    db.InKindDonationItems.Add(item);
+    await db.SaveChangesAsync();
+
+    return Ok(new { message = "In-kind item recorded.", itemId = item.ItemId });
+}
+
+/// <summary>
+/// Update a donation record.
+/// </summary>
     /// </summary>
     [HttpPut("donations/{id:int}")]
     public async Task<IActionResult> UpdateDonation(int id, [FromBody] Donation updated)

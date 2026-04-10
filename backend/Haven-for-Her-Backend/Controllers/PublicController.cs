@@ -175,6 +175,55 @@ public class PublicController(HavenForHerBackendDbContext db) : ControllerBase
         return string.Join(" ", parts);
     }
 
+    [HttpGet("impact-trends")]
+    public async Task<IActionResult> GetImpactTrends()
+    {
+        var cutoff = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-12));
+
+        var monthlyDonations = await db.Donations.AsNoTracking()
+            .Where(d => d.DonationDate >= cutoff && d.DonationType == "Monetary" && d.Amount != null)
+            .GroupBy(d => new { d.DonationDate.Year, d.DonationDate.Month })
+            .Select(g => new
+            {
+                Year = g.Key.Year,
+                Month = g.Key.Month,
+                TotalAmount = g.Sum(d => d.Amount)
+            })
+            .ToListAsync();
+
+        var monthlyMetrics = await db.SafehouseMonthlyMetrics.AsNoTracking()
+            .Where(m => m.MonthStart >= cutoff)
+            .GroupBy(m => new { m.MonthStart.Year, m.MonthStart.Month })
+            .Select(g => new
+            {
+                Year = g.Key.Year,
+                Month = g.Key.Month,
+                AvgHealth = g.Average(m => (decimal?)m.AvgHealthScore),
+                AvgEducation = g.Average(m => (decimal?)m.AvgEducationProgress)
+            })
+            .ToListAsync();
+
+        var months = Enumerable.Range(0, 12)
+            .Select(i => DateTime.UtcNow.AddMonths(-11 + i))
+            .Select(d => new { d.Year, d.Month })
+            .ToList();
+
+        var trends = months.Select(m =>
+        {
+            var d = monthlyDonations.FirstOrDefault(x => x.Year == m.Year && x.Month == m.Month);
+            var me = monthlyMetrics.FirstOrDefault(x => x.Year == m.Year && x.Month == m.Month);
+            return new
+            {
+                month = new DateTime(m.Year, m.Month, 1).ToString("MMM yyyy"),
+                totalDonations = d?.TotalAmount ?? 0,
+                avgHealthScore = me?.AvgHealth ?? 0,
+                avgEducationProgress = me?.AvgEducation ?? 0
+            };
+        });
+
+        return Ok(trends);
+    }
+
     /// <summary>
     /// Active safehouses for the resources/find-home page.
     /// Only returns non-sensitive info.

@@ -47,6 +47,7 @@ const METRIC_LABELS: Record<string, string> = {
 
 export function ImpactPage() {
   const { stats, isLoading: loading } = useImpactStats()
+  const { trends } = useImpactTrends()
 
   if (loading) {
     return (

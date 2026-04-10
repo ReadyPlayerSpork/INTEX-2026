@@ -314,6 +314,25 @@ public class CaseloadController(
         return Ok(new { message = "Intervention plan created.", planId = plan.PlanId });
     }
 
+    [HttpGet("{id:int}/case-conferences")]
+    public async Task<IActionResult> GetCaseConferences(int id)
+    {
+        var conferences = await db.InterventionPlans
+            .Where(ip => ip.ResidentId == id && ip.CaseConferenceDate != null)
+            .OrderByDescending(ip => ip.CaseConferenceDate)
+            .Select(ip => new
+            {
+                ip.PlanId,
+                ip.PlanCategory,
+                ip.PlanDescription,
+                ip.CaseConferenceDate,
+                ip.Status
+            })
+            .ToListAsync();
+
+        return Ok(conferences);
+    }
+
     // ── Create Resident ─────────────────────────────────────────────
 
     /// <summary>

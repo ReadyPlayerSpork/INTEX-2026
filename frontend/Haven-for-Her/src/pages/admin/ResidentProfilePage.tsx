@@ -304,6 +304,130 @@ function ProfileTab({ resident }: { resident: ResidentProfile }) {
   )
 }
 
+      )}
+    </div>
+  )
+}
+
+/* ---- Healing Journey Timeline (Process Recordings) ---- */
+
+function ProcessRecordingTimeline({ residentId }: { residentId: number }) {
+  const [records, setRecords] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.get<any[]>(`/api/caseload/${residentId}/recordings`)
+      .then(setRecords)
+      .finally(() => setLoading(false))
+  }, [residentId])
+
+  if (loading) return <p className="animate-pulse text-sm text-muted-foreground">Loading journey...</p>
+  if (records.length === 0) return <p className="text-sm text-muted-foreground">No sessions recorded yet.</p>
+
+  return (
+    <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:bg-gradient-to-b before:from-primary/20 before:via-primary/20 before:to-transparent md:before:mx-auto md:before:translate-x-0">
+      {records.sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime()).map((rec, i) => (
+        <div key={rec.recordingId} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+          {/* Dot */}
+          <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-primary text-primary-foreground shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+            <Heart className="size-4 fill-current" />
+          </div>
+          {/* Content */}
+          <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-card p-4 rounded-xl border border-border shadow-sm">
+            <div className="flex items-center justify-between mb-1">
+              <time className="font-heading font-bold text-accent">{new Date(rec.sessionDate).toLocaleDateString()}</time>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                rec.concernsFlagged ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
+              }`}>
+                {rec.emotionalStateObserved}
+              </span>
+            </div>
+            <div className="text-muted-foreground text-xs mb-2">
+              {rec.sessionType} Session • {rec.sessionDurationMinutes} mins • {rec.socialWorker}
+            </div>
+            <p className="text-sm text-foreground leading-relaxed italic mb-3">"{rec.sessionNarrative}"</p>
+            <div className="space-y-2">
+              <div className="text-[11px]">
+                <span className="font-bold uppercase text-soft-purple/70">Interventions:</span>
+                <p className="text-plum">{rec.interventionsApplied}</p>
+              </div>
+              <div className="text-[11px]">
+                <span className="font-bold uppercase text-soft-purple/70">Follow-up:</span>
+                <p className="text-plum">{rec.followUpActions}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ---- Case Conferences Tab ---- */
+
+function CaseConferencesTab({ residentId }: { residentId: number }) {
+  const [conferences, setConferences] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.get<any[]>(`/api/caseload/${residentId}/case-conferences`)
+      .then(setConferences)
+      .finally(() => setLoading(false))
+  }, [residentId])
+
+  if (loading) return <p className="animate-pulse text-sm text-muted-foreground">Loading conferences...</p>
+
+  const today = new Date().setHours(0,0,0,0)
+  const upcoming = conferences.filter(c => new Date(c.caseConferenceDate).getTime() >= today)
+  const past = conferences.filter(c => new Date(c.caseConferenceDate).getTime() < today)
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">Upcoming Conferences</h3>
+        {upcoming.length === 0 ? (
+          <p className="text-sm text-muted-foreground bg-muted/30 p-4 rounded-lg border border-dashed border-border">No upcoming conferences scheduled.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {upcoming.map(c => (
+              <ConferenceCard key={c.planId} conference={c} isUpcoming />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">Conference History</h3>
+        {past.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No past conferences found.</p>
+        ) : (
+          <div className="space-y-3">
+            {past.map(c => (
+              <ConferenceCard key={c.planId} conference={c} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ConferenceCard({ conference, isUpcoming }: { conference: any, isUpcoming?: boolean }) {
+  return (
+    <div className={`p-4 rounded-xl border ${isUpcoming ? 'bg-primary/5 border-primary/20 shadow-bloom' : 'bg-card border-border shadow-sm'}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <BookOpen className={`size-4 ${isUpcoming ? 'text-primary' : 'text-muted-foreground'}`} />
+          <span className="font-heading font-bold text-accent">{new Date(conference.caseConferenceDate).toLocaleDateString()}</span>
+        </div>
+        <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-muted rounded-full">{conference.status}</span>
+      </div>
+      <p className="text-xs font-bold uppercase text-soft-purple/70 mb-1">{conference.planCategory}</p>
+      <p className="text-sm text-plum">{conference.planDescription}</p>
+    </div>
+  )
+}
+
 /* ---- Generic related-records sub-tab ---- */
 
 function RelatedRecordsTab({

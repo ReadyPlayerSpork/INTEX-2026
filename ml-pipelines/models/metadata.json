@@ -1,0 +1,40 @@
+{
+  "last_trained": "2026-04-09T23:59:26.318733",
+  "model_summary": {
+    "donor_churn": {
+      "status": "success",
+      "metrics": {
+        "roc_auc": 0.8556,
+        "cv_accuracy_mean": 0.7778
+      }
+    },
+    "incident_risk": {
+      "status": "success",
+      "metrics": {
+        "roc_auc": 0.42,
+        "cv_accuracy_mean": 0.7333
+      }
+    },
+    "resident_progress": {
+      "status": "success",
+      "metrics": {
+        "roc_auc": 1.0,
+        "cv_accuracy_mean": 0.9333
+      }
+    },
+    "safehouse_outcomes": {
+      "status": "success",
+      "metrics": {
+        "r2_score": -0.0951,
+        "cv_r2_mean": -0.023
+      }
+    },
+    "social_media_impact": {
+      "status": "success",
+      "metrics": {
+        "roc_auc": 0.9131,
+        "cv_accuracy_mean": 0.812
+      }
+    }
+  }
+}
